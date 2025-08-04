@@ -1,0 +1,133 @@
+﻿<Window x:Class="CATERINGMANAGEMENT.View.Windows.Dashboard"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Dashboard"
+        WindowStartupLocation="CenterScreen"
+        Background="#FAFAFA"
+        WindowState="Maximized"
+        WindowStyle="None">
+
+    <Window.Resources>
+        <!-- Sidebar Button Style -->
+        <Style x:Key="SidebarIconButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#6A1B9A"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="80"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Margin="10" CornerRadius="12" Background="#4A148C">
+            <Grid Margin="0,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Logo -->
+                <StackPanel Grid.Row="0" Margin="0,20,0,10" HorizontalAlignment="Center">
+                    <materialDesign:PackIcon Kind="TuneVariant" Width="36" Height="36" Foreground="White"/>
+                </StackPanel>
+
+                <!-- Navigation Icons -->
+                <StackPanel Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,30">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Dashboard" Margin="0,20">
+                        <materialDesign:PackIcon Kind="ViewDashboard" Width="24" Height="24" Foreground="White"/>
+                    </Button>
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Reservations" Margin="0,20" Click="BtnReservations_Click">
+                        <materialDesign:PackIcon Kind="CalendarCheck" Width="24" Height="24" Foreground="White"/>
+                    </Button>
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Inventory" Margin="0,20">
+                        <materialDesign:PackIcon Kind="PackageVariant" Width="24" Height="24" Foreground="White"/>
+                    </Button>
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Scheduling" Margin="0,20">
+                        <materialDesign:PackIcon Kind="ClockOutline" Width="24" Height="24" Foreground="White"/>
+                    </Button>
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,20">
+                        <materialDesign:PackIcon Kind="CashMultiple" Width="24" Height="24" Foreground="White"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Settings and Logout -->
+                <StackPanel Grid.Row="2" Margin="0,30" HorizontalAlignment="Center">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Settings" Margin="0,10">
+                        <materialDesign:PackIcon Kind="Cog" Width="24" Height="24" Foreground="White"/>
+                    </Button>
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Logout" Margin="0,10">
+                        <materialDesign:PackIcon Kind="LogoutVariant" Width="24" Height="24" Foreground="White"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Column="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Top bar -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Exit and Minimize (Top-right) -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0,10,10,0"
+                            Grid.Column="1">
+                    <Ellipse Width="15" Height="15" Fill="LightGray" Margin="0,0,8,0" MouseDown="MinimizeAppBtnHandler">
+                        <Ellipse.ToolTip>Minimize</Ellipse.ToolTip>
+                    </Ellipse>
+                    <Ellipse Width="15" Height="15" Fill="Tomato" MouseDown="ExitAppBtnHandler">
+                        <Ellipse.ToolTip>Exit</Ellipse.ToolTip>
+                    </Ellipse>
+                </StackPanel>
+            </Grid>
+
+            <!-- Admin Profile (Top-right below ellipses) -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,45,10,0"
+                        Grid.Row="0">
+                <StackPanel VerticalAlignment="Center" Margin="5, 0">
+                    <TextBlock Text="Admin Name"  HorizontalAlignment="Right" FontWeight="Bold" Foreground="#333"/>
+                    <TextBlock Text="Administrator" HorizontalAlignment="Right" FontSize="11" Foreground="#777"/>
+                </StackPanel>
+                <materialDesign:PackIcon Kind="AccountCircle" Width="32" Height="32" Foreground="#555" Margin="0,0,8,0"/>
+            </StackPanel>
+
+            <!-- Dynamic Page Frame -->
+            <Frame Grid.Row="1" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
+        </Grid>
+    </Grid>
+</Window>
