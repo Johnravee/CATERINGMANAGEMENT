@@ -27,7 +27,7 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#6A1B9A"/>
+                    <Setter Property="Background" Value="#D6C4F0"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -40,7 +40,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar -->
-        <Border Grid.Column="0" Margin="10" CornerRadius="12" Background="#4A148C">
+        <Border Grid.Column="0" Margin="10,50,10,10" CornerRadius="12" Background="#E5DBFF ">
             <Grid Margin="0,10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -50,35 +50,35 @@
 
                 <!-- Logo -->
                 <StackPanel Grid.Row="0" Margin="0,20,0,10" HorizontalAlignment="Center">
-                    <materialDesign:PackIcon Kind="TuneVariant" Width="36" Height="36" Foreground="White"/>
+                    <materialDesign:PackIcon Kind="TuneVariant" Width="36" Height="36" Foreground="#2E2E2E"/>
                 </StackPanel>
 
                 <!-- Navigation Icons -->
                 <StackPanel Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,30">
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Dashboard" Margin="0,20">
-                        <materialDesign:PackIcon Kind="ViewDashboard" Width="24" Height="24" Foreground="White"/>
+                        <materialDesign:PackIcon Kind="ViewDashboard" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Reservations" Margin="0,20" Click="BtnReservations_Click">
-                        <materialDesign:PackIcon Kind="CalendarCheck" Width="24" Height="24" Foreground="White"/>
+                        <materialDesign:PackIcon Kind="CalendarCheck" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Inventory" Margin="0,20">
-                        <materialDesign:PackIcon Kind="PackageVariant" Width="24" Height="24" Foreground="White"/>
+                        <materialDesign:PackIcon Kind="PackageVariant" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Scheduling" Margin="0,20">
-                        <materialDesign:PackIcon Kind="ClockOutline" Width="24" Height="24" Foreground="White"/>
+                        <materialDesign:PackIcon Kind="ClockOutline" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,20">
-                        <materialDesign:PackIcon Kind="CashMultiple" Width="24" Height="24" Foreground="White"/>
+                        <materialDesign:PackIcon Kind="CashMultiple" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
                 </StackPanel>
 
                 <!-- Settings and Logout -->
                 <StackPanel Grid.Row="2" Margin="0,30" HorizontalAlignment="Center">
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Settings" Margin="0,10">
-                        <materialDesign:PackIcon Kind="Cog" Width="24" Height="24" Foreground="White"/>
+                        <materialDesign:PackIcon Kind="Cog" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Logout" Margin="0,10">
-                        <materialDesign:PackIcon Kind="LogoutVariant" Width="24" Height="24" Foreground="White"/>
+                        <materialDesign:PackIcon Kind="LogoutVariant" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
                 </StackPanel>
             </Grid>
@@ -88,7 +88,11 @@
         <Grid Grid.Column="1" Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <!-- Top bar -->
+                <RowDefinition Height="Auto"/>
+                <!-- Admin panel -->
                 <RowDefinition Height="*"/>
+                <!-- Main content -->
             </Grid.RowDefinitions>
 
             <!-- Top bar -->
@@ -98,7 +102,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Exit and Minimize (Top-right) -->
+                <!-- Exit and Minimize -->
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Top"
@@ -113,21 +117,29 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Admin Profile (Top-right below ellipses) -->
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Margin="0,45,10,0"
-                        Grid.Row="0">
-                <StackPanel VerticalAlignment="Center" Margin="5, 0">
-                    <TextBlock Text="Admin Name"  HorizontalAlignment="Right" FontWeight="Bold" Foreground="#333"/>
-                    <TextBlock Text="Administrator" HorizontalAlignment="Right" FontSize="11" Foreground="#777"/>
+            <!-- Admin Panel Row -->
+            <Border Grid.Row="1" Background="#E5DBFF " Padding="10" CornerRadius="12" Margin="0,10,0,10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <StackPanel VerticalAlignment="Center" Margin="5,0">
+                        <TextBlock Text="Admin Name"
+                                   Foreground="#2E2E2E"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Right"/>
+                        <TextBlock Text="Administrator"
+                                   FontSize="11"
+                                   Foreground="#2E2E2E"
+                                   HorizontalAlignment="Right"/>
+                    </StackPanel>
+                    <materialDesign:PackIcon Kind="AccountCircle"
+                                             Width="32"
+                                             Height="32"
+                                             Foreground="#2E2E2E"
+                                             Margin="0,0,8,0"/>
                 </StackPanel>
-                <materialDesign:PackIcon Kind="AccountCircle" Width="32" Height="32" Foreground="#555" Margin="0,0,8,0"/>
-            </StackPanel>
+            </Border>
 
             <!-- Dynamic Page Frame -->
-            <Frame Grid.Row="1" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
+            <Frame Grid.Row="2" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
         </Grid>
     </Grid>
 </Window>

@@ -19,7 +19,7 @@ namespace CATERINGMANAGEMENT.Services
 
             var options = new SupabaseOptions
             {
-                AutoConnectRealtime = false
+                AutoConnectRealtime = true
             };
 
             _client = new Client(url, key, options);

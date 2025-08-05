@@ -1,7 +1,6 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
-using System;
-using System.Text.Json.Nodes;
+
 
 namespace CATERINGMANAGEMENT.Models
 {
@@ -51,6 +50,7 @@ namespace CATERINGMANAGEMENT.Models
         [Column("status")]
         public string Status { get; set; } = string.Empty;
 
+       
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
     }
