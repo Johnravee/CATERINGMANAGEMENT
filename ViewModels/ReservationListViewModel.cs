@@ -177,7 +177,11 @@ namespace CATERINGMANAGEMENT.ViewModel
             SelectedReservation = reservation;
             Debug.WriteLine($"📄 Viewing reservation: {reservation.Id} | {reservation.Celebrant}");
 
-            // Optionally show a dialog/modal from the view
+           App.Current.Dispatcher.Invoke(() =>
+            {
+                var detailsWindow = new View.Windows.ReservationDetails(reservation);
+                detailsWindow.ShowDialog();
+            });
 
             return Task.CompletedTask;
         }
