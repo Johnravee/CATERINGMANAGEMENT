@@ -1,14 +1,18 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Windows;
+using PdfSharp.Fonts; // ✅ Required for GlobalFontSettings
 
 namespace CATERINGMANAGEMENT
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
-    }
+        public App()
+        {
+            GlobalFontSettings.UseWindowsFontsUnderWindows = true;
 
+            // Initialize WPF application
+            InitializeComponent();
+        }
+    }
 }
