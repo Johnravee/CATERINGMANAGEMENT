@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove=".env" />
     <None Remove="Assets\images\applogo.png" />
     <None Remove="Assets\images\contract.png" />
     <None Remove="Assets\LoginForm.png" />
@@ -25,7 +26,12 @@
 
   <ItemGroup>
     <Resource Include="Assets\images\applogo.png" />
-    <Resource Include="Assets\images\contract.png" />
+    <Content Include=".env">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\images\contract.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Resource Include="Assets\images\LoginForm.png" />
   </ItemGroup>
 

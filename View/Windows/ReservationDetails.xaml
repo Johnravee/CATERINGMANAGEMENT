@@ -8,7 +8,10 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="Calibri"
         FontSize="18"
-        Style="{StaticResource MaterialDesignWindow}">
+        Style="{StaticResource MaterialDesignWindow}"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        ResizeMode="NoResize">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -20,155 +23,194 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Grid Margin="20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="30" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+    <Grid>
 
-        <!-- 📄 LEFT SIDE: Contract A4 Preview -->
-        <ScrollViewer Grid.Column="0"
-                      HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Auto">
-            <Border BorderBrush="Gray" BorderThickness="1" Margin="0">
-                <Grid Width="595" Height="842" Background="White">
-                    <!-- A4 background image -->
-                    <Image Source="/Assets/images/contract.png" Stretch="Fill" />
+     
 
-                    <!-- Overlay Text: align based on PDF positions -->
-                    <TextBlock Text="{Binding Celebrant}" FontSize="12" FontWeight="Bold"
-                               Foreground="Black" Margin="420,142,0,0"
-                               HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <!-- 🔘 Ellipses in Top-Right Corner -->
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,30,30,0"
+                    ZIndex="999">
+            <Ellipse Width="15" Height="15" Fill="LightGray" Margin="0,0,8,0"
+                     MouseDown="MinimizeAppBtnHandler">
+                <Ellipse.ToolTip>Minimize</Ellipse.ToolTip>
+            </Ellipse>
+            <Ellipse Width="15" Height="15" Fill="Tomato"
+                     MouseDown="ExitAppBtnHandler">
+                <Ellipse.ToolTip>Exit</Ellipse.ToolTip>
+            </Ellipse>
+        </StackPanel>
 
-                    <TextBlock Text="{Binding Venue}" FontSize="12" Foreground="Black"
-                               Margin="110,290,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <!-- 🧾 Main Layout -->
+        <Grid Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="30" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="{Binding Location}" FontSize="12" Foreground="Black"
-                               Margin="420,290,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <!-- 📄 LEFT: Contract Image -->
+            <ScrollViewer Grid.Column="0"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
+                <Border BorderBrush="Gray" BorderThickness="1" Margin="0">
+                    <Grid Width="595" Height="842" Background="White">
+                        <Image Source="/Assets/images/contract.png" Stretch="Fill" />
+                    </Grid>
+                </Border>
+            </ScrollViewer>
 
-                    <TextBlock Text="{Binding EventDate, StringFormat='{}{0:MMMM dd, yyyy}'}"
-                               FontSize="12" Foreground="Black"
-                               Margin="130,320,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <!-- 📝 RIGHT: Reservation Form -->
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Margin="0, 30">
+                <Border Background="White" Padding="30" CornerRadius="4">
+                    <StackPanel>
 
-                    <TextBlock Text="{Binding EventTime}" FontSize="12" Foreground="Black"
-                               Margin="420,320,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                        <TextBlock Text="Reservation Details"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}" />
 
-                    <TextBlock Text="{Binding AdultsQty}" FontSize="12" Foreground="Black"
-                               Margin="140,350,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                        <!-- Fields -->
+                        <TextBox Text="{Binding ReceiptNumber}"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Receipt Number"
+                                 Margin="0,0,0,10"
+                                 IsReadOnly="True" />
 
-                    <TextBlock Text="{Binding KidsQty}" FontSize="12" Foreground="Black"
-                               Margin="420,350,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                        <TextBox Text="{Binding Celebrant}"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Celebrant"
+                                 Margin="0,0,0,10" />
 
-                    <!-- Add more overlays here -->
-                </Grid>
-            </Border>
-        </ScrollViewer>
+                        <TextBox Text="{Binding Venue}"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Venue"
+                                 Margin="0,0,0,10" />
 
-        <!-- 📝 RIGHT SIDE: Reservation Form -->
-        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
-            <StackPanel Background="White" Margin="0">
+                        <TextBox Text="{Binding Profile.FullName}"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Client Name"
+                                 Margin="0,0,0,10"
+                                 IsReadOnly="True" />
 
-                <TextBlock Text="Reservation Details"
-                           FontSize="24"
-                           FontWeight="Bold"
-                           Margin="0,0,0,20"
-                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                        <TextBox Text="{Binding Profile.Email}"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Email"
+                                 Margin="0,0,0,10"
+                                 IsReadOnly="True" />
 
-                <!-- Form Fields -->
-                <TextBox Text="{Binding ReceiptNumber}"
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         materialDesign:HintAssist.Hint="Receipt Number"
-                         Margin="0,0,0,10"
-                         IsReadOnly="True" />
+                        <TextBox Text="{Binding ThemeMotif.Name}"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Theme / Motif"
+                                 Margin="0,0,0,10"
+                                 IsReadOnly="True" />
 
-                <TextBox Text="{Binding Celebrant}"
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         materialDesign:HintAssist.Hint="Celebrant"
-                         Margin="0,0,0,10" />
+                        <TextBox Text="{Binding Package.Name}"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Package"
+                                 Margin="0,0,0,10"
+                                 IsReadOnly="True" />
 
-                <TextBox Text="{Binding Venue}"
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         materialDesign:HintAssist.Hint="Venue"
-                         Margin="0,0,0,10" />
+                        <TextBox Text="{Binding Grazing.Name}"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Grazing Table"
+                                 Margin="0,0,0,10"
+                                 IsReadOnly="True" />
 
-                <TextBox Text="{Binding Location}"
-                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                         materialDesign:HintAssist.Hint="Location"
-                         Margin="0,0,0,10" />
+                        <TextBox Text="{Binding Location}"
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Location"
+                                 Margin="0,0,0,10" />
 
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="20" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                    <DatePicker SelectedDate="{Binding EventDate}"
-                                Grid.Column="0"
-                                materialDesign:HintAssist.Hint="Event Date" />
+                            <DatePicker SelectedDate="{Binding EventDate}"
+                                        Grid.Column="0"
+                                        materialDesign:HintAssist.Hint="Event Date" />
 
-                    <TextBox Text="{Binding EventTime}"
-                             Grid.Column="2"
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             materialDesign:HintAssist.Hint="Event Time" />
-                </Grid>
+                            <TextBox Text="{Binding EventTime}"
+                                     Grid.Column="2"
+                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                     materialDesign:HintAssist.Hint="Event Time" />
+                        </Grid>
 
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="20" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                    <TextBox Text="{Binding AdultsQty}"
-                             Grid.Column="0"
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             materialDesign:HintAssist.Hint="Adults Qty" />
+                            <TextBox Text="{Binding AdultsQty}"
+                                     Grid.Column="0"
+                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                     materialDesign:HintAssist.Hint="Adults Qty" />
 
-                    <TextBox Text="{Binding KidsQty}"
-                             Grid.Column="2"
-                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                             materialDesign:HintAssist.Hint="Kids Qty" />
-                </Grid>
+                            <TextBox Text="{Binding KidsQty}"
+                                     Grid.Column="2"
+                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                     materialDesign:HintAssist.Hint="Kids Qty" />
+                        </Grid>
 
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="20" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                        <ComboBox SelectedValue="{Binding Status}"
+                                  SelectedValuePath="Content"
+                                  Style="{StaticResource MaterialDesignComboBox}"
+                                  materialDesign:HintAssist.Hint="Status"
+                                  Margin="0,0,0,10">
+                            <ComboBoxItem Content="pending" />
+                            <ComboBoxItem Content="confirmed" />
+                            <ComboBoxItem Content="canceled" />
+                        </ComboBox>
+                        <StackPanel Orientation="Horizontal"
+            HorizontalAlignment="Right"
+            Margin="0,20,0,0"
+           >
 
-                    <ComboBox SelectedValue="{Binding Status}"
-                              SelectedValuePath="Content"
-                              Grid.Column="0"
-                              Style="{StaticResource MaterialDesignComboBox}"
-                              materialDesign:HintAssist.Hint="Status"
-                              IsEditable="False">
-                        <ComboBoxItem Content="pending" />
-                        <ComboBoxItem Content="confirmed" />
-                        <ComboBoxItem Content="canceled" />
-                    </ComboBox>
-                </Grid>
+                            <!-- ✅ Update Button - Primary color -->
+                            <!-- ✅ Update Button - Primary color -->
+                            <Border CornerRadius="10">
+                                <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="#673AB7"
+                                        Foreground="White"
+                                        Padding="12,6"
+                                        Margin="5,0"
+                                        Command="{Binding UpdateReservationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}">   
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="ContentSaveEdit" Width="20" Height="20" Margin="0,0,6,0" />
+                                        <TextBlock Text="Update" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </Border>
 
-                <!-- Actions -->
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right"
-                            Margin="0,20,0,0">
-                    <Button Content="Update"
-                            Style="{StaticResource MaterialDesignRaisedButton}"
-                            Margin="0,0,10,0" />
 
-                    <Button Content="Delete"
-                            Style="{StaticResource MaterialDesignOutlinedButton}"
-                            Foreground="Red" />
+                            <!-- 📄 Generate Contract Button - Secondary color -->
+                            <Border CornerRadius="10">
+                                <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="#3949AB"
+                                        Foreground="White"
+                                        Click="GenerateContractButton_Click"
+                                        Padding="12,6">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="FilePdfBox" Width="20" Height="20" Margin="0,0,6,0" />
+                                        <TextBlock Text="Generate Contract" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+                        </StackPanel>
 
-                    <Button Content="Generate Contract"
-                            Style="{StaticResource MaterialDesignOutlinedButton}"
-                            Foreground="Red"
-                            Click="GenerateContractButton_Click" />
-                </StackPanel>
-            </StackPanel>
-        </ScrollViewer>
+
+                    </StackPanel>
+                </Border>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Window>

@@ -1,7 +1,6 @@
 ﻿using Supabase;
-using System;
-using System.Threading.Tasks;
-using CATERINGMANAGEMENT.Models;
+using System.Windows;
+
 
 namespace CATERINGMANAGEMENT.Services
 {
@@ -11,11 +10,12 @@ namespace CATERINGMANAGEMENT.Services
 
         public static async Task<Client> GetClientAsync()
         {
+
             if (_client != null)
                 return _client;
 
-            var url = "https://ezzpttxajkfwdgxsslsb.supabase.co"; // ← Replace with your real Supabase URL
-            var key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6enB0dHhhamtmd2RneHNzbHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI2OTUwNTUsImV4cCI6MjA1ODI3MTA1NX0.kozAOx5JUe03pMAjfXY5KYhYmVXbh4LKyTeYMsONUYs";       // ← Replace with your Supabase Key
+            var url = Environment.GetEnvironmentVariable("SUPABASE_URL");
+            var key = Environment.GetEnvironmentVariable("SUPABASE_API_KEY");
 
             var options = new SupabaseOptions
             {

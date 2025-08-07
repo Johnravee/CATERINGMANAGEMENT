@@ -1,7 +1,7 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
+using System;
 using System.Text.Json.Serialization;
-
 
 namespace CATERINGMANAGEMENT.Models
 {
@@ -15,14 +15,8 @@ namespace CATERINGMANAGEMENT.Models
         [Column("receipt_number")]
         public string ReceiptNumber { get; set; } = string.Empty;
 
-        [Column("profile_id")]
-        public long ProfileId { get; set; }
-
         [Column("celebrant")]
         public string Celebrant { get; set; } = string.Empty;
-
-        [Column("theme_motif_id")]
-        public long ThemeMotifId { get; set; }
 
         [Column("venue")]
         public string Venue { get; set; } = string.Empty;
@@ -42,20 +36,36 @@ namespace CATERINGMANAGEMENT.Models
         [Column("kids_qty")]
         public decimal KidsQty { get; set; }
 
-        [Column("package")]
+        [Column("status")]
+        public string Status { get; set; } = string.Empty;
+
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        // Foreign Keys (for internal use)
+        [Column("profile_id")]
+        public long ProfileId { get; set; }
+
+        [Column("theme_motif_id")]
+        public long ThemeMotifId { get; set; }
+
+        [Column("package_id")]
         public long PackageId { get; set; }
 
         [Column("grazing_id")]
         public long GrazingId { get; set; }
 
-        [Column("status")]
-        public string Status { get; set; } = string.Empty;
+        // --- Related Tables (joined results from Supabase)
+        [JsonPropertyName("profile")] 
+        public Profile? Profile { get; set; }
 
+        [JsonPropertyName("thememotif")]
+        public ThemeMotif? ThemeMotif { get; set; }
 
-   
+        [JsonPropertyName("grazing")]
+        public GrazingTable? Grazing { get; set; }
 
-
-        [Column("created_at")]
-        public DateTime CreatedAt { get; set; }
+        [JsonPropertyName("package")]
+        public Packages? Package { get; set; }
     }
 }

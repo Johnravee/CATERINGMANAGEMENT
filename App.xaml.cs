@@ -1,7 +1,8 @@
-﻿using System.Configuration;
-using System.Data;
+﻿using DotNetEnv;
 using System.Windows;
-using PdfSharp.Fonts; // ✅ Required for GlobalFontSettings
+using PdfSharp.Fonts;
+using System.IO;
+
 
 namespace CATERINGMANAGEMENT
 {
@@ -10,8 +11,8 @@ namespace CATERINGMANAGEMENT
         public App()
         {
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
-
-            // Initialize WPF application
+            var envPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env");
+            Env.Load(envPath);
             InitializeComponent();
         }
     }

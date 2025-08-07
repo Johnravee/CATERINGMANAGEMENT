@@ -1,20 +1,24 @@
-﻿using System.Diagnostics;
+﻿using CATERINGMANAGEMENT.Models;
+using CATERINGMANAGEMENT.Services;
+using MaterialDesignThemes.Wpf;
+using Microsoft.Win32;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
-using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
-using Microsoft.Win32;
+using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.View.Windows
 {
     public partial class ReservationDetails : Window
     {
         private Reservation _reservation;
+        public ICommand UpdateReservationCommand { get; }
 
-        public ReservationDetails(Reservation reservation)
+        public ReservationDetails(Reservation reservation, ICommand updateReservationCommand)
         {
             InitializeComponent();
             _reservation = reservation;
+            UpdateReservationCommand = updateReservationCommand;
             DataContext = reservation;
         }
 
@@ -56,5 +60,17 @@ namespace CATERINGMANAGEMENT.View.Windows
                 }
             }
         }
+
+        private void ExitAppBtnHandler(object sender, MouseButtonEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void MinimizeAppBtnHandler(object sender, MouseButtonEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+     
     }
 }

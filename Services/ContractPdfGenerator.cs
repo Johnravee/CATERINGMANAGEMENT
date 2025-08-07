@@ -11,7 +11,7 @@ namespace CATERINGMANAGEMENT.Services
         [Obsolete]
         public static void Generate(Reservation reservation, string savePath)
         {
-            string imagePath = @"C:\Users\Johnrave\Desktop\CATERINGMANAGEMENT\Assets\images\contract.png";
+            string imagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "images", "contract.png");
 
             if (!File.Exists(imagePath))
                 throw new FileNotFoundException("Contract template image not found.", imagePath);
@@ -32,18 +32,18 @@ namespace CATERINGMANAGEMENT.Services
                 var brush = XBrushes.Black;
 
                 // Draw values on correct coordinates
-                gfx.DrawString(DateTime.Now.ToString("MMMM dd, yyyy"), font, brush, new XPoint(364.85, 124.35)); // Date Now
-                gfx.DrawString("John Doe", font, brush, new XPoint(121.49, 146.85)); // Client Name (placeholder)
-                gfx.DrawString(reservation.Celebrant, font, brush, new XPoint(385.77, 146.85)); // Celebrant
+                gfx.DrawString(DateTime.Now.ToString("MMMM dd, yyyy"), font, brush, new XPoint(364.85, 124.35)); 
+                gfx.DrawString(reservation.Profile?.FullName ?? string.Empty, font, brush, new XPoint(121.49, 146.85));
+                gfx.DrawString(reservation.Celebrant, font, brush, new XPoint(385.77, 146.85));
 
-                gfx.DrawString("Sample Address", font, brush, new XPoint(130.70, 168.17));
-                gfx.DrawString("09123456789", font, brush, new XPoint(148.86, 191.07));
-                gfx.DrawString("sample@email.com", font, brush, new XPoint(361.29, 192.25));
+                gfx.DrawString(reservation.Profile?.Address ?? string.Empty, font, brush, new XPoint(130.70, 168.17));
+                gfx.DrawString(reservation.Profile?.ContactNumber ?? string.Empty, font, brush, new XPoint(148.86, 191.07));
+                gfx.DrawString(reservation.Profile?.Email ?? string.Empty, font, brush, new XPoint(361.29, 192.25));
 
-                gfx.DrawString($"Package {reservation.PackageId}", font, brush, new XPoint(130, 215));
-                gfx.DrawString("Birthday", font, brush, new XPoint(396.04, 213.96)); // Sample Event/Party
+                gfx.DrawString(reservation.Package?.Name ?? string.Empty, font, brush, new XPoint(130, 215));
+                gfx.DrawString(reservation.Package?.Name ?? string.Empty, font, brush, new XPoint(396.04, 213.96)); 
 
-                gfx.DrawString($"Motif {reservation.ThemeMotifId}", font, brush, new XPoint(153.99, 235.28));
+                gfx.DrawString(reservation.ThemeMotif?.Name ?? string.Empty, font, brush, new XPoint(153.99, 235.28));
                 gfx.DrawString(reservation.Venue, font, brush, new XPoint(118.46, 258.97));
                 gfx.DrawString(reservation.Location, font, brush, new XPoint(377.48, 257.58));
 

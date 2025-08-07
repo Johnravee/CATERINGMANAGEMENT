@@ -22,6 +22,8 @@ namespace CATERINGMANAGEMENT.ViewModel
 
         public ICommand ViewReservationCommand { get; }
         public ICommand DeleteReservationCommand { get; }
+        public ICommand UpdateReservationCommand { get; }
+
 
         private bool _isLoading;
         public bool IsLoading
@@ -85,6 +87,8 @@ namespace CATERINGMANAGEMENT.ViewModel
         {
             ViewReservationCommand = new RelayCommand<Reservation>(ViewReservation);
             DeleteReservationCommand = new RelayCommand<Reservation>(async (res) => await DeleteReservation(res));
+            UpdateReservationCommand = new RelayCommand<Reservation>(async (res) => await UpdateReservation(res));
+
         }
 
         private void ApplySearchFilter()
@@ -121,9 +125,19 @@ namespace CATERINGMANAGEMENT.ViewModel
             {
                 var client = await SupabaseService.GetClientAsync();
 
-                var result = await client.From<Reservation>().Get();
+                var result = await client
+                                        .From<Reservation>()
+                                        .Select(@"
+                                                *,
+                                                profile:profile_id(*),
+                                                thememotif:theme_motif_id(*),
+                                                grazing:grazing_id(*),
+                                                package:package_id(*)
+                                            ")
+                                        .Get();
                 AllReservations.Clear();
                 FilteredReservations.Clear();
+
 
                 foreach (var reservation in result.Models)
                 {
@@ -154,9 +168,9 @@ namespace CATERINGMANAGEMENT.ViewModel
                             AllReservations.Add(updated);
                         }
 
-                        ApplySearchFilter();
                         UpdateReservationCounts();
                         IsLoading = false;
+                        ApplySearchFilter();
                     });
                 });
             }
@@ -179,12 +193,82 @@ namespace CATERINGMANAGEMENT.ViewModel
 
            App.Current.Dispatcher.Invoke(() =>
             {
-                var detailsWindow = new View.Windows.ReservationDetails(reservation);
+                var detailsWindow = new View.Windows.ReservationDetails(reservation, UpdateReservationCommand);
                 detailsWindow.ShowDialog();
             });
 
             return Task.CompletedTask;
         }
+
+
+        private async Task UpdateReservation(Reservation reservation)
+        {
+            if (reservation == null)
+            {
+                Debug.WriteLine("❌ Reservation is null.");
+                return;
+            }
+
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                Debug.WriteLine($"🛠️ Updating reservation ID: {reservation.Id}");
+
+               
+                var updateResponse = await client
+                    .From<Reservation>()
+                    .Where(x => x.Id == reservation.Id)
+                    .Set(r => r.Status, reservation.Status)
+                    .Update();
+
+                Debug.WriteLine($"✅ Update success for ID {reservation.Id}");
+
+                // Refresh data from server to update local collection
+                var refreshed = await client.From<Reservation>()
+                    .Where(x => x.Id == reservation.Id)
+                    .Select(@"
+                *,
+                profile:profile_id(*),
+                thememotif:theme_motif_id(*),
+                grazing:grazing_id(*),
+                package:package_id(*)
+            ")
+                    .Single();
+
+                if (refreshed != null)
+                {
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        var existing = AllReservations.FirstOrDefault(r => r.Id == reservation.Id);
+                        if (existing != null)
+                        {
+                            var index = AllReservations.IndexOf(existing);
+                            AllReservations[index] = refreshed;
+                            ApplySearchFilter();
+                            UpdateReservationCounts();
+
+                          
+                            System.Windows.MessageBox.Show("✅ Reservation updated successfully!",
+                                "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                        }
+                    });
+                }
+                else
+                {
+                    Debug.WriteLine($"⚠️ Refreshed reservation is null. It may not exist.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error updating reservation: {ex.Message}");
+                System.Windows.MessageBox.Show("❌ Failed to update reservation.\n\n" + ex.Message,
+                    "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+
+
 
         private async Task DeleteReservation(Reservation reservation)
         {
@@ -214,5 +298,7 @@ namespace CATERINGMANAGEMENT.ViewModel
             }
         }
     }
+
+
 }
 
