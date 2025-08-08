@@ -1,7 +1,9 @@
 ﻿using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Mailer;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -23,7 +25,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         }
 
         [Obsolete]
-        private void GenerateContractButton_Click(object sender, RoutedEventArgs e)
+        private async void GenerateContractButton_Click(object sender, RoutedEventArgs e)
         {
             var saveDialog = new SaveFileDialog
             {
@@ -36,11 +38,38 @@ namespace CATERINGMANAGEMENT.View.Windows
             {
                 try
                 {
-                    // 1. Generate PDF at chosen path
-                    ContractPdfGenerator.Generate(_reservation, saveDialog.FileName);
+                    // Show loader
+                    LoaderDialogHost.IsOpen = true;
 
-                    // 2. Ask if user wants to print
-                    var result = MessageBox.Show("PDF saved successfully. Do you want to print it now?",
+                    await Task.Run(() =>
+                    {
+                        // 1. Generate the contract PDF
+                        ContractPdfGenerator.Generate(_reservation, saveDialog.FileName);
+
+                        // 2. Send the contract via email
+                        var emailService = new EmailService();
+                        var contractMailer = new ContractMailer(emailService);
+
+                        bool sent = contractMailer.SendContractEmail(
+                            recipientEmail: _reservation.Profile?.Email ?? string.Empty,
+                            recipientName: _reservation.Profile?.FullName ?? "Client",
+                            eventDate: _reservation.EventDate.ToString("MMMM dd, yyyy"),
+                            attachmentPath: saveDialog.FileName
+                        );
+
+                        if (!sent)
+                        {
+                            throw new Exception("Failed to send the contract email.");
+                        }
+                    });
+
+                    LoaderDialogHost.IsOpen = false;
+
+                    MessageBox.Show("Contract generated and sent successfully.",
+                                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    // Ask if user wants to print
+                    var result = MessageBox.Show("Do you want to print the contract now?",
                                                  "Print Contract", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
                     if (result == MessageBoxResult.Yes)
@@ -51,15 +80,23 @@ namespace CATERINGMANAGEMENT.View.Windows
                             UseShellExecute = true,
                             Verb = "open"
                         });
-                       
                     }
                 }
                 catch (IOException ex)
                 {
-                    MessageBox.Show($"Failed to save or print the contract.\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    LoaderDialogHost.IsOpen = false;
+                    MessageBox.Show($"Failed to save or print the contract.\n\n{ex.Message}",
+                                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    LoaderDialogHost.IsOpen = false;
+                    MessageBox.Show($"Unexpected error occurred.\n\n{ex.Message}",
+                                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
+
 
         private void ExitAppBtnHandler(object sender, MouseButtonEventArgs e)
         {
@@ -70,7 +107,5 @@ namespace CATERINGMANAGEMENT.View.Windows
         {
             this.WindowState = WindowState.Minimized;
         }
-
-     
     }
 }

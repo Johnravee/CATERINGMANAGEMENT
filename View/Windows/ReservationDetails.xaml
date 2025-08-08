@@ -23,7 +23,22 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Grid>
+    <materialDesign:DialogHost x:Name="LoaderDialogHost">
+        <materialDesign:DialogHost.DialogContent>
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
+                <ProgressBar IsIndeterminate="True"
+                         Width="60" Height="60"
+                         Style="{StaticResource MaterialDesignCircularProgressBar}" />
+                <TextBlock Text="Generating contract and sending email..."
+                       Margin="0,15,0,0"
+                       FontSize="14"
+                       FontWeight="SemiBold"
+                       Foreground="Black"
+                       HorizontalAlignment="Center" />
+            </StackPanel>
+        </materialDesign:DialogHost.DialogContent>
+        
+        <Grid>
 
      
 
@@ -83,12 +98,14 @@
                         <TextBox Text="{Binding Celebrant}"
                                  Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                                  materialDesign:HintAssist.Hint="Celebrant"
-                                 Margin="0,0,0,10" />
+                                 Margin="0,0,0,10" 
+                                 IsReadOnly="True"/>
 
                         <TextBox Text="{Binding Venue}"
                                  Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                                  materialDesign:HintAssist.Hint="Venue"
-                                 Margin="0,0,0,10" />
+                                 Margin="0,0,0,10" 
+                                 IsReadOnly="True"/>
 
                         <TextBox Text="{Binding Profile.FullName}"
                                  Style="{StaticResource MaterialDesignFloatingHintTextBox}"
@@ -123,7 +140,8 @@
                         <TextBox Text="{Binding Location}"
                                  Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                                  materialDesign:HintAssist.Hint="Location"
-                                 Margin="0,0,0,10" />
+                                 Margin="0,0,0,10" 
+                                 IsReadOnly="True"/>
 
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
@@ -139,7 +157,8 @@
                             <TextBox Text="{Binding EventTime}"
                                      Grid.Column="2"
                                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Event Time" />
+                                     materialDesign:HintAssist.Hint="Event Time" 
+                                     IsReadOnly="True" />
                         </Grid>
 
                         <Grid Margin="0,0,0,10">
@@ -152,12 +171,14 @@
                             <TextBox Text="{Binding AdultsQty}"
                                      Grid.Column="0"
                                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Adults Qty" />
+                                     materialDesign:HintAssist.Hint="Adults Qty"
+                                     IsReadOnly="True"/>
 
                             <TextBox Text="{Binding KidsQty}"
                                      Grid.Column="2"
                                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Kids Qty" />
+                                     materialDesign:HintAssist.Hint="Kids Qty"
+                                     IsReadOnly="True"/>
                         </Grid>
 
                         <ComboBox SelectedValue="{Binding Status}"
@@ -213,4 +234,5 @@
             </ScrollViewer>
         </Grid>
     </Grid>
+    </materialDesign:DialogHost>
 </Window>
