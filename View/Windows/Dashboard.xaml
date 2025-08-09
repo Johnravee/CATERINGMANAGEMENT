@@ -55,8 +55,8 @@
 
                 <!-- Navigation Icons -->
                 <StackPanel Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,30">
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Dashboard" Margin="0,20">
-                        <materialDesign:PackIcon Kind="ViewDashboard" Width="24" Height="24" Foreground="#2E2E2E"/>
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Dashboard" Margin="0,20" Click="BtnOverview_Click">
+                        <materialDesign:PackIcon Kind="ViewDashboard" Width="24" Height="24" Foreground="#2E2E2E" />
                     </Button>
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Reservations" Margin="0,20" Click="BtnReservations_Click">
                         <materialDesign:PackIcon Kind="CalendarCheck" Width="24" Height="24" Foreground="#2E2E2E"/>

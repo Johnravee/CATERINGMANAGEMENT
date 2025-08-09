@@ -12,6 +12,12 @@ namespace CATERINGMANAGEMENT.View.Windows
         public Dashboard()
         {
             InitializeComponent();
+            MainFrame.Navigate(new Overview());
+        }
+
+        private void BtnOverview_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Overview());
         }
 
         private void BtnReservations_Click(object sender, RoutedEventArgs e)

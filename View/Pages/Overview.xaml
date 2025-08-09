@@ -1,0 +1,88 @@
+﻿<Page x:Class="CATERINGMANAGEMENT.View.Pages.Overview"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+      mc:Ignorable="d" 
+      d:DesignHeight="800" d:DesignWidth="1200"
+      Title="Overview">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ================= KPI Cards ================= -->
+        <UniformGrid Grid.Row="0" Columns="4" Margin="0 0 0 20">
+            <!-- Card 1 -->
+            <materialDesign:Card Padding="16" Margin="8" Background="#673AB7" Foreground="White">
+                <StackPanel>
+                    <TextBlock Text="Total Reservations" FontSize="16" FontWeight="Bold"/>
+                    <TextBlock Text="124" FontSize="28" FontWeight="Bold"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <!-- Card 2 -->
+            <materialDesign:Card Padding="16" Margin="8" Background="#4CAF50" Foreground="White">
+                <StackPanel>
+                    <TextBlock Text="Upcoming Events" FontSize="16" FontWeight="Bold"/>
+                    <TextBlock Text="6" FontSize="28" FontWeight="Bold"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <!-- Card 3 -->
+            <materialDesign:Card Padding="16" Margin="8" Background="#2196F3" Foreground="White">
+                <StackPanel>
+                    <TextBlock Text="Available Inventory" FontSize="16" FontWeight="Bold"/>
+                    <TextBlock Text="358" FontSize="28" FontWeight="Bold"/>
+                </StackPanel>
+            </materialDesign:Card>
+
+            <!-- Card 4 -->
+            <materialDesign:Card Padding="16" Margin="8" Background="#FF9800" Foreground="White">
+                <StackPanel>
+                    <TextBlock Text="Pending Payments" FontSize="16" FontWeight="Bold"/>
+                    <TextBlock Text="₱5,200" FontSize="28" FontWeight="Bold"/>
+                </StackPanel>
+            </materialDesign:Card>
+        </UniformGrid>
+
+        <!-- ================= Charts ================= -->
+        <Grid Grid.Row="1" Margin="0 0 0 20">
+            <materialDesign:Card Padding="16" Margin="8">
+                <StackPanel>
+                    <TextBlock Text="Reservations per Month" FontSize="18" FontWeight="Bold" Margin="0 0 0 10"/>
+
+                    <!-- LiveCharts 2 Binding -->
+                    <lvc:CartesianChart Height="250"
+                                        Series="{Binding ReservationSeries}"
+                                        XAxes="{Binding XAxes}"
+                                        YAxes="{Binding YAxes}" />
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+
+        <!-- ================= Table ================= -->
+        <Grid Grid.Row="2">
+            <materialDesign:Card Padding="16" Margin="8">
+                <StackPanel>
+                    <TextBlock Text="Upcoming Reservations" FontSize="18" FontWeight="Bold" Margin="0 0 0 10"/>
+                    <DataGrid AutoGenerateColumns="False"
+                              HeadersVisibility="Column"
+                              CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Event Date" Binding="{Binding EventDate}"/>
+                            <DataGridTextColumn Header="Client Name" Binding="{Binding ClientName}"/>
+                            <DataGridTextColumn Header="Package" Binding="{Binding PackageName}"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+    </Grid>
+</Page>
