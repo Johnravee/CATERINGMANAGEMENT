@@ -25,6 +25,12 @@ namespace CATERINGMANAGEMENT.View.Windows
             MainFrame.Navigate(new ReservationListPage());
         }
 
+        private void BtnEquipment_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new EquipmentsInventory());
+        }
+
+
         private void ExitAppBtnHandler(object sender, MouseButtonEventArgs e)
         {
             Application.Current.Shutdown();
