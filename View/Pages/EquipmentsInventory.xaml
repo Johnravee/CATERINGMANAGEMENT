@@ -5,6 +5,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:viewmodel="clr-namespace:CATERINGMANAGEMENT.ViewModels"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
       mc:Ignorable="d"
       Background="#FAFAFA"
       FontFamily="Calibri"
@@ -13,6 +14,7 @@
     <Page.Resources>
         <materialDesign:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
+        <!-- Styles -->
         <Style x:Key="CenteredCellStyle" TargetType="DataGridCell">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -80,132 +82,237 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <!-- Title + New Item -->
             <RowDefinition Height="Auto"/>
+            <!-- Cards -->
+            <RowDefinition Height="Auto"/>
+            <!-- Search + Export -->
+            <RowDefinition Height="*"/>
+            <!-- DataGrid -->
+            <RowDefinition Height="Auto"/>
+            <!-- Pagination -->
         </Grid.RowDefinitions>
 
-        <!-- Title -->
-        <StackPanel Margin="20">
-            <StackPanel Orientation="Horizontal">
-                <materialDesign:PackIcon Kind="Warehouse" Width="28" Height="28" Foreground="#673AB7" Margin="0,0,10,0"/>
-                <TextBlock Text="Inventory"
-                           FontSize="26"
-                           FontWeight="Bold"
-                           Foreground="#333"
-                           VerticalAlignment="Center"/>
-            </StackPanel>
-            <TextBlock FontSize="14"
-                       Foreground="Gray"
-                       Margin="0,4,0,20"
-                       Text="List of Equipment and Current Stock"/>
-        </StackPanel>
-
-        <!-- Main Content -->
-        <Grid Grid.Row="1">
+        <!-- Title with New Item Button -->
+        <Grid Grid.Row="0" Margin="20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
 
-            <!-- Cards -->
-            <UniformGrid Rows="1" Columns="3" Margin="0,0,0,10">
-                <Border Background="#7E57C2" CornerRadius="8" Padding="16" Margin="8" Height="90">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Total Items" FontWeight="Bold" Foreground="White" FontSize="14"/>
-                        <TextBlock Text="{Binding TotalCount}" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="#66BB6A" CornerRadius="8" Padding="16" Margin="8" Height="90">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Good Condition" FontWeight="Bold" Foreground="White" FontSize="14"/>
-                        <TextBlock Text="{Binding GoodConditionCount}" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="#EF5350" CornerRadius="8" Padding="16" Margin="8" Height="90">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Needs Repair" FontWeight="Bold" Foreground="White" FontSize="14"/>
-                        <TextBlock Text="{Binding NeedsRepairCount}" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
-
-            <!-- DataGrid -->
-            <DataGrid Grid.Row="1"
-                      ItemsSource="{Binding Equipments}"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      HeadersVisibility="Column"
-                      AlternatingRowBackground="#F0F0F0"
-                      IsReadOnly="True"
-                      RowHeaderWidth="0"
-                      GridLinesVisibility="None"
-                      BorderThickness="0"
-                      ColumnHeaderHeight="40"
-                      RowHeight="40"
-                      Background="White"
-                      SelectionMode="Single"
-                      SelectionUnit="FullRow"
-                      CellStyle="{StaticResource CenteredCellStyle}"
-                      ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                    <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                    <DataGridTextColumn Header="Condition" Binding="{Binding Condition}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                    <DataGridTextColumn Header="Last Updated" Binding="{Binding UpdatedAt, StringFormat='{}{0:yyyy-MM-dd}'}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                    <DataGridTemplateColumn Header="Actions" Width="180">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <Button Style="{StaticResource ModernFlatButton}" 
-                                            ToolTip="Edit"
-                                            Command="{Binding DataContext.EditEquipmentCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                            CommandParameter="{Binding}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Pencil" Width="16" Height="16" Margin="0,0,4,0"/>
-                                            <TextBlock Text="Edit"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource ModernFlatButton}"  
-                                            Background="#E53935" 
-                                            ToolTip="Delete"
-                                            Command="{Binding DataContext.DeleteEquipmentCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                            CommandParameter="{Binding}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Delete" Width="16" Height="16" Margin="0,0,4,0"/>
-                                            <TextBlock Text="Delete"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
-
-            <!-- Loading Overlay -->
-            <Border Grid.RowSpan="2"
-                    Background="#80000000"
-                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
-                    CornerRadius="8">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                 IsIndeterminate="True"
-                                 Width="60"
-                                 Height="60"
-                                 Foreground="White"/>
+            <!-- Title -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <materialDesign:PackIcon Kind="Warehouse" Width="28" Height="28" Foreground="#673AB7" Margin="0,0,10,0"/>
+                <StackPanel>
+                    <TextBlock Text="Equipments Inventory"
+                               FontSize="26"
+                               FontWeight="Bold"
+                               Foreground="#333"/>
+                    <TextBlock FontSize="14"
+                               Foreground="Gray"
+                               Text="List of Equipment and Current Stock"/>
                 </StackPanel>
-            </Border>
+            </StackPanel>
+
+            <!-- New Item Button -->
+            <Button Grid.Column="1" Style="{StaticResource ModernFlatButton}" Padding="10" Command="{Binding AddNewEquipmentCommand}" Width="100">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" Margin="0,0,4,0"/>
+                    <TextBlock Text="New Item"/>
+                </StackPanel>
+            </Button>
         </Grid>
 
+        <!-- Cards -->
+        <UniformGrid Grid.Row="1" Rows="1" Columns="3" Margin="0,0,0,10">
+            <!-- Total Items Card -->
+            <Border Background="White" CornerRadius="8" Padding="16" Margin="8" Height="90">
+                <Border.Effect>
+                    <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="3" Opacity="0.2"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center" Grid.Column="0">
+                        <TextBlock Text="Total Items" FontWeight="Bold" Foreground="#333" FontSize="14"/>
+                        <TextBlock Text="{Binding TotalCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
+                    </StackPanel>
+                    <lvc:PieChart MaxAngle="350" Grid.Column="1" Series="{Binding TotalItemsSeries}" Width="50" Height="50"/>
+                </Grid>
+            </Border>
+
+            <!-- Good Condition Card -->
+            <Border Background="White" CornerRadius="8" Padding="16" Margin="8" Height="90">
+                <Border.Effect>
+                    <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="3" Opacity="0.2"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center" Grid.Column="0">
+                        <TextBlock Text="Good Condition" FontWeight="Bold" Foreground="#333" FontSize="14"/>
+                        <TextBlock Text="{Binding GoodConditionCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
+                    </StackPanel>
+                    <lvc:PieChart MaxAngle="300" Grid.Column="1" Series="{Binding GoodConditionSeries}" Width="50" Height="50"/>
+                </Grid>
+            </Border>
+
+            <!-- Needs Repair Card -->
+            <Border Background="White" CornerRadius="8" Padding="16" Margin="8" Height="90">
+                <Border.Effect>
+                    <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="3" Opacity="0.2"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center" Grid.Column="0">
+                        <TextBlock Text="Needs Repair" FontWeight="Bold" Foreground="#333" FontSize="14"/>
+                        <TextBlock Text="{Binding NeedsRepairCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
+                    </StackPanel>
+                    <lvc:PieChart MaxAngle="280" Grid.Column="1" Series="{Binding NeedsRepairSeries}" Width="50" Height="50"/>
+                </Grid>
+            </Border>
+        </UniformGrid>
+
+        <!-- Search + Export Toolbar -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+            <!-- CSV Button -->
+            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportCsvCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FileCsv" Width="16" Height="16" Margin="0,0,4,0"/>
+                    <TextBlock Text="CSV"/>
+                </StackPanel>
+            </Button>
+
+            <!-- PDF Button -->
+            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportPdfCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="FileDocument" Width="16" Height="16" Margin="0,0,4,0"/>
+                    <TextBlock Text="PDF"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Search Box -->
+            <Border Background="White" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1" Padding="4" Height="38" VerticalAlignment="Center" Margin="0,0,8,0">
+                <DockPanel>
+                    <materialDesign:PackIcon Kind="Magnify" Width="18" Height="18" VerticalAlignment="Center" Foreground="#666" Margin="4,0"/>
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Width="200"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="#333"
+                             FontSize="14"
+                             Padding="4,2"
+                             VerticalContentAlignment="Center"
+                             materialDesign:HintAssist.Hint="Search..." />
+                </DockPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- DataGrid -->
+        <DataGrid Grid.Row="3"
+                  ItemsSource="{Binding Equipments}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  HeadersVisibility="Column"
+                  AlternatingRowBackground="#F0F0F0"
+                  IsReadOnly="True"
+                  RowHeaderWidth="0"
+                  GridLinesVisibility="None"
+                  BorderThickness="0"
+                  ColumnHeaderHeight="40"
+                  RowHeight="40"
+                  Background="White"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow"
+                  CellStyle="{StaticResource CenteredCellStyle}"
+                  ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+
+                <!-- Condition Column with color coding -->
+                <DataGridTextColumn Header="Condition" Width="*">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="Condition"/>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource CenteredTextStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Condition}" Value="Good">
+                                    <Setter Property="Foreground" Value="Green"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Condition}" Value="Needs Repair">
+                                    <Setter Property="Foreground" Value="Orange"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Condition}" Value="Bad">
+                                    <Setter Property="Foreground" Value="Red"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Last Updated" Binding="{Binding UpdatedAt, StringFormat='{}{0:yyyy-MM-dd}'}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+
+                <DataGridTemplateColumn Header="Actions" Width="180">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Style="{StaticResource ModernFlatButton}" 
+                                        ToolTip="Edit"
+                                        Command="{Binding DataContext.EditEquipmentCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Pencil" Width="16" Height="16" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Edit"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource ModernFlatButton}"  
+                                        Background="#E53935" 
+                                        ToolTip="Delete"
+                                        Command="{Binding DataContext.DeleteEquipmentCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Delete" Width="16" Height="16" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Delete"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Loading Overlay -->
+        <Border Grid.RowSpan="4"
+                Background="#80000000"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                CornerRadius="8">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True"
+                             Width="60"
+                             Height="60"
+                             Foreground="White"/>
+            </StackPanel>
+        </Border>
+
         <!-- Pagination -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <Button Content="⟨ Prev" Style="{StaticResource ModernFlatButton}" />
             <Label Content="Page 1 of 5" VerticalAlignment="Center" FontWeight="Bold" Foreground="#333" Margin="10,0"/>
             <Button Content="Next ⟩" Style="{StaticResource ModernFlatButton}" />
         </StackPanel>
+
     </Grid>
 </Page>

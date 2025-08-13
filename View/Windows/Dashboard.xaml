@@ -61,8 +61,11 @@
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Reservations" Margin="0,20" Click="BtnReservations_Click">
                         <materialDesign:PackIcon Kind="CalendarCheck" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Inventory" Margin="0,20" Click="BtnEquipment_Click">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Equipment Inventory" Margin="0,20" Click="BtnEquipment_Click">
                         <materialDesign:PackIcon Kind="PackageVariant" Width="24" Height="24" Foreground="#2E2E2E"/>
+                    </Button>
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Kitchen Inventory" Margin="0,20" Click="BtnEquipment_Click">
+                        <materialDesign:PackIcon Kind="Kitchen" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Scheduling" Margin="0,20">
                         <materialDesign:PackIcon Kind="ClockOutline" Width="24" Height="24" Foreground="#2E2E2E"/>

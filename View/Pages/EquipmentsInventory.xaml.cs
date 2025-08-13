@@ -19,5 +19,7 @@ namespace CATERINGMANAGEMENT.View.Pages
                 await _viewModel.LoadEquipments();
             };
         }
+
+     
     }
 }
