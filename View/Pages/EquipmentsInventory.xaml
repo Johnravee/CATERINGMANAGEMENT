@@ -115,7 +115,7 @@
             </StackPanel>
 
             <!-- New Item Button -->
-            <Button Grid.Column="1" Style="{StaticResource ModernFlatButton}" Padding="10" Command="{Binding AddNewEquipmentCommand}" Width="100">
+            <Button Grid.Column="1" Style="{StaticResource ModernFlatButton}" Padding="10" Command="{Binding AddEquipmentCommand}" Width="100">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="New Item"/>
@@ -182,8 +182,14 @@
 
         <!-- Search + Export Toolbar -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+
+            <TextBlock Text="Export Data as"
+                       FontWeight="Medium"
+                       Foreground="#333"
+                       Margin="0,0,20,0"
+                       VerticalAlignment="Center"/>
             <!-- CSV Button -->
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportCsvCommand}">
+            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportCsvCommand}" Click="ExportAsCsv">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileCsv" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="CSV"/>
@@ -191,7 +197,7 @@
             </Button>
 
             <!-- PDF Button -->
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportPdfCommand}">
+            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportPdfCommand}" Click="ExportAsPDF">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileDocument" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="PDF"/>
@@ -216,7 +222,8 @@
         </StackPanel>
 
         <!-- DataGrid -->
-        <DataGrid Grid.Row="3"
+        <DataGrid x:Name="EquipmentDataGrid"
+                  Grid.Row="3"
                   ItemsSource="{Binding Equipments}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
@@ -252,7 +259,7 @@
                                 <DataTrigger Binding="{Binding Condition}" Value="Needs Repair">
                                     <Setter Property="Foreground" Value="Orange"/>
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding Condition}" Value="Bad">
+                                <DataTrigger Binding="{Binding Condition}" Value="Damaged">
                                     <Setter Property="Foreground" Value="Red"/>
                                 </DataTrigger>
                             </Style.Triggers>

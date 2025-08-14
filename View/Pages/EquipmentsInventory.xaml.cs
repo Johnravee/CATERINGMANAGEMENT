@@ -1,4 +1,5 @@
 ﻿using System.Windows.Controls;
+using CATERINGMANAGEMENT.Services.DocumentsGenerator;
 using CATERINGMANAGEMENT.ViewModels;
 
 
@@ -20,6 +21,33 @@ namespace CATERINGMANAGEMENT.View.Pages
             };
         }
 
-     
+        private void ExportAsCsv(object sender, System.Windows.RoutedEventArgs e)
+        {
+            DatagridToCsv.ExportToCsv(
+               EquipmentDataGrid.ItemsSource,
+               "Id",
+               "BaseUrl",
+               "RequestClientOptions",
+               "TableName",
+               "PrimaryKey",
+               "UpdatedAt",
+               "CreatedAt"
+           );
+        }
+
+        [Obsolete]
+        private void ExportAsPDF(object sender, System.Windows.RoutedEventArgs e)
+        {
+            DataGridToPdf.DataGridToPDF(
+                EquipmentDataGrid.ItemsSource,
+                "Id",
+                "BaseUrl",
+                "RequestClientOptions",
+                "TableName",
+                "PrimaryKey",
+                "UpdatedAt",
+                "CreatedAt"
+                );
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.DocumentsGenerator;
 using CATERINGMANAGEMENT.Services.Mailer;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
