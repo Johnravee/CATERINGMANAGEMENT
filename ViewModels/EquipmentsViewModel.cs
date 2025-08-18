@@ -64,7 +64,9 @@ namespace CATERINGMANAGEMENT.ViewModels
         {
             DeleteEquipmentCommand = new RelayCommand<Equipments>(async (e) => await DeleteEquipment(e));
             AddEquipmentCommand = new RelayCommand(() => AddNewEquipment());
+            EditEquipmentCommand = new RelayCommand<Equipments>(async (eq) => await EditEquipment(eq));
         }
+        
 
         // Load from Supabase
         public async Task LoadEquipments()
@@ -161,9 +163,41 @@ namespace CATERINGMANAGEMENT.ViewModels
         }
 
         // Edit/View equipment
-        private void EditEquipment(Equipments equipment)
+        private async Task EditEquipment(Equipments equipment)
         {
-          
+            if (equipment == null) return;
+
+            var editWindow = new EditEquipments(equipment);
+            bool? result = editWindow.ShowDialog();
+
+            if (result == true && editWindow.Equipments != null)
+            {
+                try
+                {
+                    editWindow.Equipments.UpdatedAt = DateTime.UtcNow;
+
+                    var client = await SupabaseService.GetClientAsync();
+                    var response = await client.From<Equipments>()
+                        .Where(e => e.Id == editWindow.Equipments.Id)
+                        .Update(editWindow.Equipments);
+
+                    if (response.Models != null && response.Models.Count > 0)
+                    {
+                        // Update local collection
+                        var index = _equipments.IndexOf(equipment);
+                        if (index >= 0)
+                            _equipments[index] = response.Models[0];
+
+                        ApplySearchFilter();
+                        UpdateCounts(); 
+                        MessageBox.Show("Equipment updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show($"Error updating equipment:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
 
         // Insert new equipment

@@ -310,7 +310,7 @@
                              IsIndeterminate="True"
                              Width="60"
                              Height="60"
-                             Foreground="White"/>
+                             Foreground="White  "/>
             </StackPanel>
         </Border>
 
