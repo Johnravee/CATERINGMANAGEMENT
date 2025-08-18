@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace CATERINGMANAGEMENT.Services
+namespace CATERINGMANAGEMENT.Helpers
 {
     public class RelayCommand : ICommand
     {

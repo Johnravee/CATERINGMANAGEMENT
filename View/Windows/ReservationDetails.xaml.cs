@@ -1,10 +1,8 @@
-﻿using CATERINGMANAGEMENT.Models;
+﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+using CATERINGMANAGEMENT.Mailer;
+using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
-using CATERINGMANAGEMENT.Services.DocumentsGenerator;
-using CATERINGMANAGEMENT.Services.Mailer;
-using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
-using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;

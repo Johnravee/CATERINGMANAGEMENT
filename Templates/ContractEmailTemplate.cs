@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CATERINGMANAGEMENT.Services.Templates
+namespace CATERINGMANAGEMENT.Templates
 {
     internal static class ContractEmailTemplate
     {

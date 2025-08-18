@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Windows;
 
-namespace CATERINGMANAGEMENT.Services.DocumentsGenerator
+namespace CATERINGMANAGEMENT.DocumentsGenerator
 {
     public static class DatagridToCsv
     {

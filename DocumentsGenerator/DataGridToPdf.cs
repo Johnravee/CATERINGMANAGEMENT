@@ -5,7 +5,7 @@ using System.Collections;
 using System.Reflection;
 using System.Windows;
 
-namespace CATERINGMANAGEMENT.Services.DocumentsGenerator
+namespace CATERINGMANAGEMENT.DocumentsGenerator
 {
     internal static class DataGridToPdf
     {

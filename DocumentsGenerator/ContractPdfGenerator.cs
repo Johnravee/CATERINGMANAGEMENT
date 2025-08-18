@@ -4,7 +4,7 @@ using CATERINGMANAGEMENT.Models;
 using System;
 using System.IO;
 
-namespace CATERINGMANAGEMENT.Services.DocumentsGenerator
+namespace CATERINGMANAGEMENT.DocumentsGenerator
 {
     internal class ContractPdfGenerator
     {

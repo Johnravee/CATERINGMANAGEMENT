@@ -1,8 +1,8 @@
 ﻿using System;
 using CATERINGMANAGEMENT.Services;
-using CATERINGMANAGEMENT.Services.Templates;
+using CATERINGMANAGEMENT.Templates;
 
-namespace CATERINGMANAGEMENT.Services.Mailer
+namespace CATERINGMANAGEMENT.Mailer
 {
     internal class ContractMailer
     {

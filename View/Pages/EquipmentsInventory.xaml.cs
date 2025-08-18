@@ -1,5 +1,5 @@
 ﻿using System.Windows.Controls;
-using CATERINGMANAGEMENT.Services.DocumentsGenerator;
+using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.ViewModels;
 
 
