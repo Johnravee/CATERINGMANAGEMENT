@@ -9,15 +9,18 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
 {
     public static class DatagridToCsv
     {
-        public static void ExportToCsv(IEnumerable dataSource, params string[] skipProperties)
+        public static void ExportToCsv(IEnumerable dataSource, string filename  ,params string[] skipProperties)
         {
-            if (dataSource == null)
+            if (dataSource == null || !dataSource.Cast<object>().Any())
+            {
+                MessageBox.Show("No data available to export.", "Export Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
 
             var saveFileDialog = new SaveFileDialog
             {
                 Filter = "CSV file (*.csv)|*.csv",
-                FileName = "Equipments.csv"
+                FileName = filename
             };
 
             if (saveFileDialog.ShowDialog() != true)

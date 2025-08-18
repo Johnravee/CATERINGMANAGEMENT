@@ -10,15 +10,18 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
     internal static class DataGridToPdf
     {
         [Obsolete]
-        public static void DataGridToPDF(IEnumerable dataSource, params string[] skipProperties)
+        public static void DataGridToPDF(IEnumerable dataSource, string filename, params string[] skipProperties)
         {
-            if (dataSource == null)
+            if (dataSource == null || !dataSource.Cast<object>().Any())
+            {
+                MessageBox.Show("No data available to export.", "Export Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
 
             var saveFileDialog = new SaveFileDialog
             {
                 Filter = "PDF file (*.pdf)|*.pdf",
-                FileName = "Equipments.pdf"
+                FileName = filename
             };
 
             if (saveFileDialog.ShowDialog() != true)

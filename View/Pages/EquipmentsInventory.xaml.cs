@@ -25,6 +25,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         {
             DatagridToCsv.ExportToCsv(
                EquipmentDataGrid.ItemsSource,
+               "EquipmentsInventory.csv",
                "Id",
                "BaseUrl",
                "RequestClientOptions",
@@ -40,6 +41,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         {
             DataGridToPdf.DataGridToPDF(
                 EquipmentDataGrid.ItemsSource,
+                "EquipmentsInventory.pdf",
                 "Id",
                 "BaseUrl",
                 "RequestClientOptions",

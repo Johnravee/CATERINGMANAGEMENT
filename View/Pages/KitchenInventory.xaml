@@ -277,7 +277,7 @@
                    VerticalAlignment="Center"/>
             
             <!-- Export CSV -->
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportCsvCommand}" Width="90" Margin="0,0,10,0">
+            <Button Style="{StaticResource ModernFlatButton}" Width="90" Margin="0,0,10,0" Click="ExportAsCsv">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileCsv" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="CSV"/>
@@ -285,7 +285,7 @@
             </Button>
 
             <!-- Export PDF -->
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportPdfCommand}" Width="90" Margin="0,0,10,0">
+            <Button Style="{StaticResource ModernFlatButton}" Width="90" Margin="0,0,10,0" Click="ExportAsPDF">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileDocument" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="PDF"/>
