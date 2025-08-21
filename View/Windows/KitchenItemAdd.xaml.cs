@@ -7,7 +7,7 @@ namespace CATERINGMANAGEMENT.View.Windows
 {
     public partial class KitchenItemAdd : Window
     {
-        public Kitchen KitchenItem { get; set; }
+        public Kitchen? KitchenItem { get; set; }
 
         public KitchenItemAdd()
         {

@@ -1,0 +1,130 @@
+﻿<Window x:Class="CATERINGMANAGEMENT.View.Windows.AddWorker"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CATERINGMANAGEMENT.View.Windows"
+        mc:Ignorable="d"
+        Title="Add Worker"
+        Height="700" Width="480"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#F9FAFB"
+        FontFamily="Segoe UI">
+
+    <Border CornerRadius="12" Background="White" Padding="20" Margin="10"
+            Effect="{DynamicResource DropShadow}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="Add New Worker"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Foreground="#2D2D2D"
+                       Margin="0,0,0,20"/>
+
+            <StackPanel Grid.Row="1" Margin="0,0,0,15">
+                <TextBlock Text="Full Name" Foreground="#555" Margin="0,0,0,4"/>
+                <TextBox x:Name="NameTextBox"
+                         Padding="8"
+                         FontSize="14"
+                         Background="#F3F4F6"
+                         BorderThickness="1"
+                         BorderBrush="#D1D5DB"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Margin="0,0,0,15">
+                <TextBlock Text="Role" Foreground="#555" Margin="0,0,0,4"/>
+                <TextBox x:Name="RoleTextBox"
+                         Padding="8"
+                         FontSize="14"
+                         Background="#F3F4F6"
+                         BorderThickness="1"
+                         BorderBrush="#D1D5DB"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="3" Margin="0,0,0,15">
+                <TextBlock Text="Contact Number" Foreground="#555" Margin="0,0,0,4"/>
+                <TextBox x:Name="ContactTextBox"
+                         Padding="8"
+                         FontSize="14"
+                         Background="#F3F4F6"
+                         BorderThickness="1"
+                         BorderBrush="#D1D5DB"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="4" Margin="0,0,0,15">
+                <TextBlock Text="Email Address" Foreground="#555" Margin="0,0,0,4"/>
+                <TextBox x:Name="EmailTextBox"
+                         Padding="8"
+                         FontSize="14"
+                         Background="#F3F4F6"
+                         BorderThickness="1"
+                         BorderBrush="#D1D5DB"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="5" Margin="0,0,0,15">
+                <TextBlock Text="Salary" Foreground="#555" Margin="0,0,0,4"/>
+                <TextBox x:Name="SalaryTextBox"
+                         Padding="8"
+                         FontSize="14"
+                         Background="#F3F4F6"
+                         BorderThickness="1"
+                         BorderBrush="#D1D5DB"
+                         InputScope="Number"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="6" Margin="0,0,0,15">
+                <TextBlock Text="Hire Date" Foreground="#555" Margin="0,0,0,4"/>
+                <DatePicker x:Name="HireDatePicker"
+                            Padding="8"
+                            FontSize="14"
+                            Background="#F3F4F6"
+                            BorderBrush="#D1D5DB"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="7" Margin="0,0,0,15">
+                <TextBlock Text="Status" Foreground="#555" Margin="0,0,0,4"/>
+                <ComboBox x:Name="StatusComboBox"
+                          FontSize="14"
+                          Padding="6"
+                          Background="#F3F4F6"
+                          BorderBrush="#D1D5DB">
+                    <ComboBoxItem Content="Active"/>
+                    <ComboBoxItem Content="On Leave"/>
+                    <ComboBoxItem Content="Terminated"/>
+                </ComboBox>
+            </StackPanel>
+
+            <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <Button Content="Cancel"
+                        Width="90"
+                        Height="32"
+                        Margin="0,0,10,0"
+                        Background="#E5E7EB"
+                        Foreground="#333"
+                        BorderBrush="#D1D5DB"
+                        BorderThickness="1"/>
+                <Button Content="Add"
+                        Width="90"
+                        Height="32"
+                        Background="#4F46E5"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Click="AddWorker_Click"
+                        />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

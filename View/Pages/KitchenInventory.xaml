@@ -291,6 +291,32 @@
                     <TextBlock Text="PDF"/>
                 </StackPanel>
             </Button>
+
+            <!-- Pagination Controls -->
+            <Button Style="{StaticResource ModernFlatButton}" 
+            Width="80" 
+            Command="{Binding PrevPageCommand}">
+                <TextBlock Text="Prev"/>
+            </Button>
+
+            <TextBlock Text="{Binding CurrentPage}" 
+               FontWeight="Bold" 
+               VerticalAlignment="Center"
+               Margin="10,0"/>
+            <TextBlock Text=" / " 
+               FontWeight="Bold" 
+               VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding TotalPages}" 
+               FontWeight="Bold" 
+               VerticalAlignment="Center"
+               Margin="10,0"/>
+
+            <Button Style="{StaticResource ModernFlatButton}" 
+            Width="80" 
+            Command="{Binding NextPageCommand}" >
+                <TextBlock Text="Next"/>
+            </Button>
+            
         </StackPanel>
 
     </Grid>

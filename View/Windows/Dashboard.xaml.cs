@@ -35,6 +35,11 @@ namespace CATERINGMANAGEMENT.View.Windows
             MainFrame.Navigate(new KitchenInventory());
         }
 
+        private void BtnWorkers_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Workers());
+        }
+
 
         private void ExitAppBtnHandler(object sender, MouseButtonEventArgs e)
         {

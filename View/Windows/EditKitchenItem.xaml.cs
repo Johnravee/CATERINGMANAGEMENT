@@ -11,7 +11,7 @@ namespace CATERINGMANAGEMENT.View.Windows
     public partial class EditKitchenItem : Window
     {
         // Property to hold the edited Kitchen item
-        public Kitchen KitchenItem { get; set; }
+        public Kitchen? KitchenItem { get; set; }
 
         // Constructor takes the existing item
         public EditKitchenItem(Kitchen existingItem)

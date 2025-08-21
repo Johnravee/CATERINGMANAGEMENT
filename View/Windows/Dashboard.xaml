@@ -73,6 +73,14 @@
                     <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,20">
                         <materialDesign:PackIcon Kind="CashMultiple" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
+
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,20" Click="BtnWorkers_Click">
+                        <materialDesign:PackIcon Kind="Worker" Width="24" Height="24" Foreground="#2E2E2E"/>
+                    </Button>
+
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,20">
+                        <materialDesign:PackIcon Kind="Chat" Width="24" Height="24" Foreground="#2E2E2E"/>
+                    </Button>
                 </StackPanel>
 
                 <!-- Settings and Logout -->

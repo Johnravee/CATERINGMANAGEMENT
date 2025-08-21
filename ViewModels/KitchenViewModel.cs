@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.ViewModels
 {
@@ -18,6 +19,9 @@ namespace CATERINGMANAGEMENT.ViewModels
     {
         private ObservableCollection<Kitchen> _kitchenItems = new(); // master list
         private ObservableCollection<Kitchen> _filteredKitchenItems = new(); // filtered view
+
+        private const int PageSize = 20;
+ 
 
         public ObservableCollection<Kitchen> Items
         {
@@ -52,41 +56,50 @@ namespace CATERINGMANAGEMENT.ViewModels
             }
         }
 
+        // Pagination properties
+        private int _currentPage = 1;
+        public int CurrentPage
+        {
+            get => _currentPage;
+            set { _currentPage = value; OnPropertyChanged(); }
+        }
+
+        private int _totalPages = 1;
+        public int TotalPages
+        {
+            get => _totalPages;
+            set { _totalPages = value; OnPropertyChanged(); }
+        }
+
         // Commands
         public ICommand DeleteKitchenItemCommand { get; set; }
         public ICommand EditKitchenItemCommand { get; set; }
         public ICommand AddKitchenItemCommand { get; set; }
+        public ICommand LoadMoreCommand { get; set; }
+        public ICommand NextPageCommand { get; set; }
+        public ICommand PrevPageCommand { get; set; }
 
         public KitchenViewModel()
         {
             DeleteKitchenItemCommand = new RelayCommand<Kitchen>(async (k) => await DeleteKitchenItem(k));
             EditKitchenItemCommand = new RelayCommand<Kitchen>(async (k) => await EditKitchenItem(k));
             AddKitchenItemCommand = new RelayCommand(() => AddNewKitchenItem());
+            LoadMoreCommand = new RelayCommand(async () => await LoadMoreItems());
+
+            NextPageCommand = new RelayCommand(async () => await NextPage(), () => CurrentPage < TotalPages);
+            PrevPageCommand = new RelayCommand(async () => await PrevPage(), () => CurrentPage > 1);
         }
 
-        // Load from Supabase
+        // Load first page
         public async Task LoadItems()
         {
             IsLoading = true;
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                var response = await client
-                    .From<Kitchen>()
-                    .Get();
+                _kitchenItems.Clear();
+                Items.Clear();
 
-                if (response.Models != null && response.Models.Count > 0)
-                {
-                    _kitchenItems = new ObservableCollection<Kitchen>(response.Models);
-                    ApplySearchFilter();
-                    UpdateCounts();
-                }
-                else
-                {
-                    _kitchenItems.Clear();
-                    Items.Clear();
-                    TotalCount = LowStockCount = NormalStockCount = 0;
-                }
+                await LoadPage(1);
             }
             catch (System.Exception ex)
             {
@@ -96,6 +109,64 @@ namespace CATERINGMANAGEMENT.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        // Load specific page
+        public async Task LoadPage(int pageNumber)
+        {
+            IsLoading = true;
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                int from = (pageNumber - 1) * PageSize;
+                int to = from + PageSize - 1;
+
+                var response = await client
+                    .From<Kitchen>()
+                    .Range(from, to)
+                    .Order(x => x.UpdatedAt, Ordering.Descending)
+                    .Get();
+
+                _kitchenItems.Clear();
+                if (response.Models != null)
+                {
+                    foreach (var item in response.Models)
+                        _kitchenItems.Add(item);
+                }
+
+                ApplySearchFilter();
+                UpdateCounts();
+                UpdatePagination();
+
+                CurrentPage = pageNumber;
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error loading page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task NextPage()
+        {
+            if (CurrentPage < TotalPages)
+                await LoadPage(CurrentPage + 1);
+        }
+
+        private async Task PrevPage()
+        {
+            if (CurrentPage > 1)
+                await LoadPage(CurrentPage - 1);
+        }
+
+        // Load next batch (for backwards compatibility)
+        private async Task LoadMoreItems()
+        {
+            await LoadPage(CurrentPage + 1);
         }
 
         // Filter
@@ -135,6 +206,14 @@ namespace CATERINGMANAGEMENT.ViewModels
             OnPropertyChanged(nameof(NormalStockCount));
         }
 
+        private void UpdatePagination()
+        {
+            // Example: you might want to fetch total rows count from Supabase separately
+            TotalPages = (int)Math.Ceiling((double)100 / PageSize); // replace 100 with actual count if available
+            OnPropertyChanged(nameof(CurrentPage));
+            OnPropertyChanged(nameof(TotalPages));
+        }
+
         // Delete Kitchen Item
         private async Task DeleteKitchenItem(Kitchen item)
         {
@@ -165,7 +244,7 @@ namespace CATERINGMANAGEMENT.ViewModels
         {
             if (item == null) return;
 
-            var editWindow = new EditKitchenItem(item); 
+            var editWindow = new EditKitchenItem(item);
             bool? result = editWindow.ShowDialog();
 
             if (result == true && editWindow.KitchenItem != null)
@@ -200,7 +279,7 @@ namespace CATERINGMANAGEMENT.ViewModels
         // Add new kitchen item
         private void AddNewKitchenItem()
         {
-            var addWindow = new KitchenItemAdd(); 
+            var addWindow = new KitchenItemAdd();
             bool? result = addWindow.ShowDialog();
 
             if (result == true && addWindow.KitchenItem != null)
@@ -233,7 +312,7 @@ namespace CATERINGMANAGEMENT.ViewModels
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
