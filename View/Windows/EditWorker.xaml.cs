@@ -16,39 +16,9 @@ namespace CATERINGMANAGEMENT.View.Windows
         public EditWorker(Worker existingWorker)
         {
             InitializeComponent();
+            Worker = existingWorker ?? throw new ArgumentNullException(nameof(existingWorker));
+            DataContext = Worker;
 
-            if (existingWorker != null)
-            {
-                Worker = new Worker
-                {
-                    Id = existingWorker.Id,
-                    Name = existingWorker.Name,
-                    Role = existingWorker.Role,
-                    Email = existingWorker.Email,
-                    Contact = existingWorker.Contact,
-                    Salary = existingWorker.Salary,
-                    HireDate = existingWorker.HireDate,
-                    Status = existingWorker.Status
-                };
-
-  
-                NameTextBox.Text = Worker.Name;
-                RoleTextBox.Text = Worker.Role;
-                ContactTextBox.Text = Worker.Contact;
-                EmailTextBox.Text = Worker.Email;
-                SalaryTextBox.Text = Worker.Salary?.ToString();
-                HireDatePicker.SelectedDate = Worker.HireDate;
-
-              
-                foreach (ComboBoxItem item in StatusComboBox.Items)
-                {
-                    if (item.Content.ToString() == Worker.Status)
-                    {
-                        StatusComboBox.SelectedItem = item;
-                        break;
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -93,15 +63,6 @@ namespace CATERINGMANAGEMENT.View.Windows
                 MessageBox.Show("Salary must be a valid number.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-
-
-            Worker.Name = NameTextBox.Text;
-            Worker.Role = RoleTextBox.Text;
-            Worker.Contact = ContactTextBox.Text;
-            Worker.Email = email;
-            Worker.Salary = decimal.TryParse(SalaryTextBox.Text, out decimal salary) ? salary : null;
-            Worker.HireDate = HireDatePicker.SelectedDate;
-            Worker.Status = (StatusComboBox.SelectedItem as ComboBoxItem)?.Content.ToString();
 
             this.DialogResult = true;
             this.Close();

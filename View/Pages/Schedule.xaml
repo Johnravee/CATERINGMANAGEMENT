@@ -1,0 +1,240 @@
+﻿<Page x:Class="CATERINGMANAGEMENT.View.Pages.Schedule"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" xmlns:viewmodels="clr-namespace:CATERINGMANAGEMENT.ViewModels" d:DataContext="{d:DesignInstance Type=viewmodels:SchedulingViewModel}"
+      mc:Ignorable="d"
+      Background="#FAFAFA"
+      FontFamily="Calibri"
+      FontSize="14"
+      Title="Schedule">
+
+    <Page.Resources>
+       
+
+        <!-- Cell Style -->
+        <Style x:Key="CenteredCellStyle" TargetType="DataGridCell">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+
+        <!-- Header Style -->
+        <Style x:Key="CenteredHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="#512DA8"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- Text Style -->
+        <Style x:Key="CenteredTextStyle" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="MaxWidth" Value="250"/>
+        </Style>
+
+        <!-- Modern Flat Button -->
+        <Style x:Key="ModernFlatButton" TargetType="Button">
+            <Setter Property="Background" Value="#673AB7"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="75"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#5E35B1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Page.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="20,0,20,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <materialDesign:PackIcon Kind="CalendarAccount" Width="28" Height="28" Foreground="#673AB7" Margin="0,0,10,0"/>
+                <StackPanel>
+                    <TextBlock Text="Event Scheduling"
+                               FontSize="26"
+                               FontWeight="Bold"
+                               Foreground="#333"/>
+                    <TextBlock FontSize="14"
+                               Foreground="Gray"
+                               Text="Assign workers to reservations/events"/>
+                </StackPanel>
+            </StackPanel>
+
+            <Button Grid.Column="1" Style="{StaticResource ModernFlatButton}" Padding="10" Width="160">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" Margin="0,0,4,0"/>
+                    <TextBlock Text="Assign Worker"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- Reservation Section -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Reservation DataGrid -->
+            <GroupBox Header="Reservations (Ready for Scheduling)" Margin="0,0,10,0">
+                <DataGrid x:Name="ReservationDataGrid"
+                          ItemsSource="{Binding ContractSignedReservations}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          HeadersVisibility="Column"
+                          IsReadOnly="True"
+                          RowHeaderWidth="0"
+                          GridLinesVisibility="None"
+                          BorderThickness="0"
+                          ColumnHeaderHeight="28"
+                          RowHeight="28"
+                          MaxHeight="150"
+                          Background="White"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          CellStyle="{StaticResource CenteredCellStyle}"
+                          ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Package" Binding="{Binding Package.Name}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                        <DataGridTextColumn Header="Event Date" Binding="{Binding EventDate}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </GroupBox>
+
+            <!-- Cards -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                <!-- Total Schedules Card -->
+                <Border Background="White" CornerRadius="8" Padding="12" BorderBrush="#DDD" BorderThickness="1" Margin="0,0,10,0" Width="150">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ElementName=ScheduleDataGrid, Path=Items.Count}" 
+                                   FontSize="24" FontWeight="Bold" Foreground="#512DA8" 
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Total Schedules" FontSize="14" Foreground="Gray" 
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Scheduled Workers Card -->
+                <Border Background="White" CornerRadius="8" Padding="12" BorderBrush="#DDD" BorderThickness="1" Margin="0,0,10,0" Width="150">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ElementName=ScheduleDataGrid, Path=Items.Count}" 
+                                   FontSize="24" FontWeight="Bold" Foreground="#2E7D32" 
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Scheduled Workers" FontSize="14" Foreground="Gray" 
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="White" CornerRadius="8" Padding="12" BorderBrush="#DDD" BorderThickness="1" Margin="0,0,10,0" Width="150">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ElementName=ScheduleDataGrid, Path=Items.Count}" 
+                   FontSize="24" FontWeight="Bold" Foreground="#2E7D32" 
+                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Scheduled Workers" FontSize="14" Foreground="Gray" 
+                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+
+            </StackPanel>
+        </Grid>
+
+        <!-- Search -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+            <Border Background="White" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1" Padding="4" Height="38" VerticalAlignment="Center" Margin="0,0,8,0">
+                <DockPanel>
+                    <materialDesign:PackIcon Kind="Magnify" Width="18" Height="18" VerticalAlignment="Center" Foreground="#666" Margin="4,0"/>
+                    <TextBox Width="200"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="#333"
+                             FontSize="14"
+                             Padding="4,2"
+                             VerticalContentAlignment="Center"
+                             materialDesign:HintAssist.Hint="Search reservation or worker..."/>
+                </DockPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Worker Schedule DataGrid -->
+        <DataGrid x:Name="ScheduleDataGrid"
+                  Grid.Row="3"
+                  ItemsSource="{Binding Schedules}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  HeadersVisibility="Column"
+                  AlternatingRowBackground="#F0F0F0"
+                  IsReadOnly="True"
+                  RowHeaderWidth="0"
+                  GridLinesVisibility="None"
+                  BorderThickness="0"
+                  ColumnHeaderHeight="40"
+                  RowHeight="40"
+                  Background="White"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow"
+                  CellStyle="{StaticResource CenteredCellStyle}"
+                  ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Reservation" Binding="{Binding ReservationName}" Width="2*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Event Date" Binding="{Binding EventDate}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Worker Name" Binding="{Binding WorkerName}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="2*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Pagination -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Style="{StaticResource ModernFlatButton}" Width="80">
+                <TextBlock Text="Prev"/>
+            </Button>
+            <TextBlock Text="1" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
+            <TextBlock Text="/" FontWeight="Bold" VerticalAlignment="Center"/>
+            <TextBlock Text="10" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
+            <Button Style="{StaticResource ModernFlatButton}" Width="80">
+                <TextBlock Text="Next"/>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Page>

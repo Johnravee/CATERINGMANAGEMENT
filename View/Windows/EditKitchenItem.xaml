@@ -30,6 +30,7 @@
             <StackPanel Grid.Row="1" Margin="0,0,0,15">
                 <TextBlock Text="Item Name" Foreground="#555" Margin="0,0,0,4"/>
                 <TextBox x:Name="ItemNameTextBox"
+                         Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8"
                          FontSize="14"
                          Background="#F3F4F6"
@@ -41,6 +42,7 @@
             <StackPanel Grid.Row="2" Margin="0,0,0,15">
                 <TextBlock Text="Unit" Foreground="#555" Margin="0,0,0,4"/>
                 <TextBox x:Name="UnitTextBox"
+                         Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8"
                          FontSize="14"
                          Background="#F3F4F6"
@@ -52,6 +54,7 @@
             <StackPanel Grid.Row="3" Margin="0,0,0,15">
                 <TextBlock Text="Quantity" Foreground="#555" Margin="0,0,0,4"/>
                 <TextBox x:Name="QuantityTextBox"
+                         Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8"
                          FontSize="14"
                          Background="#F3F4F6"

@@ -200,17 +200,14 @@
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource CenteredTextStyle}">
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Status}" Value="canceled">
-                                            <Setter Property="Background" Value="#F8D7DA"/>
-                                            <Setter Property="Foreground" Value="#721C24"/>
+                                    <DataTrigger Binding="{Binding Status}" Value="canceled">
+                                        <Setter Property="Foreground" Value="#721C24"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="confirmed">
+                                        <Setter Property="Foreground" Value="#155724"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="confirmed">
-                                            <Setter Property="Background" Value="#D4EDDA"/>
-                                            <Setter Property="Foreground" Value="#155724"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="pending">
-                                            <Setter Property="Background" Value="#FFF3CD"/>
-                                            <Setter Property="Foreground" Value="#856404"/>
+                                    <DataTrigger Binding="{Binding Status}" Value="pending">
+                                        <Setter Property="Foreground" Value="#856404"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

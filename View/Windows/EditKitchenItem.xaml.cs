@@ -17,24 +17,9 @@ namespace CATERINGMANAGEMENT.View.Windows
         public EditKitchenItem(Kitchen existingItem)
         {
             InitializeComponent();
+            KitchenItem = existingItem ?? throw new ArgumentNullException(nameof(existingItem));
+            DataContext = KitchenItem; 
 
-            if (existingItem != null)
-            {
-                KitchenItem = new Kitchen
-                {
-                    Id = existingItem.Id,
-                    ItemName = existingItem.ItemName,
-                    Unit = existingItem.Unit,
-                    Quantity = existingItem.Quantity,
-                    CreatedAt = existingItem.CreatedAt,
-                    UpdatedAt = existingItem.UpdatedAt
-                };
-
-                // Populate fields
-                ItemNameTextBox.Text = KitchenItem.ItemName;
-                UnitTextBox.Text = KitchenItem.Unit;
-                QuantityTextBox.Text = KitchenItem.Quantity.ToString();
-            }
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -51,10 +36,7 @@ namespace CATERINGMANAGEMENT.View.Windows
                 return;
             }
 
-            KitchenItem.ItemName = ItemNameTextBox.Text.Trim();
-            KitchenItem.Unit = UnitTextBox.Text.Trim();
-            KitchenItem.Quantity = qty;
-            KitchenItem.UpdatedAt = DateTime.UtcNow;
+         
 
             DialogResult = true;
             Close();

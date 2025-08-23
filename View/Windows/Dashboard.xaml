@@ -5,8 +5,10 @@
         Title="Dashboard"
         WindowStartupLocation="CenterScreen"
         Background="#FAFAFA"
-        WindowState="Maximized"
-        WindowStyle="None">
+        WindowState="Normal"
+        WindowStyle="None"
+        MouseDown="HandleDashboard_Drag"
+        >
 
     <Window.Resources>
         <!-- Sidebar Button Style -->
@@ -55,30 +57,30 @@
 
                 <!-- Navigation Icons -->
                 <StackPanel Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,30">
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Dashboard" Margin="0,20" Click="BtnOverview_Click">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Dashboard" Margin="0,15" Click="BtnOverview_Click">
                         <materialDesign:PackIcon Kind="ViewDashboard" Width="24" Height="24" Foreground="#2E2E2E" />
                     </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Reservations" Margin="0,20" Click="BtnReservations_Click">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Reservations" Margin="0,15" Click="BtnReservations_Click">
                         <materialDesign:PackIcon Kind="CalendarCheck" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Equipment Inventory" Margin="0,20" Click="BtnEquipment_Click">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Equipment Inventory" Margin="0,15" Click="BtnEquipment_Click">
                         <materialDesign:PackIcon Kind="PackageVariant" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Kitchen Inventory" Margin="0,20"  Click="BtnKitchen_Click">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Kitchen Inventory" Margin="0,15"  Click="BtnKitchen_Click">
                         <materialDesign:PackIcon Kind="Kitchen" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Scheduling" Margin="0,20">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Scheduling" Margin="0,15" Click="BtnSchedule_Click">
                         <materialDesign:PackIcon Kind="ClockOutline" Width="24" Height="24" Foreground="#2E2E2E" />
                     </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,20">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,15">
                         <materialDesign:PackIcon Kind="CashMultiple" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,20" Click="BtnWorkers_Click">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,10" Click="BtnWorkers_Click">
                         <materialDesign:PackIcon Kind="Worker" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,20">
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,10">
                         <materialDesign:PackIcon Kind="Chat" Width="24" Height="24" Foreground="#2E2E2E"/>
                     </Button>
                 </StackPanel>
@@ -102,31 +104,52 @@
                 <!-- Top bar -->
                 <RowDefinition Height="Auto"/>
                 <!-- Admin panel -->
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="749*"/>
                 <!-- Main content -->
             </Grid.RowDefinitions>
 
             <!-- Top bar -->
-            <Grid Grid.Row="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Margin="0,10,10,0"
+            Grid.Column="1">
 
-                <!-- Exit and Minimize -->
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Margin="0,10,10,0"
-                            Grid.Column="1">
-                    <Ellipse Width="15" Height="15" Fill="LightGray" Margin="0,0,8,0" MouseDown="MinimizeAppBtnHandler">
-                        <Ellipse.ToolTip>Minimize</Ellipse.ToolTip>
-                    </Ellipse>
-                    <Ellipse Width="15" Height="15" Fill="Tomato" MouseDown="ExitAppBtnHandler">
-                        <Ellipse.ToolTip>Exit</Ellipse.ToolTip>
-                    </Ellipse>
-                </StackPanel>
-            </Grid>
+                <!-- Minimize -->
+                <Grid Width="20" Height="20" Margin="5, 0" MouseDown="MinimizeAppBtnHandler" Cursor="Hand">
+                    <Ellipse Fill="LightGray"/>
+                    <TextBlock Text="─"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               FontSize="10"/>
+                </Grid>
+
+                <!-- Maximize / Restore -->
+                <Grid Width="20" Height="20" Margin="5, 0" MouseDown="MaximizeRestoreAppBtnHandler" Cursor="Hand">
+                    <Ellipse Fill="Goldenrod"/>
+                    <TextBlock x:Name="MaximizeIcon"
+                               Text="□"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               FontSize="10"/>
+                </Grid>
+
+                <!-- Exit -->
+                <Grid Width="20" Height="20" Margin="5, 0" MouseDown="ExitAppBtnHandler" Cursor="Hand">
+                    <Ellipse Fill="Tomato"/>
+                    <TextBlock Text="x"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               FontSize="10"/>
+                </Grid>
+            </StackPanel>
+
 
             <!-- Admin Panel Row -->
             <Border Grid.Row="1" Background="#E5DBFF " Padding="10" CornerRadius="12" Margin="0,10,0,10">

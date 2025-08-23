@@ -30,7 +30,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         }
 
 
-        private void Save_Click(object sender, RoutedEventArgs e)
+        private void UpdatEquipment_Click(object sender, RoutedEventArgs e)
         {
             // Close dialog with "OK" result
             this.DialogResult = true;

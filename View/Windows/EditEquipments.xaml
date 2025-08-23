@@ -91,11 +91,11 @@
                         Foreground="#333"
                         BorderBrush="#D1D5DB"
                         BorderThickness="1"/>
-                <Button Content="Save"
+                <Button Content="Update"
                         Width="90"
                         Height="32"
                         IsDefault="True"
-                        Click="Save_Click"
+                        Click="UpdatEquipment_Click"
                         Background="#4F46E5"
                         Foreground="White"
                         BorderThickness="0"/>

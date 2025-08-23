@@ -37,6 +37,7 @@
             <StackPanel Grid.Row="1" Margin="0,0,0,15">
                 <TextBlock Text="Full Name" Foreground="#555" Margin="0,0,0,4"/>
                 <TextBox x:Name="NameTextBox"
+                         Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8"
                          FontSize="14"
                          Background="#F3F4F6"
@@ -47,6 +48,7 @@
             <StackPanel Grid.Row="2" Margin="0,0,0,15">
                 <TextBlock Text="Role" Foreground="#555" Margin="0,0,0,4"/>
                 <TextBox x:Name="RoleTextBox"
+                         Text="{Binding Role, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8"
                          FontSize="14"
                          Background="#F3F4F6"
@@ -57,6 +59,7 @@
             <StackPanel Grid.Row="3" Margin="0,0,0,15">
                 <TextBlock Text="Contact Number" Foreground="#555" Margin="0,0,0,4"/>
                 <TextBox x:Name="ContactTextBox"
+                         Text="{Binding Contact, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8"
                          FontSize="14"
                          Background="#F3F4F6"
@@ -67,6 +70,7 @@
             <StackPanel Grid.Row="4" Margin="0,0,0,15">
                 <TextBlock Text="Email Address" Foreground="#555" Margin="0,0,0,4"/>
                 <TextBox x:Name="EmailTextBox"
+                         Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8"
                          FontSize="14"
                          Background="#F3F4F6"
@@ -77,6 +81,7 @@
             <StackPanel Grid.Row="5" Margin="0,0,0,15">
                 <TextBlock Text="Salary" Foreground="#555" Margin="0,0,0,4"/>
                 <TextBox x:Name="SalaryTextBox"
+                         Text="{Binding Salary, UpdateSourceTrigger=PropertyChanged}"
                          Padding="8"
                          FontSize="14"
                          Background="#F3F4F6"
@@ -88,6 +93,7 @@
             <StackPanel Grid.Row="6" Margin="0,0,0,15">
                 <TextBlock Text="Hire Date" Foreground="#555" Margin="0,0,0,4"/>
                 <DatePicker x:Name="HireDatePicker"
+                            Text="{Binding HireDate, UpdateSourceTrigger=PropertyChanged}"
                             Padding="8"
                             FontSize="14"
                             Background="#F3F4F6"
@@ -97,6 +103,8 @@
             <StackPanel Grid.Row="7" Margin="0,0,0,15">
                 <TextBlock Text="Status" Foreground="#555" Margin="0,0,0,4"/>
                 <ComboBox x:Name="StatusComboBox"
+                          SelectedValue="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Content"
                           FontSize="14"
                           Padding="6"
                           Background="#F3F4F6"
