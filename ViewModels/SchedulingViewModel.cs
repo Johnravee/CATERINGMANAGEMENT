@@ -1,12 +1,15 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.View.Windows;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
 using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.ViewModels
@@ -28,8 +31,11 @@ namespace CATERINGMANAGEMENT.ViewModels
         public ObservableCollection<Reservation> ContractSignedReservations { get; } = new();
         public ObservableCollection<Scheduling> Schedules { get; } = new();
 
+        public ICommand OpenAssignWorkerCommand { get; }
+
         public SchedulingViewModel()
         {
+            OpenAssignWorkerCommand = new RelayCommand(OpenAssignWorkerDialog);
             _ = LoadData();
         }
 
@@ -63,9 +69,9 @@ namespace CATERINGMANAGEMENT.ViewModels
 
                 // 2. Fetch schedules
                 var scheduleResult = await client
-                    .From<Scheduling>() 
+                    .From<Scheduling>()
                     .Select("*, reservation:reservation_id(*)")
-                    .Order(x => x.CreatedAt, Ordering.Ascending) // 👈 use a real column (not just x)
+                    .Order(x => x.CreatedAt, Ordering.Ascending)
                     .Get();
 
                 Schedules.Clear();
@@ -80,6 +86,23 @@ namespace CATERINGMANAGEMENT.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        /// <summary>
+        /// Opens AssignWorker dialog window
+        /// </summary>
+        private void OpenAssignWorkerDialog()
+        {
+          
+            var window = new AssignWorker
+            {
+                Owner = Application.Current.MainWindow,
+            };
+
+            window.ShowDialog();
+
+            // TODO: after closing, pull new schedules or refresh
+            // await LoadData();
         }
     }
 }

@@ -16,9 +16,6 @@ namespace CATERINGMANAGEMENT.Models
         [Column("worker_id")]
         public long WorkerId { get; set; }
 
-        [Column("notes")]
-        public string? Notes { get; set; }
-
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
