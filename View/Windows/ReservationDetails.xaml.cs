@@ -40,7 +40,7 @@ namespace CATERINGMANAGEMENT.View.Windows
                     // Show loader
                     LoaderDialogHost.IsOpen = true;
 
-                    await Task.Run(() =>
+                    await Task.Run(async () =>
                     {
                         // 1. Generate the contract PDF
                         ContractPdfGenerator.Generate(_reservation, saveDialog.FileName);
@@ -49,7 +49,7 @@ namespace CATERINGMANAGEMENT.View.Windows
                         var emailService = new EmailService();
                         var contractMailer = new ContractMailer(emailService);
 
-                        bool sent = contractMailer.SendContractEmail(
+                        bool sent = await contractMailer.SendContractEmailAsync(
                             recipientEmail: _reservation.Profile?.Email ?? string.Empty,
                             recipientName: _reservation.Profile?.FullName ?? "Client",
                             eventDate: _reservation.EventDate.ToString("MMMM dd, yyyy"),

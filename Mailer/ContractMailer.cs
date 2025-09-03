@@ -1,6 +1,7 @@
 ﻿using System;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Templates;
+using System.Threading.Tasks;
 
 namespace CATERINGMANAGEMENT.Mailer
 {
@@ -13,14 +14,13 @@ namespace CATERINGMANAGEMENT.Mailer
             _emailService = emailService;
         }
 
-        public bool SendContractEmail(string recipientEmail, string recipientName, string eventDate, string attachmentPath)
+        public async Task<bool> SendContractEmailAsync(string recipientEmail, string recipientName, string eventDate, string attachmentPath)
         {
             string subject = "OSHDY Event Catering Services Contract Agreement";
-           
+
             string body = ContractEmailTemplate.GetHtmlBody(recipientName, eventDate, _emailService.GetFromEmail());
 
-            return _emailService.SendEmail(recipientEmail, subject, body, isHtml: true, attachmentPath: attachmentPath);
+            return await _emailService.SendEmailAsync(recipientEmail, subject, body, isHtml: true, attachmentPath: attachmentPath);
         }
-
     }
 }

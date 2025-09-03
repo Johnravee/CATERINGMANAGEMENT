@@ -10,7 +10,7 @@ namespace CATERINGMANAGEMENT.View.Windows
 {
     public partial class EquipmentItemAdd : Window
     {
-        public Equipments NewEquipment { get; private set; }
+        public Equipment NewEquipment { get; private set; }
 
         public EquipmentItemAdd()
         {
@@ -48,7 +48,7 @@ namespace CATERINGMANAGEMENT.View.Windows
             string notes = NotesTextBox.Text.Trim();
 
             // Create Equipment object
-            NewEquipment = new Equipments
+            NewEquipment = new Equipment
             {
                 ItemName = itemName,
                 Quantity = quantity,

@@ -5,7 +5,7 @@ using Supabase.Postgrest.Models;
 namespace CATERINGMANAGEMENT.Models
 {
     [Table("equipments")]
-    public class Equipments : BaseModel
+    public class Equipment : BaseModel
     {
         [PrimaryKey("id", false)]
         public long Id { get; set; }

@@ -66,6 +66,6 @@ namespace CATERINGMANAGEMENT.Models
         public GrazingTable? Grazing { get; set; }
 
         [JsonPropertyName("package")]
-        public Packages? Package { get; set; }
+        public Package? Package { get; set; }
     }
 }

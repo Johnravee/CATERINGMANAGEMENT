@@ -9,7 +9,7 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
     internal class EquipmentPdfGenerator
     {
         [Obsolete]
-        public static void Generate(List<Equipments> equipments)
+        public static void Generate(List<Equipment> equipments)
         {
             if (equipments == null || equipments.Count == 0)
                 throw new ArgumentException("No equipment provided to export.");

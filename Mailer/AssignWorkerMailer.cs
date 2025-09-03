@@ -13,7 +13,7 @@ namespace CATERINGMANAGEMENT.Mailer
             _emailService = emailService;
         }
 
-        public bool SendWorkerScheduleEmail(
+        public async Task<bool> SendWorkerScheduleEmailAsync(
             string workerEmail,
             string workerName,
             string workerRole,
@@ -32,7 +32,7 @@ namespace CATERINGMANAGEMENT.Mailer
                 _emailService.GetFromEmail()
             );
 
-            return _emailService.SendEmail(
+            return await _emailService.SendEmailAsync(
                 workerEmail,
                 subject,
                 body,
@@ -40,4 +40,5 @@ namespace CATERINGMANAGEMENT.Mailer
             );
         }
     }
+
 }

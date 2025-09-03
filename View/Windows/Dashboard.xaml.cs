@@ -78,5 +78,9 @@ namespace CATERINGMANAGEMENT.View.Windows
             }
         }
 
+        private void BtnChat_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new ChatMessage());
+        }
     }
 }

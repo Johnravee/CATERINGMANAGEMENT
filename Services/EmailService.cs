@@ -15,11 +15,11 @@ namespace CATERINGMANAGEMENT.Services
             _appPassword = Environment.GetEnvironmentVariable("GMAIL_PASSWORD") ?? string.Empty;
         }
 
-        public bool SendEmail(string toEmail, string subject, string body, bool isHtml = false, string? attachmentPath = null)
+        public async Task<bool> SendEmailAsync(string toEmail, string subject, string body, bool isHtml = false, string? attachmentPath = null)
         {
             try
             {
-                using (MailMessage message = new MailMessage(_fromEmail, toEmail, subject, body))
+                using (var message = new MailMessage(_fromEmail, toEmail, subject, body))
                 {
                     message.IsBodyHtml = isHtml;
 
@@ -28,14 +28,13 @@ namespace CATERINGMANAGEMENT.Services
                         message.Attachments.Add(new Attachment(attachmentPath));
                     }
 
-                    using (SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587))
+                    using (var smtp = new SmtpClient("smtp.gmail.com", 587))
                     {
                         smtp.EnableSsl = true;
                         smtp.Credentials = new NetworkCredential(_fromEmail, _appPassword);
-                        smtp.Send(message);
+                        await smtp.SendMailAsync(message);
                     }
                 }
-
                 return true;
             }
             catch (Exception ex)
@@ -44,6 +43,7 @@ namespace CATERINGMANAGEMENT.Services
                 return false;
             }
         }
+
 
         public string GetFromEmail() => _fromEmail;
     }

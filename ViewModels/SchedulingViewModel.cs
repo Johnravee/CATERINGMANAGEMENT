@@ -30,6 +30,7 @@ namespace CATERINGMANAGEMENT.ViewModels
         // Collections exposed to your view
         public ObservableCollection<Reservation> ContractSignedReservations { get; } = new();
         public ObservableCollection<Scheduling> Schedules { get; } = new();
+        public ObservableCollection<GroupSchedule> GroupedSchedules { get; } = new();
 
         public ICommand OpenAssignWorkerCommand { get; }
 
@@ -49,16 +50,16 @@ namespace CATERINGMANAGEMENT.ViewModels
             {
                 var client = await SupabaseService.GetClientAsync();
 
-                // 1. Fetch contract signed reservations
+                // 1. Fetch reservations
                 var reservationResult = await client
                     .From<Reservation>()
                     .Select(@"
-                        *,
+                            *,
                         profile:profile_id(*),
                         thememotif:theme_motif_id(*),
                         grazing:grazing_id(*),
                         package:package_id(*)
-                    ")
+            ")
                     .Where(r => r.Status == "done")
                     .Order(x => x.EventDate, Ordering.Ascending)
                     .Get();
@@ -69,14 +70,43 @@ namespace CATERINGMANAGEMENT.ViewModels
 
                 // 2. Fetch schedules
                 var scheduleResult = await client
-                    .From<Scheduling>()
-                    .Select("*, reservation:reservation_id(*)")
-                    .Order(x => x.CreatedAt, Ordering.Ascending)
-                    .Get();
+                            .From<Scheduling>()
+                            .Select(@"
+                                *,
+                                reservations:reservation_id(
+                                    *,
+                                    package:package_id(*),
+                                    profile:profile_id(*),
+                                    thememotif:theme_motif_id(*),
+                                    grazing:grazing_id(*)
+                                ),
+                                workers:worker_id(*)
+                            ")
+                            .Get();
+
 
                 Schedules.Clear();
                 foreach (var schedule in scheduleResult.Models)
                     Schedules.Add(schedule);
+
+                // 3. Group by reservation
+                GroupedSchedules.Clear();
+                var grouped = Schedules
+                    .Where(s => s.Reservations != null && s.Workers != null)
+                    .GroupBy(s => s.ReservationId)
+                    .ToList();
+
+                foreach (var group in grouped)
+                {
+                    var reservation = group.First().Reservations!;
+                    var workers = group.Select(s => s.Workers!).ToList();
+
+                    GroupedSchedules.Add(new GroupSchedule
+                    {
+                        Reservation = reservation,
+                        Workers = workers
+                    });
+                }
             }
             catch (Exception ex)
             {

@@ -1,6 +1,6 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
-
+using System.Text.Json.Serialization;
 
 namespace CATERINGMANAGEMENT.Models
 {
@@ -19,5 +19,23 @@ namespace CATERINGMANAGEMENT.Models
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
-    }
+        // Relations from Supabase (JOIN)
+        [JsonPropertyName("reservations")]
+        public Reservation? Reservations { get; set; }
+
+        [JsonPropertyName("workers")]
+        public Worker? Workers { get; set; }
+
+        [JsonPropertyName("profiles")]
+        [JsonIgnore]
+        public Profile? Profile { get; set; }
+
+        [JsonPropertyName("package")]
+        [JsonIgnore]
+        public Package? Package { get; set; }
+
+        [JsonPropertyName("grazing")]
+        [JsonIgnore]
+        public GrazingTable? Grazing { get; set; }
+    } 
 }

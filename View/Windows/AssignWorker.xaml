@@ -118,20 +118,43 @@
                         <ItemsControl ItemsSource="{Binding AssignedWorkers}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <DockPanel Margin="4">
-                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" DockPanel.Dock="Left"/>
-                                        <TextBlock Text=" - " DockPanel.Dock="Left"/>
-                                        <TextBlock Text="{Binding Role}" Foreground="Gray" DockPanel.Dock="Left"/>
-                                        <Button Content="✕" Foreground="Red" Width="28" Height="22"
-                                                HorizontalAlignment="Right" Margin="6,0,0,0"
-                                                Command="{Binding DataContext.RemoveAssignedWorkerCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}"/>
-                                    </DockPanel>
+                                    <Grid Margin="4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <!-- Worker Info -->
+                                            <ColumnDefinition Width="Auto"/>
+                                            <!-- Remove Button -->
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Worker Info -->
+                                        <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                            <TextBlock Text=" - " />
+                                            <TextBlock Text="{Binding Role}" Foreground="Gray"/>
+                                        </StackPanel>
+
+                                        <!-- Remove Button -->
+                                        <Button Grid.Column="1"
+                                Width="28" Height="28"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                ToolTip="Remove Worker"
+                                Command="{Binding DataContext.RemoveAssignedWorkerCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}">
+                                            <materialDesign:PackIcon Kind="CloseCircle"
+                                                     Foreground="Red"
+                                                     Width="20"
+                                                     Height="20"
+                                                     VerticalAlignment="Center"
+                                                     HorizontalAlignment="Center"/>
+                                        </Button>
+                                    </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
                 </GroupBox>
+
+
             </StackPanel>
         </DockPanel>
 

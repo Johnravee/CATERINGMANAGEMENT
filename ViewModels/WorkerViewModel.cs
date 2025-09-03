@@ -11,7 +11,7 @@ using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.ViewModels
 {
-    public class WorkersViewModel : INotifyPropertyChanged
+    public class WorkerViewModel : INotifyPropertyChanged
     {
         private ObservableCollection<Worker> _workerItems = new(); // master list
         private ObservableCollection<Worker> _filteredWorkerItems = new(); // filtered list
@@ -68,7 +68,7 @@ namespace CATERINGMANAGEMENT.ViewModels
         public ICommand NextPageCommand { get; set; }
         public ICommand PrevPageCommand { get; set; }
 
-        public WorkersViewModel()
+        public WorkerViewModel()
         {
             DeleteWorkerCommand = new RelayCommand<Worker>(async (w) => await DeleteWorker(w));
             EditWorkerCommand = new RelayCommand<Worker>(async (w) => await EditWorker(w));

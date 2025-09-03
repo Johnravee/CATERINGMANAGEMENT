@@ -17,13 +17,13 @@ namespace CATERINGMANAGEMENT.ViewModels
 {
     public class EquipmentViewModel : INotifyPropertyChanged
     {
-        private ObservableCollection<Equipments> _equipmentItems = new(); // master list
-        private ObservableCollection<Equipments> _filteredEquipmentItems = new(); // filtered view
+        private ObservableCollection<Equipment> _equipmentItems = new(); // master list
+        private ObservableCollection<Equipment> _filteredEquipmentItems = new(); // filtered view
 
         private const int PageSize = 20;
         private int _currentOffset = 0;
 
-        public ObservableCollection<Equipments> Items
+        public ObservableCollection<Equipment> Items
         {
             get => _filteredEquipmentItems;
             set { _filteredEquipmentItems = value; OnPropertyChanged(); }
@@ -81,8 +81,8 @@ namespace CATERINGMANAGEMENT.ViewModels
 
         public EquipmentViewModel()
         {
-            DeleteEquipmentCommand = new RelayCommand<Equipments>(async (e) => await DeleteEquipment(e));
-            EditEquipmentCommand = new RelayCommand<Equipments>(async (e) => await EditEquipment(e));
+            DeleteEquipmentCommand = new RelayCommand<Equipment>(async (e) => await DeleteEquipment(e));
+            EditEquipmentCommand = new RelayCommand<Equipment>(async (e) => await EditEquipment(e));
             AddEquipmentCommand = new RelayCommand(() => AddNewEquipment());
             LoadMoreCommand = new RelayCommand(async () => await LoadMoreItems());
 
@@ -124,7 +124,7 @@ namespace CATERINGMANAGEMENT.ViewModels
                 int to = from + PageSize - 1;
 
                 var response = await client
-                    .From<Equipments>()
+                    .From<Equipment>()
                     .Range(from, to)
                     .Order(x => x.UpdatedAt, Ordering.Descending)
                     .Get();
@@ -137,7 +137,7 @@ namespace CATERINGMANAGEMENT.ViewModels
                 }
 
                 TotalCount = TotalCount = await client
-                    .From<Equipments>()
+                    .From<Equipment>()
                     .Select("id")
                     .Count(CountType.Exact);
 
@@ -183,8 +183,8 @@ namespace CATERINGMANAGEMENT.ViewModels
         {
             var query = _searchText?.Trim().ToLower() ?? "";
             Items = string.IsNullOrWhiteSpace(query)
-                ? new ObservableCollection<Equipments>(_equipmentItems)
-                : new ObservableCollection<Equipments>(_equipmentItems.Where(i =>
+                ? new ObservableCollection<Equipment>(_equipmentItems)
+                : new ObservableCollection<Equipment>(_equipmentItems.Where(i =>
                     (!string.IsNullOrEmpty(i.ItemName) && i.ItemName.ToLower().Contains(query)) ||
                     (!string.IsNullOrEmpty(i.Condition) && i.Condition.ToLower().Contains(query))
                 ));
@@ -218,7 +218,7 @@ namespace CATERINGMANAGEMENT.ViewModels
     
 
         // Delete Equipment Item
-        private async Task DeleteEquipment(Equipments item)
+        private async Task DeleteEquipment(Equipment item)
         {
             if (item == null) return;
 
@@ -230,7 +230,7 @@ namespace CATERINGMANAGEMENT.ViewModels
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-                await client.From<Equipments>().Where(e => e.Id == item.Id).Delete();
+                await client.From<Equipment>().Where(e => e.Id == item.Id).Delete();
 
                 _equipmentItems.Remove(item);
                 ApplySearchFilter();
@@ -243,7 +243,7 @@ namespace CATERINGMANAGEMENT.ViewModels
         }
 
         // Edit Equipment Item
-        private async Task EditEquipment(Equipments item)
+        private async Task EditEquipment(Equipment item)
         {
             if (item == null) return;
 
@@ -257,7 +257,7 @@ namespace CATERINGMANAGEMENT.ViewModels
                     editWindow.Equipments.UpdatedAt = DateTime.UtcNow;
 
                     var client = await SupabaseService.GetClientAsync();
-                    var response = await client.From<Equipments>()
+                    var response = await client.From<Equipment>()
                         .Where(e => e.Id == editWindow.Equipments.Id)
                         .Update(editWindow.Equipments);
 
@@ -291,14 +291,14 @@ namespace CATERINGMANAGEMENT.ViewModels
             }
         }
 
-        private async void InsertEquipmentItem(Equipments item)
+        private async void InsertEquipmentItem(Equipment item)
         {
             if (item == null) return;
 
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-                var response = await client.From<Equipments>().Insert(item);
+                var response = await client.From<Equipment>().Insert(item);
 
                 if (response.Models != null && response.Models.Count > 0)
                 {

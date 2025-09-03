@@ -1,23 +1,23 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
-using System;
+
 
 namespace CATERINGMANAGEMENT.Models
 {
-    [Table("packages")]
-    public class Packages : BaseModel
+    [Table("menu_options")]
+    public class MenuOption : BaseModel
     {
-        [PrimaryKey("id", false)] 
-        [Column("id")]
+        [PrimaryKey("id", false)]
         public long Id { get; set; }
 
         [Column("name")]
-        public string Name { get; set; } = string.Empty;
+        public string? Name { get; set; }
 
-        [Column("ratings")]
-        public decimal? Ratings { get; set; }
+        [Column("category")]
+        public string? Category { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
+
     }
 }

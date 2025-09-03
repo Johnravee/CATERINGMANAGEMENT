@@ -26,13 +26,6 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
         set { _selectedReservation = value; OnPropertyChanged(); }
     }
 
-    private string? _notes;
-    public string? Notes
-    {
-        get => _notes;
-        set { _notes = value; OnPropertyChanged(); }
-    }
-
     private string? _searchText;
     public string? SearchText
     {
@@ -51,6 +44,7 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
         get => _isLoading;
         set { _isLoading = value; OnPropertyChanged(); }
     }
+
 
     public ICommand AssignWorkerCommand { get; }
     public ICommand RemoveAssignedWorkerCommand { get; }
@@ -150,19 +144,20 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
 
             var client = await SupabaseService.GetClientAsync();
 
-            var schedules = AssignedWorkers.Select(w => new Scheduling
+            var schedules = AssignedWorkers.Select(w => new NewScheduling
             {
                 ReservationId = (int)SelectedReservation.Id,
                 WorkerId = w.Id,
                 CreatedAt = DateTime.UtcNow
             }).ToList();
 
-            await client.From<Scheduling>().Insert(schedules);
+            await client.From<NewScheduling>().Insert(schedules);
 
             var mailer = new AssignWorkerMailer(new EmailService());
-            foreach (var worker in AssignedWorkers)
+
+            var emailTasks = AssignedWorkers.Select(async worker =>
             {
-                bool emailSent = mailer.SendWorkerScheduleEmail(
+                bool emailSent = await mailer.SendWorkerScheduleEmailAsync(
                     worker.Email ?? "",
                     worker.Name ?? "Staff",
                     worker.Role ?? "Staff",
@@ -170,13 +165,16 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
                     SelectedReservation.EventDate.ToString("MMMM dd, yyyy"),
                     SelectedReservation.Venue ?? "Venue"
                 );
+
                 if (!emailSent)
                 {
-                    MessageBox.Show($"Failed to send email to {worker.Name} ({worker.Email})");
+                    Console.WriteLine($"Failed to send email to {worker.Name} ({worker.Email})");
                 }
-            }
+            });
 
-            MessageBox.Show("Workers successfully assigned!");
+            await Task.WhenAll(emailTasks);
+
+            MessageBox.Show("Workers successfully assigned and emails sent!");
             CloseWindow();
         }
         catch (Exception ex)
@@ -188,6 +186,9 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
             IsLoading = false;
         }
     }
+
+
+
 
     private void CloseWindow()
     {

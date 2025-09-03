@@ -5,15 +5,15 @@ namespace CATERINGMANAGEMENT.View.Pages
 {
     public partial class Workers : Page
     {
-        private readonly WorkersViewModel _viewModel;
+        private readonly WorkerViewModel _viewModel;
         public Workers()
         {
             InitializeComponent();
-            _viewModel = new WorkersViewModel();
+            _viewModel = new WorkerViewModel();
             DataContext = _viewModel;
             Loaded += async (_, __) =>
             {
-                if (DataContext is WorkersViewModel vm)
+                if (DataContext is WorkerViewModel vm)
                 {
                     await vm.LoadItems();
                 }

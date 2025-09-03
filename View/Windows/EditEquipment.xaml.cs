@@ -21,8 +21,8 @@ namespace CATERINGMANAGEMENT.View.Windows
     /// </summary>
     public partial class EditEquipments : Window
     {
-        public Equipments Equipments { get; set; }
-        public EditEquipments(Equipments equipments)
+        public Equipment Equipments { get; set; }
+        public EditEquipments(Equipment equipments)
         {
             InitializeComponent();
             Equipments = equipments ?? throw new ArgumentNullException(nameof(equipments));
