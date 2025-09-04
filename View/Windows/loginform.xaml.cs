@@ -1,5 +1,6 @@
 ﻿using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.View.Windows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,5 +53,11 @@ namespace CATERINGMANAGEMENT.View
             }
         }
 
+        private void CreateAccount_Click(object sender, RoutedEventArgs e)
+        {
+            var registerWindow = new Registration();
+            registerWindow.Show();
+            this.Close();   
+        }
     }
 }

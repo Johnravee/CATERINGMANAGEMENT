@@ -22,6 +22,7 @@
     <None Remove=".env" />
     <None Remove="Assets\images\applogo.png" />
     <None Remove="Assets\images\contract.png" />
+    <None Remove="Assets\images\signupform.png" />
     <None Remove="Assets\images\systemIcon.ico" />
     <None Remove="Assets\LoginForm.png" />
   </ItemGroup>
@@ -52,6 +53,9 @@
     <Content Include="Assets\images\systemIcon.ico" />
     <Resource Include="Assets\images\LoginForm.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\images\signupform.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Assets\images\systemIcon.ico" />
   </ItemGroup>

@@ -18,15 +18,15 @@ namespace CATERINGMANAGEMENT.ViewModels
             set { _profiles = value; OnPropertyChanged(); }
         }
 
-        private ChatMessageViewModel? _chatVM;
-        public ChatMessageViewModel ChatVM
+        private ChatMessageViewModel? _chatVM ;
+        public ChatMessageViewModel? ChatVM
         {
             get => _chatVM;
             set { _chatVM = value; OnPropertyChanged(); }
         }
 
-        private Profile _selectedProfile;
-        public Profile SelectedProfile
+        private Profile? _selectedProfile;
+        public Profile? SelectedProfile
         {
             get => _selectedProfile;
             set
@@ -38,8 +38,6 @@ namespace CATERINGMANAGEMENT.ViewModels
 
                     if (_selectedProfile != null)
                     {
-                        Debug.WriteLine($"👤 Selected profile: {_selectedProfile.FullName} ({_selectedProfile.Email})");
-
                         // Create and assign the ChatMessageViewModel
                         ChatVM = new ChatMessageViewModel(_selectedProfile);
 

@@ -154,7 +154,9 @@
                                     Style="{StaticResource MaterialDesignFlatButton}"
                                     Foreground="{DynamicResource PrimaryHueMidBrush}"
                                     FontSize="13"
-                                    Cursor="Hand" />
+                                    Cursor="Hand"
+                                    Click="CreateAccount_Click"
+                                    />
                         </StackPanel>
 
                         <!-- Version Text at Bottom -->

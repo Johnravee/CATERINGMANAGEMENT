@@ -14,6 +14,10 @@ namespace CATERINGMANAGEMENT.ViewModels
 
         public ChatMessageViewModel(Profile profile)
         {
+
+            if(profile == null)
+                throw new ArgumentNullException(nameof(profile), "Profile cannot be null when initializing ChatMessageViewModel.");
+
             _profile = profile;
             Debug.WriteLine($"👤 ChatMessageViewModel created for Profile ID={_profile.Id}, Name={_profile.FullName}");
         }
