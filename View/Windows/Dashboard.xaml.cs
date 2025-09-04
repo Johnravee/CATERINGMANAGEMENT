@@ -1,4 +1,5 @@
 ﻿using CATERINGMANAGEMENT.View.Pages;
+using CATERINGMANAGEMENT.ViewModels;
 using System.Windows;
 using System.Windows.Input;
 
@@ -9,10 +10,13 @@ namespace CATERINGMANAGEMENT.View.Windows
     /// </summary>
     public partial class Dashboard : Window
     {
+        private readonly DashboardViewModel _viewModel;
         public Dashboard()
         {
             InitializeComponent();
             MainFrame.Navigate(new Overview());
+            _viewModel = new DashboardViewModel();
+            DataContext = _viewModel;
         }
 
         private void HandleDashboard_Drag(object sender, MouseButtonEventArgs e)

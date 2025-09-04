@@ -10,6 +10,10 @@
         ResizeMode="NoResize"
         WindowStyle="None">
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
+
     <Border BorderBrush="#FF6200EE"
             BorderThickness="2"
             CornerRadius="15"
@@ -90,8 +94,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- Main StackPanel with Form -->
-                        <StackPanel Grid.Row="1" VerticalAlignment="Top">
-
+                        <StackPanel Grid.Row="1" VerticalAlignment="Top" IsEnabled="{Binding IsNotLoading}">
                             <!-- Welcome Text -->
                             <TextBlock Text="Welcome to"
                                        FontSize="20"
@@ -110,14 +113,18 @@
                                        Margin="0 0 0 30" />
 
                             <!-- Email -->
-                            <TextBox materialDesign:HintAssist.Hint="Email"
+                            <TextBox x:Name="EmailBox"
+                                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="Email"
                                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                                      Margin="0 0 0 20" />
 
                             <!-- Password -->
-                            <PasswordBox materialDesign:HintAssist.Hint="Password"
+                            <PasswordBox x:Name="PasswordBox"
+                                         materialDesign:HintAssist.Hint="Password"
                                          Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
-                                         Margin="0 0 0 10" />
+                                         Margin="0 0 0 10"
+                                        />
 
                             <!-- Forgot password -->
                             <TextBlock Text="Forgot Password?"
@@ -131,17 +138,36 @@
                             <CheckBox Content="Keep me signed in"
                                       Margin="0 0 0 20"
                                       Foreground="#666"
-                                      FontSize="12" />
+                                      FontSize="12"
+                                      IsChecked="{Binding KeepSignedIn}" />
 
                             <!-- Login Button -->
-                            <Button Content="Login"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}"
                                     Foreground="White"
                                     Padding="10"
                                     Height="38"
                                     Margin="0 0 0 10"
-                                    Click="handleLoginBtn"
-                                    />
+                                    Command="{Binding LoginCommand}"
+                                    IsEnabled="{Binding IsNotLoading}">
+
+                                <TextBlock Text="Login"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Setter Value="Logging in..." Property="Text" /> 
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Button>
+
+
                         </StackPanel>
 
                         <!-- Register Prompt -->
@@ -155,8 +181,7 @@
                                     Foreground="{DynamicResource PrimaryHueMidBrush}"
                                     FontSize="13"
                                     Cursor="Hand"
-                                    Click="CreateAccount_Click"
-                                    />
+                                    Click="CreateAccount_Click" />
                         </StackPanel>
 
                         <!-- Version Text at Bottom -->
@@ -167,6 +192,7 @@
                                    FontSize="10"
                                    Foreground="#AAAAAA"
                                    Margin="0 10 0 10" />
+
                     </Grid>
                 </Border>
             </Grid>

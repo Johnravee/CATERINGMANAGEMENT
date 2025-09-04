@@ -51,9 +51,22 @@ namespace CATERINGMANAGEMENT.ViewModels
                 return;
             }
 
+
             if (Password != ConfirmPassword)
             {
                 MessageBox.Show("Passwords do not match.");
+                return;
+            }
+
+            if( Password.Length < 8)
+            {
+                MessageBox.Show("Password must be at least 8 characters long.");
+                return;
+            }
+
+            if (!ValidationHelper.IsValidEmail(Email))
+            {
+                MessageBox.Show("Please enter a valid email address.");
                 return;
             }
 

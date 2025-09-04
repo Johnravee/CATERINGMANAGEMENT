@@ -1,8 +1,6 @@
-﻿using Supabase;
-using Supabase.Gotrue;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using Supabase.Gotrue;
+
+
 
 namespace CATERINGMANAGEMENT.Services
 {
@@ -15,19 +13,15 @@ namespace CATERINGMANAGEMENT.Services
                 var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL");
                 var serviceRoleKey = Environment.GetEnvironmentVariable("SERVICE_ROLE_KEY");
 
-                Console.WriteLine($"Supabase URL: {supabaseUrl}");
-                Console.WriteLine($"Service Role Key: {serviceRoleKey}");
-
                 if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(serviceRoleKey))
                 {
                     Console.WriteLine("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
                     return false;
                 }
 
-                // Create a new Supabase.Client instance with the service role key
+
                 var adminClient = new Supabase.Client(supabaseUrl, serviceRoleKey);
 
-                // No need to call InitializeAsync() here
 
                 var adminAuth = adminClient.AdminAuth(serviceRoleKey);
 
@@ -35,7 +29,7 @@ namespace CATERINGMANAGEMENT.Services
                 {
                     Email = email,
                     Password = password,
-                    EmailConfirm = false,
+                    EmailConfirm = true,
                     UserMetadata = new Dictionary<string, object>
                     {
                         { "role", "admin" }

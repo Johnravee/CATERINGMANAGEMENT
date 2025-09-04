@@ -83,7 +83,8 @@
                                      Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
                                      materialDesign:HintAssist.Hint="Confirm Password"
                                      Margin="0 0 0 25"
-                                     FontSize="14" />
+                                     FontSize="14"
+                                     />
 
                         <!-- Register Button -->
                         <Button Content="Register"

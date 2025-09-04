@@ -20,7 +20,7 @@ namespace CATERINGMANAGEMENT.View.Windows
     /// </summary>
     public partial class Registration : Window
     {
-        private RegistrationViewModel _viewModel;
+        private readonly RegistrationViewModel _viewModel;
         public Registration()
         {
             InitializeComponent();

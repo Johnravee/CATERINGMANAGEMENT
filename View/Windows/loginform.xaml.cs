@@ -1,6 +1,7 @@
 ﻿using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.View.Windows;
+using CATERINGMANAGEMENT.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,9 +21,18 @@ namespace CATERINGMANAGEMENT.View
 
     public partial class LoginView : Window
     {
+
+        private readonly LoginViewModel _viewModel;
         public LoginView()
         {
             InitializeComponent();
+            _viewModel = new LoginViewModel(this);
+            DataContext = _viewModel;
+
+            PasswordBox.PasswordChanged += (s, e) =>
+            {
+                _viewModel.Password = PasswordBox.Password;
+            };
         }
         private void ExitAppBtnHandler(object sender, RoutedEventArgs e)
         {
@@ -35,23 +45,7 @@ namespace CATERINGMANAGEMENT.View
         }
 
 
-        private async void handleLoginBtn(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var client = await SupabaseService.GetClientAsync();
-
-                // Example: fetch reservations (assuming you created a model)
-                var response = await client.From<Reservation>().Get(); 
-                var data = response.Models;
-
-                MessageBox.Show($"✅ Retrieved {data.Count} reservations");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"❌ Error: {ex.Message}");
-            }
-        }
+      
 
         private void CreateAccount_Click(object sender, RoutedEventArgs e)
         {
@@ -59,5 +53,7 @@ namespace CATERINGMANAGEMENT.View
             registerWindow.Show();
             this.Close();   
         }
+
+        
     }
 }
