@@ -13,6 +13,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         public ProfileChatList()
         {
             InitializeComponent();
+            AuthGuard.RequireAuthentication(this);
             _viewModel = new ProfileViewModel();
             DataContext = _viewModel;
           

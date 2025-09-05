@@ -1,4 +1,5 @@
-﻿using CATERINGMANAGEMENT.ViewModels;
+﻿using CATERINGMANAGEMENT.Helpers;
+using CATERINGMANAGEMENT.ViewModels;
 using System.Windows.Controls;
 
 namespace CATERINGMANAGEMENT.View.Pages
@@ -10,10 +11,11 @@ namespace CATERINGMANAGEMENT.View.Pages
         public ChatMessage()
         {
             InitializeComponent();
+            AuthGuard.RequireAuthentication(this);
             ViewModel = new ProfileViewModel();
             DataContext = ViewModel;
 
-            _ = ViewModel.LoadProfiles(); // Load profiles on page load
+            _ = ViewModel.LoadProfiles(); 
         }
     }
 }

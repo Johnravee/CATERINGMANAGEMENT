@@ -26,6 +26,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public AddWorker()
         {
             InitializeComponent();
+            AuthGuard.RequireAuthentication(this);
         }
 
         private void AddWorker_Click(object sender, RoutedEventArgs e)

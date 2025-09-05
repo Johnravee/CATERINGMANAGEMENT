@@ -18,14 +18,16 @@ namespace CATERINGMANAGEMENT.Services
                 if (session?.User == null)
                     return null;
 
+                SessionService.SetSession(session);
+
                 var user = session.User;
 
-                // Optional: check if user has "role": "admin" in metadata
+                
                 if (user.UserMetadata != null &&
                     user.UserMetadata.TryGetValue("role", out var role) &&
                     role?.ToString() == "admin")
                 {
-                    return user; // user is admin
+                    return user; 
                 }
 
                 return null; // not admin

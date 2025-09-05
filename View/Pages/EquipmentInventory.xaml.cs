@@ -12,6 +12,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         public EquipmentsInventory()
         {
             InitializeComponent();
+            AuthGuard.RequireAuthentication(this);
             _viewModel = new EquipmentViewModel();
             DataContext = _viewModel;
 

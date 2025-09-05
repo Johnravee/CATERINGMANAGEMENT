@@ -17,6 +17,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public EditKitchenItem(Kitchen existingItem)
         {
             InitializeComponent();
+            AuthGuard.RequireAuthentication(this);
             KitchenItem = existingItem ?? throw new ArgumentNullException(nameof(existingItem));
             DataContext = KitchenItem; 
 

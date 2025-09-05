@@ -26,6 +26,7 @@ namespace CATERINGMANAGEMENT.View
         public LoginView()
         {
             InitializeComponent();
+            AuthGuard.PreventAccessIfAuthenticated(this);
             _viewModel = new LoginViewModel(this);
             DataContext = _viewModel;
 
