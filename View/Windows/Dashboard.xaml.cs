@@ -19,31 +19,11 @@ namespace CATERINGMANAGEMENT.View.Windows
             MainFrame.Navigate(new Overview());
             _viewModel = new DashboardViewModel();
             DataContext = _viewModel;
-            Loaded += Dashboard_Loaded;
-        }
-        private async void Dashboard_Loaded(object sender, RoutedEventArgs e)
-        {
-            bool hasProfile = await ProfileGuard.HasProfileAsync();
 
-            if (!hasProfile)
-            {
-                MessageBox.Show(
-                            "You don't have a profile yet. Redirecting to profile setup...",
-                            "Redirecting",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
-
-
-
-                new AddProfile().Show();
-                this.Close(); 
-                return;
-            }
-
-            // Navigate only if user has a profile
-            MainFrame.Navigate(new Overview());
         }
 
+
+  
 
         private void HandleDashboard_Drag(object sender, MouseButtonEventArgs e)
         {
@@ -108,9 +88,5 @@ namespace CATERINGMANAGEMENT.View.Windows
             }
         }
 
-        private void BtnChat_Click(object sender, RoutedEventArgs e)
-        {
-            MainFrame.Navigate(new ChatMessage());
-        }
     }
 }

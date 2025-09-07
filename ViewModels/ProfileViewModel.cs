@@ -19,35 +19,10 @@ namespace CATERINGMANAGEMENT.ViewModels
             set { _profiles = value; OnPropertyChanged(); }
         }
 
-        private ChatMessageViewModel? _chatVM ;
-        public ChatMessageViewModel? ChatVM
-        {
-            get => _chatVM;
-            set { _chatVM = value; OnPropertyChanged(); }
-        }
 
-        private Profile? _selectedProfile;
-        public Profile? SelectedProfile
-        {
-            get => _selectedProfile;
-            set
-            {
-                if (_selectedProfile != value)
-                {
-                    _selectedProfile = value;
-                    OnPropertyChanged();
+     
 
-                    if (_selectedProfile != null)
-                    {
-                        // Create and assign the ChatMessageViewModel
-                        ChatVM = new ChatMessageViewModel(_selectedProfile);
-
-                        // Load messages for this profile
-                        _ = ChatVM.LoadMessages(); 
-                    }
-                }
-            }
-        }
+  
 
 
         private bool _isLoading;
