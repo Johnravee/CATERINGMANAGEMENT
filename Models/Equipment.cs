@@ -8,7 +8,7 @@ namespace CATERINGMANAGEMENT.Models
     public class Equipment : BaseModel
     {
         [PrimaryKey("id", false)]
-        public long Id { get; set; }
+        public long? Id { get; set; }
 
         [Column("item_name")]
         public string? ItemName { get; set; }

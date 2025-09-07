@@ -80,6 +80,76 @@ namespace CATERINGMANAGEMENT.ViewModels
             }
         }
 
+        //public async Task SendMessageAsync()
+        //{
+        //    if (string.IsNullOrWhiteSpace(NewMessage))
+        //        return;
+
+        //    if (_profile == null)
+        //    {
+        //        Debug.WriteLine("⚠ Profile is null. Cannot send message.");
+        //        return;
+        //    }
+
+        //    var client = await SupabaseService.GetClientAsync();
+
+        //    // You need to know who the current sender is (maybe from auth context)
+        //    var currentUser = await SessionService.CurrentUser.Aud ; // ← implement this if needed
+
+        //    if (currentUser == null)
+        //    {
+        //        Debug.WriteLine("⚠ Current user not authenticated.");
+        //        return;
+        //    }
+
+        //    var message = new Message
+        //    {
+        //        SenderId = currentUser.Id,
+        //        ReceiverId = _profile.Id,
+        //        Content = NewMessage,
+        //        CreatedAt = DateTime.UtcNow
+        //    };
+
+        //    var response = await client
+        //        .From<Message>()
+        //        .Insert(message);
+
+        //    if (response.Models == null || response.Models.Count == 0)
+        //    {
+        //        Debug.WriteLine("❌ Failed to insert message.");
+        //        return;
+        //    }
+
+        //    var savedMessage = response.Models.First();
+        //    savedMessage.Sender = currentUser;
+        //    savedMessage.Receiver = _profile;
+        //    savedMessage.ShowSenderHeader = Messages.LastOrDefault()?.SenderId != currentUser.Id;
+
+        //    Messages.Add(savedMessage);
+
+        //    // Clear the message box
+        //    NewMessage = string.Empty;
+
+        //    Debug.WriteLine($"✅ Message sent: {savedMessage.Content}");
+
+        //    // 🔔 Send Firebase push notification
+        //    try
+        //    {
+        //        var token = _profile.FcmToken; 
+        //        if (!string.IsNullOrEmpty(token))
+        //        {
+        //            await FirebaseMessagingService.Instance.SendNotificationAsync(
+        //                token,
+        //                $"New message from {currentUser.FullName}",
+        //                message.Content
+        //            );
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"❌ Firebase notification failed: {ex.Message}");
+        //    }
+        //}
 
 
         #region INotifyPropertyChanged Implementation

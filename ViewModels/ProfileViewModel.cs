@@ -1,11 +1,12 @@
-﻿using CATERINGMANAGEMENT.Models;
+﻿using CATERINGMANAGEMENT.Helpers;
+using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels
 {
@@ -94,6 +95,63 @@ namespace CATERINGMANAGEMENT.ViewModels
                 IsLoading = false;
             }
         }
+
+        public ICommand SaveCommand { get; }
+
+        public ProfileViewModel()
+        {
+            SaveCommand = new RelayCommand(async () => await InsertProfileAsync());
+        }
+
+        public string Name { get => _name; set { _name = value; OnPropertyChanged(); } }
+        public string Address { get => _address; set { _address = value; OnPropertyChanged(); } }
+        public string ContactNumber { get => _contactNumber; set { _contactNumber = value; OnPropertyChanged(); } }
+
+        private string _name = string.Empty;
+        private string _address = string.Empty;
+        private string _contactNumber = string.Empty;
+
+
+        public async Task<bool> InsertProfileAsync()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                var newProfile = new Profile
+                {
+                    FullName = this.Name,
+                    Email = SessionService.CurrentUser?.Email,
+                    Address = this.Address,
+                    ContactNumber = this.ContactNumber,
+                    FcmToken = null,
+                    AuthId = SessionService.CurrentUser?.Id
+                };
+
+                var response = await client
+                    .From<Profile>()
+                    .Insert(newProfile);
+
+                
+                if (response.Models != null && response.Models.Count > 0)
+                {
+                    var insertedProfile = response.Models[0];
+                    Debug.WriteLine($"✅ Inserted profile ID: {insertedProfile.Id}");
+                    return true;
+                }
+
+                Debug.WriteLine("⚠ Insert succeeded but no profile returned.");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Insert failed: {ex.Message}");
+                return false;
+            }
+        }
+
+
+
 
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
