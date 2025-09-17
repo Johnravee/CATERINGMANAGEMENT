@@ -25,7 +25,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public EditEquipments(Equipment equipments)
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             Equipments = equipments ?? throw new ArgumentNullException(nameof(equipments));
             DataContext = Equipments;
         }

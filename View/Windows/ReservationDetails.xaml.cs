@@ -18,7 +18,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public ReservationDetails(Reservation reservation, ICommand updateReservationCommand)
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             _reservation = reservation;
             UpdateReservationCommand = updateReservationCommand;
             DataContext = reservation;

@@ -24,7 +24,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public Registration()
         {
             InitializeComponent();
-            AuthGuard.PreventAccessIfAuthenticated(this);
+            //AuthGuard.PreventAccessIfAuthenticated(this);
             _viewModel = new RegistrationViewModel();
             DataContext = _viewModel;
             

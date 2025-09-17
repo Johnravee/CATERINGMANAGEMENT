@@ -13,7 +13,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         public Schedule()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             DataContext = new SchedulingViewModel();
 
             Loaded += async (_, __) =>

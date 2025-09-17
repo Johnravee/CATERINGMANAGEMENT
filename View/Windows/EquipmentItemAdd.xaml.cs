@@ -15,7 +15,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public EquipmentItemAdd()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)

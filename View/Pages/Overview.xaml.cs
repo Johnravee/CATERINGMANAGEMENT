@@ -15,7 +15,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         public Overview()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             // Sample data for bar chart
             ReservationSeries = new List<ISeries>
             {

@@ -12,7 +12,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public KitchenItemAdd()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
         }
 
        

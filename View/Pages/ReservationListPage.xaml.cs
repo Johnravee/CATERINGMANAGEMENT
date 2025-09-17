@@ -12,7 +12,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         public ReservationListPage()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             DataContext = new ReservationListViewModel();
 
             Loaded += async (_, _) =>

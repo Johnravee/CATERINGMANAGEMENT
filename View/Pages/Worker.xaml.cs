@@ -9,7 +9,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         public Workers()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             _viewModel = new WorkerViewModel();
             DataContext = _viewModel;
             Loaded += async (_, __) =>

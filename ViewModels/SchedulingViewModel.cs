@@ -60,7 +60,7 @@ namespace CATERINGMANAGEMENT.ViewModels
                         grazing:grazing_id(*),
                         package:package_id(*)
             ")
-                    .Where(r => r.Status == "done")
+                    .Where(r => r.Status == "completed")
                     .Order(x => x.EventDate, Ordering.Ascending)
                     .Get();
 

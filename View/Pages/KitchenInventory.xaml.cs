@@ -12,7 +12,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         public KitchenInventory()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             _viewModel = new KitchenViewModel();
             DataContext = _viewModel;
 

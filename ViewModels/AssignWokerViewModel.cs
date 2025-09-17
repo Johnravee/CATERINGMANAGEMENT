@@ -108,7 +108,7 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
             var reservations = await client
                 .From<Reservation>()
                 .Select("*, package:package_id(*)")
-                .Where(r => r.Status == "done")
+                .Where(r => r.Status == "completed")
                 .Get();
 
             Reservations.Clear();
@@ -144,19 +144,32 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
 
             var client = await SupabaseService.GetClientAsync();
 
-            var schedules = AssignedWorkers.Select(w => new NewScheduling
-            {
-                ReservationId = (int)SelectedReservation.Id,
-                WorkerId = w.Id,
-                CreatedAt = DateTime.UtcNow
-            }).ToList();
-
-            await client.From<NewScheduling>().Insert(schedules);
-
             var mailer = new AssignWorkerMailer(new EmailService());
 
-            var emailTasks = AssignedWorkers.Select(async worker =>
+          
+            foreach (var worker in AssignedWorkers)
             {
+                var parameters = new
+                {
+                    p_worker_id = worker.Id,
+                    p_reservation_id = (int)SelectedReservation.Id,
+                    p_paid_status = "Unpaid",    
+                    p_paid_date = (DateTime?)null 
+                };
+
+                var rpcResponse = await client.Rpc("insert_payroll_and_scheduling", parameters);
+
+                if (rpcResponse.ResponseMessage == null || !rpcResponse.ResponseMessage.IsSuccessStatusCode)
+                {
+                    string errorContent = rpcResponse.ResponseMessage != null
+                        ? await rpcResponse.ResponseMessage.Content.ReadAsStringAsync()
+                        : "No response received from server.";
+
+                    MessageBox.Show($"Failed to assign worker {worker.Name} (ID: {worker.Id}): {errorContent}");
+                    continue;
+                }
+
+                // Send email after successful insert
                 bool emailSent = await mailer.SendWorkerScheduleEmailAsync(
                     worker.Email ?? "",
                     worker.Name ?? "Staff",
@@ -170,9 +183,7 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
                 {
                     Console.WriteLine($"Failed to send email to {worker.Name} ({worker.Email})");
                 }
-            });
-
-            await Task.WhenAll(emailTasks);
+            }
 
             MessageBox.Show("Workers successfully assigned and emails sent!");
             CloseWindow();
@@ -186,6 +197,7 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
             IsLoading = false;
         }
     }
+
 
 
 

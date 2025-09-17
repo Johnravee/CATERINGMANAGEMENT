@@ -25,7 +25,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public AssignWorker()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             _vm = new AssignWorkersViewModel();
             DataContext = _vm;
         }
