@@ -63,6 +63,10 @@ namespace CATERINGMANAGEMENT.View.Windows
             MainFrame.Navigate(new Workers());
         }
 
+        private void BtnPayroll_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Payroll());
+        }
 
         private void ExitAppBtnHandler(object sender, MouseButtonEventArgs e)
         {
