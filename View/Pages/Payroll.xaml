@@ -96,6 +96,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
+            <!-- Left side: Title -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <materialDesign:PackIcon Kind="CashMultiple" Width="28" Height="28" Foreground="#673AB7" Margin="0,0,10,0"/>
                 <StackPanel>
@@ -104,16 +105,30 @@
                 </StackPanel>
             </StackPanel>
 
-            <Button Grid.Column="1" 
-                    Style="{StaticResource ModernFlatButton}" 
-                    Padding="10" Width="160"
-                    Command="{Binding AddPayrollCommand}">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" Margin="0,0,4,0"/>
-                    <TextBlock Text="Add Payroll"/>
-                </StackPanel>
-            </Button>
+            <!-- Right side: Action buttons -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Generate Payroll Button -->
+                <Button Style="{StaticResource ModernFlatButton}" 
+                Padding="10" Width="160"
+                Command="{Binding OpenPayrollGeneratorCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FilePdfBox" Width="16" Height="16" Margin="0,0,4,0"/>
+                        <TextBlock Text="Generate Payroll"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Generate Payslip Button -->
+                <Button Style="{StaticResource ModernFlatButton}" 
+                Padding="10" Width="160"
+                Command="{Binding OpenPayslipGeneratorCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Receipt" Width="16" Height="16" Margin="0,0,4,0"/>
+                        <TextBlock Text="Generate Payslip"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
+
 
         <!-- Summary Cards -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
@@ -144,13 +159,14 @@
                 <DockPanel>
                     <materialDesign:PackIcon Kind="Magnify" Width="18" Height="18" VerticalAlignment="Center" Foreground="#666" Margin="4,0"/>
                     <TextBox Width="200"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Foreground="#333"
-                             FontSize="14"
-                             Padding="4,2"
-                             VerticalContentAlignment="Center"
-                             materialDesign:HintAssist.Hint="Search worker or payroll..."/>
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Foreground="#333"
+                     FontSize="14"
+                     Padding="4,2"
+                     VerticalContentAlignment="Center"
+                     materialDesign:HintAssist.Hint="Search worker or payroll..."
+                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                 </DockPanel>
             </Border>
         </StackPanel>

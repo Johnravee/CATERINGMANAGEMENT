@@ -1,6 +1,7 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.View.Windows;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -15,8 +16,8 @@ namespace CATERINGMANAGEMENT.ViewModels
 {
     public class PayrollViewModel : INotifyPropertyChanged
     {
-        private ObservableCollection<Payroll> _payrollItems = new();  // Master list
-        private ObservableCollection<Payroll> _filteredPayrollItems = new(); // Filtered view
+        private ObservableCollection<Payroll> _payrollItems = new();  
+        private ObservableCollection<Payroll> _filteredPayrollItems = new(); 
 
         private const int PageSize = 20;
         private int _currentPage = 1;
@@ -59,14 +60,17 @@ namespace CATERINGMANAGEMENT.ViewModels
         public ICommand LoadPageCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
-        public ICommand ReloadCommand { get; }
+        public ICommand OpenPayslipGeneratorCommand { get; }
+        public ICommand OpenPayrollGeneratorCommand { get; }
 
         public PayrollViewModel()
         {
             LoadPageCommand = new RelayCommand(async () => await LoadPage());
             NextPageCommand = new RelayCommand(async () => await NextPage(), () => CurrentPage < TotalPages);
             PrevPageCommand = new RelayCommand(async () => await PrevPage(), () => CurrentPage > 1);
-            ReloadCommand = new RelayCommand(async () => await LoadPage());
+            OpenPayslipGeneratorCommand = new RelayCommand(OpenPaySlipGenerator);
+            OpenPayrollGeneratorCommand = new RelayCommand(OpenPayrollGenerator);
+
         }
 
        
@@ -131,6 +135,19 @@ namespace CATERINGMANAGEMENT.ViewModels
             if (CurrentPage > 1)
                 await LoadPage(CurrentPage - 1);
         }
+
+        private void OpenPaySlipGenerator()
+        {
+            var generatorWindow = new PayslipWindow();
+            generatorWindow.ShowDialog();
+        }
+
+        private void OpenPayrollGenerator()
+        {
+            var generatorWindow = new PayrollWindow();
+            generatorWindow.ShowDialog();
+        }
+
 
         private void ApplySearchFilter()
         {

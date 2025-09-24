@@ -1,0 +1,38 @@
+﻿<Window x:Class="CATERINGMANAGEMENT.View.Windows.PayrollWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Payroll Generator" Height="350" Width="600"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Generate Payroll Reports (by Event / Schedule)"
+                   FontSize="20" FontWeight="Bold" Margin="0,0,0,20" />
+
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="Select Reservation / Event:" Margin="0,0,0,5"/>
+            <ComboBox ItemsSource="{Binding Reservations}"
+                      SelectedItem="{Binding SelectedReservation}"
+                      DisplayMemberPath="ReceiptNumber"
+                      Height="28"/>
+
+            <TextBlock Text="Or Select Date Range:" Margin="0,20,0,5"/>
+            <StackPanel Orientation="Horizontal" >
+                <DatePicker SelectedDate="{Binding FromDate}" Width="120"/>
+                <TextBlock Text=" to " VerticalAlignment="Center" Margin="5,0"/>
+                <DatePicker SelectedDate="{Binding ToDate}" Width="120"/>
+            </StackPanel>
+        </StackPanel>
+
+        <Button Grid.Row="2"
+                Content="Generate Payroll"
+                Width="140"
+                Height="30"
+                HorizontalAlignment="Left"
+                Command="{Binding GeneratePayrollCommand}" />
+    </Grid>
+</Window>

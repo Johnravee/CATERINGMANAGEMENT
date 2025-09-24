@@ -1,0 +1,69 @@
+﻿<Window x:Class="CATERINGMANAGEMENT.View.Windows.PayslipWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Payroll Generator" Height="300" Width="520" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title with Material Design Icon -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20" Orientation="Horizontal" VerticalAlignment="Center" >
+            <StackPanel>
+                <TextBlock Text="Generate Payslip PDF Reports"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="#2E86C1"
+                           HorizontalAlignment="Left"
+                           Margin="0,0,0,4"/>
+                <TextBlock Text="Create detailed payslip PDFs by selecting user, month, year, and cutoff period."
+                           FontSize="13"
+                           Foreground="#6B7280"
+                           HorizontalAlignment="Left"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- User Selection Panel -->
+        <StackPanel Grid.Row="2" Width="480" Margin="0,0,0,20">
+            <TextBlock Text="Select User:" Margin="0,0,0,5"/>
+            <ComboBox x:Name="UserComboBox"
+                      Height="28"
+                      DisplayMemberPath="Name"
+                      ItemsSource="{Binding Workers}"
+                      SelectedItem="{Binding SelectedWorker}"
+                      Margin="0,0,0,10"
+                      />
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <StackPanel Width="150">
+                    <TextBlock Text="Select Month:" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="MonthComboBox"
+                              Height="28"
+                              ItemsSource="{Binding Months}"
+                              SelectedItem="{Binding SelectedMonth}"/>
+                </StackPanel>
+                <StackPanel Width="150" Margin="10,0,0,0">
+                    <TextBlock Text="Select Year:" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="YearComboBox" 
+                              Height="28"
+                              ItemsSource="{Binding Years}"
+                              SelectedItem="{Binding SelectedYear}"/>
+                </StackPanel>
+                <StackPanel Width="150" Margin="10,0,0,0">
+                    <TextBlock Text="Select Cutoff:" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="CutoffComboBox" Height="28" SelectedItem="{Binding SelectedCutoff}">
+                        <ComboBoxItem Content="1st Cutoff"/>
+                        <ComboBoxItem Content="2nd Cutoff"/>
+                    </ComboBox>
+                </StackPanel>
+            </StackPanel>
+
+            <Button Content="Generate" Width="100" Height="30"
+                    HorizontalAlignment="Left" 
+                    Command="{Binding GeneratePayslipCommand}"/>
+        </StackPanel>
+    </Grid>
+</Window>
