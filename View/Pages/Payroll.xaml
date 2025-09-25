@@ -129,30 +129,6 @@
             </StackPanel>
         </Grid>
 
-
-        <!-- Summary Cards -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
-            <Border Background="White" CornerRadius="8" Padding="12" BorderBrush="#DDD" BorderThickness="1" Margin="0,0,10,0" Width="150">
-                <StackPanel>
-                    <TextBlock Text="{Binding Payrolls.Count}" 
-                               FontSize="24" FontWeight="Bold" Foreground="#512DA8" 
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="Total Workers" FontSize="14" Foreground="Gray" 
-                               HorizontalAlignment="Center"/>
-                </StackPanel>
-            </Border>
-
-            <Border Background="White" CornerRadius="8" Padding="12" BorderBrush="#DDD" BorderThickness="1" Margin="0,0,10,0" Width="150">
-                <StackPanel>
-                    <TextBlock Text="{Binding TotalPayrollAmount, StringFormat='₱{0:N2}'}" 
-                               FontSize="24" FontWeight="Bold" Foreground="#2E7D32" 
-                               HorizontalAlignment="Center"/>
-                    <TextBlock Text="Total Payroll" FontSize="14" Foreground="Gray" 
-                               HorizontalAlignment="Center"/>
-                </StackPanel>
-            </Border>
-        </StackPanel>
-
         <!-- Search Box -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
             <Border Background="White" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1" Padding="4" Height="38" VerticalAlignment="Center" Margin="0,0,8,0">
@@ -207,11 +183,10 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Style="{StaticResource ModernFlatButton}"
                                         ToolTip="Edit"
-                                        Command="{Binding DataContext.EditPayrollCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        Command="{Binding DataContext.MarkAsPaidCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                         CommandParameter="{Binding}">
                                     <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="Pencil" Width="16" Height="16" Margin="0,0,4,0"/>
-                                        <TextBlock Text="Edit"/>
+                                        <TextBlock Text="Mark as Paid"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource ModernFlatButton}"

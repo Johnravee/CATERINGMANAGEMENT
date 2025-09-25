@@ -1,15 +1,15 @@
 ﻿<Window x:Class="CATERINGMANAGEMENT.View.Windows.Dashboard"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" xmlns:viewmodels="clr-namespace:CATERINGMANAGEMENT.ViewModels" 
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
+        xmlns:viewmodels="clr-namespace:CATERINGMANAGEMENT.ViewModels" 
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
         Title="Dashboard"
         WindowStartupLocation="CenterScreen"
         Background="#FAFAFA"
-        WindowState="Normal"
+        WindowState="Maximized"
         WindowStyle="None"
-        MouseDown="HandleDashboard_Drag"
-        >
+        MouseDown="HandleDashboard_Drag">
 
     <Window.Resources>
         <!-- Sidebar Button Style -->
@@ -17,13 +17,13 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="10"/>
-            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="8 6"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="10" >
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -38,58 +38,118 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="80"/>
+            <ColumnDefinition Width="180"/>
+            <!-- wider sidebar -->
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar -->
-        <Border Grid.Column="0" Margin="10,50,10,10" CornerRadius="12" Background="#E5DBFF ">
-            <Grid Margin="0,10">
+        <Border Grid.Column="0" Margin="10,50,10,10" CornerRadius="12" Background="#E5DBFF">
+            <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <!-- Logo + Label -->
                     <RowDefinition Height="*"/>
+                    <!-- Navigation -->
                     <RowDefinition Height="Auto"/>
+                    <!-- Settings + Logout -->
                 </Grid.RowDefinitions>
 
-                <!-- Logo -->
-                <StackPanel Grid.Row="0" Margin="0,10,0,0" HorizontalAlignment="Center">
-                    <materialDesign:PackIcon Kind="TuneVariant" Width="36" Height="36" Foreground="#2E2E2E"/>
+                <!-- Logo + Label -->
+                <StackPanel Grid.Row="0" Margin="10,20,10,30" HorizontalAlignment="Center" VerticalAlignment="Top" Width="160" >
+                    <Border Width="70" Height="70" Background="#D6C4F0" CornerRadius="35" HorizontalAlignment="Center" VerticalAlignment="Center" >
+                        <Image Source="/Assets/images/applogo.png"
+                               Width="52"
+                               Height="52"
+                               Stretch="Uniform"
+                               HorizontalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="CaterMate"
+                               FontWeight="Bold"
+                               FontSize="18"
+                               Foreground="#2E2E2E"
+                               Margin="0,10,0,0"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               Width="140"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Your Smart Partner in Catering.”"
+                       FontWeight="Normal"
+                       FontSize="12"
+                       Foreground="#6A6A6A"
+                       Margin="0,4,0,0"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       Width="106"
+                       HorizontalAlignment="Center"/>
                 </StackPanel>
 
+
                 <!-- Navigation Icons -->
-                <StackPanel Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,20">
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Dashboard" Margin="0,15" Click="BtnOverview_Click">
-                        <materialDesign:PackIcon Kind="ViewDashboard" Width="24" Height="24" Foreground="#2E2E2E" />
-                    </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Reservations" Margin="0,15" Click="BtnReservations_Click">
-                        <materialDesign:PackIcon Kind="CalendarCheck" Width="24" Height="24" Foreground="#2E2E2E"/>
-                    </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Equipment Inventory" Margin="0,15" Click="BtnEquipment_Click">
-                        <materialDesign:PackIcon Kind="PackageVariant" Width="24" Height="24" Foreground="#2E2E2E"/>
-                    </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Kitchen Inventory" Margin="0,15"  Click="BtnKitchen_Click">
-                        <materialDesign:PackIcon Kind="Kitchen" Width="24" Height="24" Foreground="#2E2E2E"/>
-                    </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Scheduling" Margin="0,15" Click="BtnSchedule_Click">
-                        <materialDesign:PackIcon Kind="ClockOutline" Width="24" Height="24" Foreground="#2E2E2E" />
-                    </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,15" Click="BtnPayroll_Click">
-                        <materialDesign:PackIcon Kind="CashMultiple" Width="24" Height="24" Foreground="#2E2E2E"/>
+                <StackPanel Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Stretch" >
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Dashboard" Margin="0,8" Click="BtnOverview_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                            <materialDesign:PackIcon Kind="ViewDashboard" Width="26" Height="26" Foreground="#2E2E2E" Margin="0,0,12,0"/>
+                            <TextBlock Text="Dashboard" VerticalAlignment="Center" Foreground="#2E2E2E" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,10" Click="BtnWorkers_Click">
-                        <materialDesign:PackIcon Kind="Worker" Width="24" Height="24" Foreground="#2E2E2E"/>
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Reservations" Margin="0,8" Click="BtnReservations_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                            <materialDesign:PackIcon Kind="CalendarCheck" Width="26" Height="26" Foreground="#2E2E2E" Margin="0,0,12,0"/>
+                            <TextBlock Text="Reservations" VerticalAlignment="Center" Foreground="#2E2E2E" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
                     </Button>
 
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Equipment Inventory" Margin="0,8" Click="BtnEquipment_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                            <materialDesign:PackIcon Kind="PackageVariant" Width="26" Height="26" Foreground="#2E2E2E" Margin="0,0,12,0"/>
+                            <TextBlock Text="Equipment" VerticalAlignment="Center" Foreground="#2E2E2E" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Kitchen Inventory" Margin="0,8" Click="BtnKitchen_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                            <materialDesign:PackIcon Kind="Kitchen" Width="26" Height="26" Foreground="#2E2E2E" Margin="0,0,12,0"/>
+                            <TextBlock Text="Kitchen" VerticalAlignment="Center" Foreground="#2E2E2E" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Scheduling" Margin="0,8" Click="BtnSchedule_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                            <materialDesign:PackIcon Kind="ClockOutline" Width="26" Height="26" Foreground="#2E2E2E" Margin="0,0,12,0"/>
+                            <TextBlock Text="Scheduling" VerticalAlignment="Center" Foreground="#2E2E2E" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Payroll" Margin="0,8" Click="BtnPayroll_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                            <materialDesign:PackIcon Kind="CashMultiple" Width="26" Height="26" Foreground="#2E2E2E" Margin="0,0,12,0"/>
+                            <TextBlock Text="Payroll" VerticalAlignment="Center" Foreground="#2E2E2E" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Workers" Margin="0,8" Click="BtnWorkers_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                            <materialDesign:PackIcon Kind="Worker" Width="26" Height="26" Foreground="#2E2E2E" Margin="0,0,12,0"/>
+                            <TextBlock Text="Workers" VerticalAlignment="Center" Foreground="#2E2E2E" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
 
                 <!-- Settings and Logout -->
-                <StackPanel Grid.Row="2" Margin="0,30" HorizontalAlignment="Center">
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Settings" Margin="0,10">
-                        <materialDesign:PackIcon Kind="Cog" Width="24" Height="24" Foreground="#2E2E2E"/>
+                <StackPanel Grid.Row="2" Margin="0,30,0,0" HorizontalAlignment="Stretch" >
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Settings" Margin="0,8">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                            <materialDesign:PackIcon Kind="Cog" Width="26" Height="26" Foreground="#2E2E2E" Margin="0,0,12,0"/>
+                            <TextBlock Text="Settings" VerticalAlignment="Center" Foreground="#2E2E2E" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Logout" Margin="0,10" Command="{Binding SignOutCommand}">
-                        <materialDesign:PackIcon Kind="LogoutVariant" Width="24" Height="24" Foreground="#2E2E2E"/>
+                    <Button Style="{StaticResource SidebarIconButton}" ToolTip="Logout" Margin="0,8" Command="{Binding SignOutCommand}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                            <materialDesign:PackIcon Kind="LogoutVariant" Width="26" Height="26" Foreground="#2E2E2E" Margin="0,0,12,0"/>
+                            <TextBlock Text="Logout" VerticalAlignment="Center" Foreground="#2E2E2E" FontWeight="SemiBold" FontSize="14"/>
+                        </StackPanel>
                     </Button>
                 </StackPanel>
             </Grid>
@@ -99,19 +159,16 @@
         <Grid Grid.Column="1" Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <!-- Top bar -->
                 <RowDefinition Height="Auto"/>
-                <!-- Admin panel -->
-                <RowDefinition Height="749*"/>
-                <!-- Main content -->
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <!-- Top bar -->
             <StackPanel Orientation="Horizontal"
-            HorizontalAlignment="Right"
-            VerticalAlignment="Top"
-            Margin="0,10,10,0"
-            Grid.Column="1">
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,10,10,0"
+                        Grid.Column="1">
 
                 <!-- Minimize -->
                 <Grid Width="20" Height="20" Margin="5, 0" MouseDown="MinimizeAppBtnHandler" Cursor="Hand">
@@ -148,9 +205,8 @@
                 </Grid>
             </StackPanel>
 
-
             <!-- Admin Panel Row -->
-            <Border Grid.Row="1" Background="#E5DBFF " Padding="10" CornerRadius="12" Margin="0,10,0,10">
+            <Border Grid.Row="1" Background="#E5DBFF" Padding="10" CornerRadius="12" Margin="0,10,0,10">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <StackPanel VerticalAlignment="Center" Margin="5,0">
                         <TextBlock Text="{Binding CurrentUser.Email}"

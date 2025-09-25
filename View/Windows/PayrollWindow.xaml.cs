@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CATERINGMANAGEMENT.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,9 +20,12 @@ namespace CATERINGMANAGEMENT.View.Windows
     /// </summary>
     public partial class PayrollWindow : Window
     {
+        private readonly PayrollWindowViewModel _viewmodel = new();
+
         public PayrollWindow()
         {
             InitializeComponent();
+            DataContext = _viewmodel;
         }
     }
 }

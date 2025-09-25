@@ -101,7 +101,7 @@
                                        FontWeight="SemiBold"
                                        Foreground="#555555" />
 
-                            <TextBlock Text="OSHDY Catering Services"
+                            <TextBlock Text="CaterMate Management"
                                        FontSize="28"
                                        FontWeight="Bold"
                                        Foreground="#333333"

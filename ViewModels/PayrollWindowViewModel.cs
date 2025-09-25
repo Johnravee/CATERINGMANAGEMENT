@@ -1,9 +1,11 @@
-﻿using CATERINGMANAGEMENT.Helpers;
+﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using static Supabase.Postgrest.Constants;
 
@@ -11,118 +13,126 @@ namespace CATERINGMANAGEMENT.ViewModels
 {
     public class PayrollWindowViewModel : INotifyPropertyChanged
     {
-        public ObservableCollection<Reservation> Reservations { get; set; } = new();
+       private  Supabase.Client? _client;
+
+        public ObservableCollection<Reservation> Reservations { get; } = new();
+        public ObservableCollection<Payroll> Payrolls { get; } = new();
+
         private Reservation? _selectedReservation;
         public Reservation? SelectedReservation
         {
             get => _selectedReservation;
-            set { _selectedReservation = value; OnPropertyChanged(); }
-        }
-
-        private DateTime? _fromDate;
-        public DateTime? FromDate
-        {
-            get => _fromDate;
-            set { _fromDate = value; OnPropertyChanged(); }
-        }
-
-        private DateTime? _toDate;
-        public DateTime? ToDate
-        {
-            get => _toDate;
-            set { _toDate = value; OnPropertyChanged(); }
+            set
+            {
+                if (_selectedReservation != value)
+                {
+                    _selectedReservation = value;
+                    OnPropertyChanged();
+                    _ = LoadPayrollsAsync(); // Async fire-and-forget
+                }
+            }
         }
 
         public RelayCommand GeneratePayrollCommand { get; }
 
         public PayrollWindowViewModel()
         {
-            GeneratePayrollCommand = new RelayCommand(async () => await GeneratePayroll());
-            LoadReservationsAsync();
+            GeneratePayrollCommand = new RelayCommand(async () => await GeneratePayrollAsync());
+
+            // Async constructor pattern
+            Task.Run(async () =>
+            {
+                _client = await SupabaseService.GetClientAsync();
+                await LoadReservationsAsync();
+            });
         }
 
-        private async void LoadReservationsAsync()
+        private async Task LoadReservationsAsync()
         {
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                var resp = await client
+                var client = _client ?? await SupabaseService.GetClientAsync();
+
+                var response = await client
                     .From<Reservation>()
-                    .Select("*")
                     .Get();
 
-                Reservations.Clear();
-                foreach (var r in resp.Models)
-                    Reservations.Add(r);
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    Reservations.Clear();
+                    foreach (var res in response.Models)
+                        Reservations.Add(res);
+                });
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load reservations: {ex.Message}", "Error");
+                MessageBox.Show($"Failed to load reservations: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private async Task GeneratePayroll()
+        private async Task LoadPayrollsAsync()
         {
+            if (SelectedReservation == null)
+            {
+                Payrolls.Clear();
+                return;
+            }
+
             try
             {
-                var client = await SupabaseService.GetClientAsync();
+                var client = _client ?? await SupabaseService.GetClientAsync();
 
-                // If a reservation is selected, use that
-                if (SelectedReservation != null)
+                var response = await client
+                    .From<Payroll>()
+                    .Select("*, workers(*)")
+                    .Filter("reservation_id", Operator.Equals, SelectedReservation.Id)
+                    .Get();
+
+                App.Current.Dispatcher.Invoke(() =>
                 {
-                    // Perhaps fetch payroll(s) for that reservation
-                    var resp = await client
-                        .From<Payroll>()
-                        .Select("*, workers(*)")
-                        .Filter("reservation_id", Operator.Equals, SelectedReservation.Id)
-                        .Get();
-
-                    var payrolls = resp.Models;
-                    if (payrolls == null || payrolls.Count == 0)
-                    {
-                        MessageBox.Show("No payroll records for this reservation.");
-                        return;
-                    }
-
-                    // Generate PDF or report using those payrolls
-                    // You can make a new PDF generator method for payroll by event
-                    //PayrollByEventPdfGenerator.Generate(payrolls, SelectedReservation);
-                    return;
-                }
-
-                // Otherwise, if FromDate & ToDate are set, filter payrolls in that range
-                if (FromDate != null && ToDate != null)
-                {
-                    var resp = await client
-                        .From<Payroll>()
-                        .Select("*, reservations(*)")
-                        .Get();
-
-                    var payrolls = resp.Models?
-                        .Where(p => p.Reservation?.EventDate >= FromDate
-                                 && p.Reservation?.EventDate <= ToDate)
-                        .ToList();
-
-                    if (payrolls == null || payrolls.Count == 0)
-                    {
-                        MessageBox.Show("No payroll records in that date range.");
-                        return;
-                    }
-
-                    //PayrollByDateRangePdfGenerator.Generate(payrolls, FromDate.Value, ToDate.Value);
-                    return;
-                }
-
-                MessageBox.Show("Please select a reservation or a date range.");
+                    Payrolls.Clear();
+                    foreach (var payroll in response.Models)
+                        Payrolls.Add(payroll);
+                });
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error generating payroll: {ex.Message}");
+                MessageBox.Show($"Failed to load payroll data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        private async Task GeneratePayrollAsync()
+        {
+            if (SelectedReservation == null)
+            {
+                MessageBox.Show("Please select a reservation.", "Missing Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (Payrolls.Count == 0)
+            {
+                MessageBox.Show("No payroll data found for the selected reservation.", "No Data", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                 PayrollPdfGenerator.Generate(
+                     Payrolls.ToList(),
+                    SelectedReservation.ReceiptNumber,
+                    SelectedReservation.EventDate);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to generate payroll report: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        #region INotifyPropertyChanged Implementation
         public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? name = null)
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        #endregion
     }
 }

@@ -11,13 +11,14 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using static Supabase.Postgrest.Constants;
+using Supabase.Realtime;
 
 namespace CATERINGMANAGEMENT.ViewModels
 {
     public class PayrollViewModel : INotifyPropertyChanged
     {
-        private ObservableCollection<Payroll> _payrollItems = new();  
-        private ObservableCollection<Payroll> _filteredPayrollItems = new(); 
+        private ObservableCollection<Payroll> _payrollItems = new();
+        private ObservableCollection<Payroll> _filteredPayrollItems = new();
 
         private const int PageSize = 20;
         private int _currentPage = 1;
@@ -62,6 +63,8 @@ namespace CATERINGMANAGEMENT.ViewModels
         public ICommand PrevPageCommand { get; }
         public ICommand OpenPayslipGeneratorCommand { get; }
         public ICommand OpenPayrollGeneratorCommand { get; }
+        public ICommand MarkAsPaidCommand { get; }
+        public ICommand DeletePayrollCommand { get; }
 
         public PayrollViewModel()
         {
@@ -71,9 +74,11 @@ namespace CATERINGMANAGEMENT.ViewModels
             OpenPayslipGeneratorCommand = new RelayCommand(OpenPaySlipGenerator);
             OpenPayrollGeneratorCommand = new RelayCommand(OpenPayrollGenerator);
 
+            MarkAsPaidCommand = new RelayCommand<Payroll>(async (payroll) => await MarkAsPaidAsync(payroll));
+            DeletePayrollCommand = new RelayCommand<Payroll>(async (payroll) => await DeletePayrollAsync(payroll));
+
         }
 
-       
         public async Task LoadPage(int pageNumber = 1)
         {
             IsLoading = true;
@@ -148,7 +153,6 @@ namespace CATERINGMANAGEMENT.ViewModels
             generatorWindow.ShowDialog();
         }
 
-
         private void ApplySearchFilter()
         {
             if (string.IsNullOrWhiteSpace(SearchText))
@@ -163,10 +167,83 @@ namespace CATERINGMANAGEMENT.ViewModels
                     _payrollItems.Where(p =>
                         (p.PaidStatus != null && p.PaidStatus.ToLower().Contains(query)) ||
                         (p.WorkerId != null && p.WorkerId.ToString().Contains(query)) ||
-                        (p.ReservationId != null && p.ReservationId.ToString().Contains(query))
+                        (p.ReservationId != null && p.ReservationId.ToString().Contains(query)) ||
+                        (p.Worker != null && p.Worker.Name != null && p.Worker.Name.ToLower().Contains(query)) ||
+                        (p.Reservation != null && p.Reservation.ReceiptNumber != null && p.Reservation.ReceiptNumber.ToLower().Contains(query))
                     ));
             }
         }
+
+        private async Task MarkAsPaidAsync(Payroll payroll)
+        {
+            if (payroll == null) return;
+            var result = MessageBox.Show("Are you sure you want to Mark as Paid this worker?", "Confirm Marking", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes)
+                return;
+
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+    
+                var response = await client
+                                .From<Payroll>()
+                                .Where(p => p.Id == payroll.Id)
+                                .Set(p => p.PaidDate, DateTime.Now)
+                                .Set(p => p.PaidStatus, "Paid")
+                                .Update();
+
+                if (response.Models != null)
+                {
+                    var item = _payrollItems.FirstOrDefault(p => p.Id == payroll.Id);
+                    if (item != null)
+                    {
+                        item.PaidStatus = payroll.PaidStatus;
+                        item.PaidDate = payroll.PaidDate;
+                    }
+                    ApplySearchFilter();
+                   await LoadPage(CurrentPage);
+                }
+                else
+                {
+                    MessageBox.Show("Failed to mark payroll as paid.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error marking as paid:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task DeletePayrollAsync(Payroll payroll)
+        {
+            if (payroll == null) return;
+
+            var result = MessageBox.Show("Are you sure you want to delete this payroll record?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes)
+                return;
+
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                 await client.From<Payroll>()
+                        .Where(p => p.Id == payroll.Id)
+                        .Delete();
+
+                
+                    _payrollItems.Remove(payroll);
+                    ApplySearchFilter();
+                    await LoadPage(CurrentPage);
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting payroll:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
 
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
