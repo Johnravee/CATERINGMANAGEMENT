@@ -33,10 +33,6 @@ namespace CATERINGMANAGEMENT.ViewModels
         public int LowStockCount { get; set; }
         public int NormalStockCount { get; set; }
 
-        public ObservableCollection<ISeries> TotalItemsSeries { get; set; } = new();
-        public ObservableCollection<ISeries> LowStockSeries { get; set; } = new();
-        public ObservableCollection<ISeries> NormalStockSeries { get; set; } = new();
-
         private bool _isLoading;
         public bool IsLoading
         {
@@ -84,7 +80,6 @@ namespace CATERINGMANAGEMENT.ViewModels
             DeleteKitchenItemCommand = new RelayCommand<Kitchen>(async (k) => await DeleteKitchenItem(k));
             EditKitchenItemCommand = new RelayCommand<Kitchen>(async (k) => await EditKitchenItem(k));
             AddKitchenItemCommand = new RelayCommand(() => AddNewKitchenItem());
-            LoadMoreCommand = new RelayCommand(async () => await LoadMoreItems());
 
             NextPageCommand = new RelayCommand(async () => await NextPage(), () => CurrentPage < TotalPages);
             PrevPageCommand = new RelayCommand(async () => await PrevPage(), () => CurrentPage > 1);
@@ -136,7 +131,7 @@ namespace CATERINGMANAGEMENT.ViewModels
                 }
 
                 ApplySearchFilter();
-                UpdateCounts();
+               await LoadKitchenSummary();
                 UpdatePagination();
 
                 CurrentPage = pageNumber;
@@ -163,48 +158,74 @@ namespace CATERINGMANAGEMENT.ViewModels
                 await LoadPage(CurrentPage - 1);
         }
 
-        // Load next batch (for backwards compatibility)
-        private async Task LoadMoreItems()
-        {
-            await LoadPage(CurrentPage + 1);
-        }
+     
 
-        // Filter
-        private void ApplySearchFilter()
+        // Search Query
+        private async void ApplySearchFilter()
         {
             var query = _searchText?.Trim().ToLower() ?? "";
-            Items = string.IsNullOrWhiteSpace(query)
-                ? new ObservableCollection<Kitchen>(_kitchenItems)
-                : new ObservableCollection<Kitchen>(_kitchenItems.Where(i =>
-                    (!string.IsNullOrEmpty(i.ItemName) && i.ItemName.ToLower().Contains(query)) ||
-                    (!string.IsNullOrEmpty(i.Unit) && i.Unit.ToLower().Contains(query))
-                ));
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                Items = new ObservableCollection<Kitchen>(_kitchenItems);
+            }
+            else
+            {
+                try
+                {
+                    IsLoading = true;
+                    var client = await SupabaseService.GetClientAsync();
+
+                    var response = await client
+                        .From<Kitchen>()
+                        .Filter(x => x.ItemName, Operator.ILike, $"%{query}%")
+                        .Get();
+
+                    if (response.Models != null)
+                        Items = new ObservableCollection<Kitchen>(response.Models);
+                    else
+                        Items = new ObservableCollection<Kitchen>();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error searching equipment:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    IsLoading = false;
+                }
+            }
         }
 
-        // Update counts and charts
-        private void UpdateCounts()
+        public async Task LoadKitchenSummary()
         {
-            TotalCount = _kitchenItems.Count;
-            LowStockCount = _kitchenItems.Count(i => i.Quantity < 10);
-            NormalStockCount = TotalCount - LowStockCount;
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
 
-            double total = TotalCount > 0 ? TotalCount : 1;
-            double lowStockPercent = (double)LowStockCount / total;
-            double normalStockPercent = (double)NormalStockCount / total;
+                var response = await client
+                    .From<KitchenSummary>()
+                    .Get();
 
-            TotalItemsSeries.Clear();
-            TotalItemsSeries.Add(new PieSeries<int> { Values = new int[] { TotalCount }, Fill = new SolidColorPaint(SKColors.MediumPurple), InnerRadius = 15 });
+                if (response.Models != null && response.Models.Count > 0)
+                {
+                    var summary = response.Models[0];
+                    TotalCount = summary.TotalCount;
+                    NormalStockCount = summary.NormalCount;
+                    LowStockCount = summary.LowCount;
 
-            LowStockSeries.Clear();
-            LowStockSeries.Add(new PieSeries<double> { Values = new double[] { lowStockPercent }, Fill = new SolidColorPaint(SKColors.Red), InnerRadius = 15 });
-
-            NormalStockSeries.Clear();
-            NormalStockSeries.Add(new PieSeries<double> { Values = new double[] { normalStockPercent }, Fill = new SolidColorPaint(SKColors.Green), InnerRadius = 15 });
-
-            OnPropertyChanged(nameof(TotalCount));
-            OnPropertyChanged(nameof(LowStockCount));
-            OnPropertyChanged(nameof(NormalStockCount));
+                    OnPropertyChanged(nameof(TotalCount));
+                    OnPropertyChanged(nameof(NormalStockCount));
+                    OnPropertyChanged(nameof(LowStockCount));
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading equipment summary:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
+
+
 
         private void UpdatePagination()
         {
@@ -231,7 +252,7 @@ namespace CATERINGMANAGEMENT.ViewModels
 
                 _kitchenItems.Remove(item);
                 ApplySearchFilter();
-                UpdateCounts();
+               await LoadKitchenSummary();
             }
             catch (System.Exception ex)
             {
@@ -265,7 +286,7 @@ namespace CATERINGMANAGEMENT.ViewModels
                             _kitchenItems[index] = response.Models[0];
 
                         ApplySearchFilter();
-                        UpdateCounts();
+                       await LoadKitchenSummary();
                         MessageBox.Show("Kitchen item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
@@ -301,7 +322,7 @@ namespace CATERINGMANAGEMENT.ViewModels
                 {
                     _kitchenItems.Add(response.Models[0]);
                     ApplySearchFilter();
-                    UpdateCounts();
+                   await LoadKitchenSummary();
                     MessageBox.Show("Kitchen item added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }

@@ -137,7 +137,7 @@
                         <TextBlock Text="Total Items" FontWeight="Bold" Foreground="#333" FontSize="14"/>
                         <TextBlock Text="{Binding TotalCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
                     </StackPanel>
-                    <lvc:PieChart MaxAngle="350" Grid.Column="1" Series="{Binding TotalItemsSeries}" Width="50" Height="50"/>
+                    <materialDesign:PackIcon Kind="PackageVariant" Foreground="#673AB7" Width="36" Height="36" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Grid>
             </Border>
 
@@ -155,7 +155,7 @@
                         <TextBlock Text="Good Condition" FontWeight="Bold" Foreground="#333" FontSize="14"/>
                         <TextBlock Text="{Binding GoodConditionCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
                     </StackPanel>
-                    <lvc:PieChart MaxAngle="300" Grid.Column="1" Series="{Binding GoodConditionSeries}" Width="50" Height="50"/>
+                    <materialDesign:PackIcon Kind="ThumbUpOutline" Foreground="Green" Width="36" Height="36" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Grid>
             </Border>
 
@@ -173,7 +173,7 @@
                         <TextBlock Text="Damaged" FontWeight="Bold" Foreground="#333" FontSize="14"/>
                         <TextBlock Text="{Binding DamagedCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
                     </StackPanel>
-                    <lvc:PieChart MaxAngle="280" Grid.Column="1" Series="{Binding DamagedCount}" Width="50" Height="50"/>
+                    <materialDesign:PackIcon Kind="Wrench" Foreground="Red" Width="36" Height="36" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Grid>
             </Border>
         </UniformGrid>

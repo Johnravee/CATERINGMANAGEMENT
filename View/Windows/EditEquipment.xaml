@@ -58,8 +58,6 @@
                   Padding="6"
                   Background="#F3F4F6"
                   BorderBrush="#D1D5DB">
-                    <ComboBoxItem Content="New" Foreground="Green"/>
-                    <ComboBoxItem Content="Fair" Foreground="Goldenrod"/>
                     <ComboBoxItem Content="Good" Foreground="LimeGreen"/>
                     <ComboBoxItem Content="Needs Repair" Foreground="Orange"/>
                     <ComboBoxItem Content="Bad" Foreground="Red"/>

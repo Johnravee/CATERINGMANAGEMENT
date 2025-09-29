@@ -142,30 +142,7 @@
                 </DataGrid>
             </GroupBox>
 
-            <!-- Info Cards -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Top">
-                <!-- Total Schedules Card -->
-                <Border Background="White" CornerRadius="8" Padding="12" BorderBrush="#DDD" BorderThickness="1" Margin="0,0,10,0" Width="150">
-                    <StackPanel>
-                        <TextBlock Text="{Binding GroupedSchedules.Count}" 
-                                   FontSize="24" FontWeight="Bold" Foreground="#512DA8" 
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock Text="Total Events" FontSize="14" Foreground="Gray" 
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Scheduled Workers Card -->
-                <Border Background="White" CornerRadius="8" Padding="12" BorderBrush="#DDD" BorderThickness="1" Margin="0,0,10,0" Width="150">
-                    <StackPanel>
-                        <TextBlock Text="{Binding Schedules.Count}" 
-                                   FontSize="24" FontWeight="Bold" Foreground="#2E7D32" 
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock Text="Scheduled Workers" FontSize="14" Foreground="Gray" 
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+            
         </Grid>
 
         <!-- Search -->

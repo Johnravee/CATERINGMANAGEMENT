@@ -113,7 +113,7 @@
         </Grid>
 
         <!-- Cards -->
-        <UniformGrid Grid.Row="1" Rows="1" Columns="3" Margin="0,10,0,10">
+        <UniformGrid Grid.Row="1" Rows="1" Columns="3" Margin="0,0,0,10">
             <!-- Total Items Card -->
             <Border Background="White" CornerRadius="8" Padding="16" Margin="8" Height="90">
                 <Border.Effect>
@@ -125,14 +125,14 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel VerticalAlignment="Center" Grid.Column="0">
-                        <TextBlock Text="Total Items" FontWeight="Bold" Foreground="#333" FontSize="14"/>
+                        <TextBlock Text="Total Stock" FontWeight="Bold" Foreground="#333" FontSize="14"/>
                         <TextBlock Text="{Binding TotalCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
                     </StackPanel>
-                    <lvc:PieChart MaxAngle="360" Grid.Column="1" Series="{Binding TotalItemsSeries}" Width="50" Height="50"/>
+                    <materialDesign:PackIcon Kind="Cutlery" Foreground="#673AB7" Width="36" Height="36" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Grid>
             </Border>
 
-            <!-- Low Stock Card -->
+            <!-- Good Condition Card -->
             <Border Background="White" CornerRadius="8" Padding="16" Margin="8" Height="90">
                 <Border.Effect>
                     <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="3" Opacity="0.2"/>
@@ -143,14 +143,14 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel VerticalAlignment="Center" Grid.Column="0">
-                        <TextBlock Text="Low Stock" FontWeight="Bold" Foreground="#E53935" FontSize="14"/>
-                        <TextBlock Text="{Binding LowStockCount}" FontSize="24" FontWeight="Bold" Foreground="#E53935"/>
+                        <TextBlock Text="Normal Stocks" FontWeight="Bold" Foreground="#333" FontSize="14"/>
+                        <TextBlock Text="{Binding NormalStockCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
                     </StackPanel>
-                    <lvc:PieChart MaxAngle="360" Grid.Column="1" Series="{Binding LowStockSeries}" Width="50" Height="50"/>
+                    <materialDesign:PackIcon Kind="CheckCircle" Foreground="Green" Width="36" Height="36" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Grid>
             </Border>
 
-            <!-- Normal Stock Card -->
+            <!-- Damage  Card -->
             <Border Background="White" CornerRadius="8" Padding="16" Margin="8" Height="90">
                 <Border.Effect>
                     <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="3" Opacity="0.2"/>
@@ -161,10 +161,10 @@
                         <ColumnDefinition Width="50"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel VerticalAlignment="Center" Grid.Column="0">
-                        <TextBlock Text="Normal Stock" FontWeight="Bold" Foreground="#388E3C" FontSize="14"/>
-                        <TextBlock Text="{Binding NormalStockCount}" FontSize="24" FontWeight="Bold" Foreground="#388E3C"/>
+                        <TextBlock Text="Low Stocks" FontWeight="Bold" Foreground="#333" FontSize="14"/>
+                        <TextBlock Text="{Binding LowStockCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
                     </StackPanel>
-                    <lvc:PieChart MaxAngle="360" Grid.Column="1" Series="{Binding NormalStockSeries}" Width="50" Height="50"/>
+                    <materialDesign:PackIcon Kind="Exclamation" Foreground="#FFA000" Width="36" Height="36" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Grid>
             </Border>
         </UniformGrid>
