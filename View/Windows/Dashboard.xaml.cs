@@ -68,6 +68,21 @@ namespace CATERINGMANAGEMENT.View.Windows
             MainFrame.Navigate(new Payroll());
         }
 
+        private void BtnMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Menu());
+        }
+
+        private void BtnPackages_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Package());
+        }
+
+        private void BtnThemeMotif_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new ThemeMotif());
+        }
+
         private void BtnGrazingOptions_Click(object sender, RoutedEventArgs e)
         {
             MainFrame.Navigate(new GrazingOptions());

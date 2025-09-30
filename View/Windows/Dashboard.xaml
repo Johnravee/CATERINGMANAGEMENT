@@ -128,16 +128,22 @@
                         <!-- More Section -->
                         <Expander Header="More" FontWeight="Bold" Margin="0,8,0,0" Background="Transparent">
                             <StackPanel>
-                                <Button Style="{StaticResource SidebarIconButton}" ToolTip="Menu">
+                                <Button Style="{StaticResource SidebarIconButton}" ToolTip="Menu" Click="BtnMenu_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="FoodForkDrink" Width="24" Height="24" Margin="0,0,12,0"/>
                                         <TextBlock Text="Menu" FontSize="16"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Style="{StaticResource SidebarIconButton}" ToolTip="Packages" >
+                                <Button Style="{StaticResource SidebarIconButton}" ToolTip="Packages" Click="BtnPackages_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="Package" Width="24" Height="24" Margin="0,0,12,0"/>
                                         <TextBlock Text="Packages" FontSize="16"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource SidebarIconButton}" ToolTip="Theme &amp; Motif" Click="BtnThemeMotif_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Palette" Width="24" Height="24" Margin="0,0,12,0" />
+                                        <TextBlock Text="Theme &amp; Motif" FontSize="16"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource SidebarIconButton}" ToolTip="Grazing" Click="BtnGrazingOptions_Click">
