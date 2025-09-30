@@ -77,11 +77,11 @@ namespace CATERINGMANAGEMENT.ViewModels
 
         public ThemeMotifViewModel()
         {
-            //EditThemeMotifCommand = new RelayCommand<ThemeMotif>(async (m) => await EditThemeMotif(m));
+            EditThemeMotifCommand = new RelayCommand<ThemeMotif>(async (m) => await EditThemeMotif(m));
             DeleteThemeMotifCommand = new RelayCommand<ThemeMotif>(async (m) => await DeleteThemeMotif(m));
             NextPageCommand = new RelayCommand(async () => await NextPage());
             PrevPageCommand = new RelayCommand(async () => await PrevPage());
-            //AddThemeMotifCommand = new RelayCommand(async () => await InsertThemeMotif());
+            AddThemeMotifCommand = new RelayCommand(async () => await InsertThemeMotif());
 
             ExportPdfCommand = new RelayCommand(ExportToPdf);
             ExportCsvCommand = new RelayCommand(ExportToCsv);
@@ -181,7 +181,7 @@ namespace CATERINGMANAGEMENT.ViewModels
                     var client = await SupabaseService.GetClientAsync();
                     var response = await client
                         .From<ThemeMotif>()
-                        .Select("*, package_id(*)")
+                        .Select("*")
                         .Filter(x => x.Name, Operator.ILike, $"%{query}%")
                         .Order(x => x.CreatedAt, Ordering.Descending)
                         .Get();
@@ -202,25 +202,25 @@ namespace CATERINGMANAGEMENT.ViewModels
             }
         }
 
-        //private async Task InsertThemeMotif()
-        //{
-        //    var addWindow = new AddThemeMotif();
-        //    bool? result = addWindow.ShowDialog();
+        private async Task InsertThemeMotif()
+        {
+            var addWindow = new AddThemeMotif();
+            bool? result = addWindow.ShowDialog();
 
-        //    if (result == true)
-        //        await LoadItems();
-        //}
+            if (result == true)
+                await LoadItems();
+        }
 
-        //private async Task EditThemeMotif(ThemeMotif item)
-        //{
-        //    if (item == null) return;
+        private async Task EditThemeMotif(ThemeMotif item)
+        {
+            if (item == null) return;
 
-        //    var editWindow = new EditThemeMotif(item);
-        //    bool? result = editWindow.ShowDialog();
+            var editWindow = new EditThemeMotif(item);
+            bool? result = editWindow.ShowDialog();
 
-        //    if (result == true)
-        //        await LoadItems();
-        //}
+            if (result == true)
+                await LoadItems();
+        }
 
         private async Task DeleteThemeMotif(ThemeMotif item)
         {
