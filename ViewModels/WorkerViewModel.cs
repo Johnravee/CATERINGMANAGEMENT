@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using CATERINGMANAGEMENT.DocumentsGenerator;
 using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.ViewModels
@@ -67,6 +68,9 @@ namespace CATERINGMANAGEMENT.ViewModels
         public ICommand AddWorkerCommand { get; set; }
         public ICommand NextPageCommand { get; set; }
         public ICommand PrevPageCommand { get; set; }
+        public ICommand ExportPdfCommand { get; set; }
+        public ICommand ExportCsvCommand { get; set; }
+
 
         public WorkerViewModel()
         {
@@ -76,6 +80,10 @@ namespace CATERINGMANAGEMENT.ViewModels
 
             NextPageCommand = new RelayCommand(async () => await NextPage(), () => CurrentPage < TotalPages);
             PrevPageCommand = new RelayCommand(async () => await PrevPage(), () => CurrentPage > 1);
+
+            ExportPdfCommand = new RelayCommand(ExportToPdf);
+            ExportCsvCommand = new RelayCommand(ExportToCsv);
+
         }
 
         // Load first page
@@ -155,18 +163,41 @@ namespace CATERINGMANAGEMENT.ViewModels
                 await LoadPage(CurrentPage - 1);
         }
 
-        // Filter
-        private void ApplySearchFilter()
+        //Search query
+        private async void ApplySearchFilter()
         {
             var query = _searchText?.Trim().ToLower() ?? "";
-            Items = string.IsNullOrWhiteSpace(query)
-                ? new ObservableCollection<Worker>(_workerItems)
-                : new ObservableCollection<Worker>(_workerItems.Where(w =>
-                    (!string.IsNullOrEmpty(w.Name) && w.Name.ToLower().Contains(query)) ||
-                    (!string.IsNullOrEmpty(w.Role) && w.Role.ToLower().Contains(query)) ||
-                    (!string.IsNullOrEmpty(w.Email) && w.Email.ToLower().Contains(query)) ||
-                    (!string.IsNullOrEmpty(w.Contact) && w.Contact.ToLower().Contains(query))
-                ));
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                Items = new ObservableCollection<Worker>(_workerItems);
+            }
+            else
+            {
+                try
+                {
+                    IsLoading = true;
+                    var client = await SupabaseService.GetClientAsync();
+
+                    var response = await client
+                        .From<Worker>()
+                        .Filter(x => x.Name, Operator.ILike, $"%{query}%")
+                        .Get();
+
+                    if (response.Models != null)
+                        Items = new ObservableCollection<Worker>(response.Models);
+                    else
+                        Items = new ObservableCollection<Worker>();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error searching equipment:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    IsLoading = false;
+                }
+            }
         }
 
         // Delete Worker
@@ -260,6 +291,82 @@ namespace CATERINGMANAGEMENT.ViewModels
                 MessageBox.Show($"Error adding worker:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+
+        private async Task ExportToPdf()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+
+                var response = await client
+                    .From<Worker>()
+                    .Order(x => x.CreatedAt, Ordering.Descending)
+                    .Get();
+                var workers = response.Models;
+
+                if (workers == null || workers.Count == 0)
+                {
+                    MessageBox.Show("No workers found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                DataGridToPdf.DataGridToPDF(
+                    workers,
+                    "Workers",
+                    "Id",               
+                    "BaseUrl",
+                    "RequestClientOptions",
+                    "TableName",
+                    "PrimaryKey",
+                    "CreatedAt",
+                    "HireDate"
+                );
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error exporting to PDF:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task ExportToCsv()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+
+                var response = await client
+                    .From<Worker>()
+                    .Order(x => x.CreatedAt, Ordering.Descending)
+                    .Get();
+                var workers = response.Models;
+
+                if (workers == null || workers.Count == 0)
+                {
+                    MessageBox.Show("No workers found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                DatagridToCsv.ExportToCsv(
+                    workers,
+                    "Workers",
+                    "Id",           
+                    "BaseUrl",
+                    "RequestClientOptions",
+                    "TableName",
+                    "PrimaryKey",
+                    "CreatedAt",
+                    "HireDate"
+                );
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error exporting to PDF:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
 
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>

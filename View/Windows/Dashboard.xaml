@@ -140,7 +140,7 @@
                                         <TextBlock Text="Packages" FontSize="16"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Style="{StaticResource SidebarIconButton}" ToolTip="Grazing">
+                                <Button Style="{StaticResource SidebarIconButton}" ToolTip="Grazing" Click="BtnGrazingOptions_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="Corn" Width="24" Height="24" Margin="0,0,12,0"/>
                                         <TextBlock Text="Grazing" FontSize="16"/>

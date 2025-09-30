@@ -198,10 +198,6 @@ public class AssignWorkersViewModel : INotifyPropertyChanged
         }
     }
 
-
-
-
-
     private void CloseWindow()
     {
         var win = Application.Current.Windows.OfType<AssignWorker>().FirstOrDefault();
