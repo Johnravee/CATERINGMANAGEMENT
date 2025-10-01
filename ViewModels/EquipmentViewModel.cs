@@ -143,10 +143,11 @@ namespace CATERINGMANAGEMENT.ViewModels
                         _equipmentItems.Add(item);
                 }
 
-                TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
+               
 
                 ApplySearchFilter();
                 await LoadEquipmentSummary();
+                UpdatePagination();
 
                 CurrentPage = pageNumber;
             }
@@ -238,7 +239,15 @@ namespace CATERINGMANAGEMENT.ViewModels
             }
         }
 
-      
+        private void UpdatePagination()
+        {
+
+            TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
+            OnPropertyChanged(nameof(CurrentPage));
+            OnPropertyChanged(nameof(TotalPages));
+        }
+
+
         private async Task DeleteEquipment(Equipment item)
         {
             if (item == null) return;

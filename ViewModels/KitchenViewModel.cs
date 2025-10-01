@@ -229,8 +229,8 @@ namespace CATERINGMANAGEMENT.ViewModels
 
         private void UpdatePagination()
         {
-            // Example: you might want to fetch total rows count from Supabase separately
-            TotalPages = (int)Math.Ceiling((double)100 / PageSize); // replace 100 with actual count if available
+         
+            TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize); 
             OnPropertyChanged(nameof(CurrentPage));
             OnPropertyChanged(nameof(TotalPages));
         }

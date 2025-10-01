@@ -24,7 +24,7 @@ namespace CATERINGMANAGEMENT.View.Windows
             DataContext = reservation;
         }
 
-        [Obsolete]
+
         private async void GenerateContractButton_Click(object sender, RoutedEventArgs e)
         {
             var saveDialog = new SaveFileDialog
@@ -98,14 +98,10 @@ namespace CATERINGMANAGEMENT.View.Windows
         }
 
 
-        private void ExitAppBtnHandler(object sender, MouseButtonEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            this.Close(); 
         }
 
-        private void MinimizeAppBtnHandler(object sender, MouseButtonEventArgs e)
-        {
-            this.WindowState = WindowState.Minimized;
-        }
     }
 }
