@@ -88,6 +88,10 @@ namespace CATERINGMANAGEMENT.View.Windows
             MainFrame.Navigate(new GrazingOptions());
         }
 
+        private void BtnFeedBack_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Feedback());
+        }
         private void ExitAppBtnHandler(object sender, MouseButtonEventArgs e)
         {
             Application.Current.Shutdown();

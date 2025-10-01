@@ -152,7 +152,7 @@
                                         <TextBlock Text="Grazing" FontSize="16"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Style="{StaticResource SidebarIconButton}" ToolTip="Feedbacks" Margin="0,8" >
+                                <Button Style="{StaticResource SidebarIconButton}" ToolTip="Feedbacks" Margin="0,8" Click="BtnFeedBack_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="MessageAlert" Width="24" Height="24" Margin="0,0,12,0"/>
                                         <TextBlock Text="Feedbacks" FontSize="16"/>
