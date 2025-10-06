@@ -5,84 +5,188 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
-      mc:Ignorable="d" 
-      d:DesignHeight="800" d:DesignWidth="1200"
+      mc:Ignorable="d"
       Title="Overview">
 
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="2*"/>
-        </Grid.RowDefinitions>
+    <Viewbox Stretch="Uniform">
+        <Grid Width="1300" Margin="0,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <!-- ================= KPI Cards ================= -->
-        <UniformGrid Grid.Row="0" Columns="4" Margin="0 0 0 20">
-            <!-- Card 1 -->
-            <materialDesign:Card Padding="16" Margin="8" Background="#673AB7" Foreground="White">
-                <StackPanel>
-                    <TextBlock Text="Total Reservations" FontSize="16" FontWeight="Bold"/>
-                    <TextBlock Text="124" FontSize="28" FontWeight="Bold"/>
+            <!-- 🟪 HEADER -->
+            <DockPanel Margin="0,0,0,20" LastChildFill="False">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <Border Width="40" Height="40" CornerRadius="20" Background="#EDE7F6"
+                            HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <materialDesign:PackIcon Kind="ViewDashboard" Width="22" Height="22"
+                                                 Foreground="#673AB7"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel>
+                        <TextBlock Text="Dashboard Overview" FontSize="26" FontWeight="Bold" Foreground="#333"/>
+                        <TextBlock Text="Here’s your catering report summary so far" FontSize="14" Foreground="#777"/>
+                    </StackPanel>
                 </StackPanel>
-            </materialDesign:Card>
 
-            <!-- Card 2 -->
-            <materialDesign:Card Padding="16" Margin="8" Background="#4CAF50" Foreground="White">
-                <StackPanel>
-                    <TextBlock Text="Upcoming Events" FontSize="16" FontWeight="Bold"/>
-                    <TextBlock Text="6" FontSize="28" FontWeight="Bold"/>
-                </StackPanel>
-            </materialDesign:Card>
+                <Button DockPanel.Dock="Right"
+                        Width="130"
+                        Height="38"
+                        Background="#673AB7"
+                        Foreground="White"
+                        FontWeight="SemiBold"
+                        Cursor="Hand"
+                        Content="View Reports"
+                        Style="{StaticResource MaterialDesignRaisedButton}" />
+            </DockPanel>
 
-            <!-- Card 3 -->
-            <materialDesign:Card Padding="16" Margin="8" Background="#2196F3" Foreground="White">
-                <StackPanel>
-                    <TextBlock Text="Available Inventory" FontSize="16" FontWeight="Bold"/>
-                    <TextBlock Text="358" FontSize="28" FontWeight="Bold"/>
-                </StackPanel>
-            </materialDesign:Card>
+            <!-- 🟦 TOP SECTION -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.3*"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
 
-            <!-- Card 4 -->
-            <materialDesign:Card Padding="16" Margin="8" Background="#FF9800" Foreground="White">
-                <StackPanel>
-                    <TextBlock Text="Pending Payments" FontSize="16" FontWeight="Bold"/>
-                    <TextBlock Text="₱5,200" FontSize="28" FontWeight="Bold"/>
-                </StackPanel>
-            </materialDesign:Card>
-        </UniformGrid>
+                <!-- 🟩 LEFT: KPI CARDS with WrapPanel -->
+                <WrapPanel Grid.Column="0" Margin="0,0,16,0">
+                    <!-- Copy each card below and paste inside WrapPanel -->
+                    <!-- Example Card -->
+                    <Border Background="#E3F2FD" CornerRadius="10" Padding="18" Margin="6" Width="220" Height="200">
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="ToolboxOutline"
+                                                         Width="24" Height="24" Margin="0,0,8,0"
+                                                         Foreground="#1976D2" VerticalAlignment="Center"/>
+                                <TextBlock Text="Equipment" FontSize="18" FontWeight="SemiBold" Foreground="#1565C0"/>
+                            </StackPanel>
+                            <TextBlock Text="20" FontSize="34" FontWeight="Bold" Foreground="#0D47A1" Margin="0,0,0,6"/>
+                            <TextBlock Text="+3.5% maintenance ready" FontSize="13" Foreground="#4CAF50"/>
+                        </StackPanel>
+                    </Border>
 
-        <!-- ================= Charts ================= -->
-        <Grid Grid.Row="1" Margin="0 0 0 20">
-            <materialDesign:Card Padding="16" Margin="8">
-                <StackPanel>
-                    <TextBlock Text="Reservations per Month" FontSize="18" FontWeight="Bold" Margin="0 0 0 10"/>
+                    <!-- Add the rest of KPI cards in the same style... -->
 
-                    <!-- LiveCharts 2 Binding -->
-                    <lvc:CartesianChart Height="250"
-                                        Series="{Binding ReservationSeries}"
-                                        XAxes="{Binding XAxes}"
-                                        YAxes="{Binding YAxes}" />
-                </StackPanel>
-            </materialDesign:Card>
+                    <Border Background="#E8F5E9" CornerRadius="10" Padding="18" Margin="6" Width="220" Height="200">
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountGroup"
+                                                         Width="24" Height="24" Margin="0,0,8,0"
+                                                         Foreground="#2E7D32" VerticalAlignment="Center"/>
+                                <TextBlock Text="Workers" FontSize="18" FontWeight="SemiBold" Foreground="#2E7D32"/>
+                            </StackPanel>
+                            <TextBlock Text="40" FontSize="34" FontWeight="Bold" Foreground="#1B5E20" Margin="0,0,0,6"/>
+                            <TextBlock Text="+2.1% this month" FontSize="13" Foreground="#4CAF50"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#FFF3E0" CornerRadius="10" Padding="18" Margin="6" Width="220" Height="200">
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="SilverwareForkKnife"
+                                                         Width="24" Height="24" Margin="0,0,8,0"
+                                                         Foreground="#FB8C00" VerticalAlignment="Center"/>
+                                <TextBlock Text="Kitchens" FontSize="18" FontWeight="SemiBold" Foreground="#FB8C00"/>
+                            </StackPanel>
+                            <TextBlock Text="333" FontSize="34" FontWeight="Bold" Foreground="#E65100" Margin="0,0,0,6"/>
+                            <TextBlock Text="+1.8% active" FontSize="13" Foreground="#4CAF50"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#F3E5F5" CornerRadius="10" Padding="18" Margin="6" Width="220" Height="200">
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="CalendarCheck"
+                                                         Width="24" Height="24" Margin="0,0,8,0"
+                                                         Foreground="#8E24AA" VerticalAlignment="Center"/>
+                                <TextBlock Text="Reservations" FontSize="18" FontWeight="SemiBold" Foreground="#8E24AA"/>
+                            </StackPanel>
+                            <TextBlock Text="500" FontSize="34" FontWeight="Bold" Foreground="#6A1B9A" Margin="0,0,0,6"/>
+                            <TextBlock Text="+5.7% compared to last month" FontSize="13" Foreground="#4CAF50"/>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+
+                <!-- 🟦 RIGHT: Reservation Chart -->
+                <materialDesign:Card Grid.Column="1" Padding="18" Margin="8,0,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+                            <TextBlock Text="Year:" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>
+                            <ComboBox
+                                Width="140"
+                                ItemsSource="{Binding AvailableYears}"
+                                SelectedItem="{Binding SelectedYear, Mode=TwoWay}"
+                                materialDesign:HintAssist.Hint="Select Year"
+                                Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Reservations per Month" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
+                        <lvc:CartesianChart
+                            Height="260"
+                            Series="{Binding ReservationSeries}"
+                            XAxes="{Binding XAxes}"
+                            YAxes="{Binding YAxes}" />
+                    </StackPanel>
+                </materialDesign:Card>
+            </Grid>
+
+            <!-- 🟨 BOTTOM SECTION -->
+            <Grid Grid.Row="2" Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="1.3*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT: Recent Reservations -->
+                <materialDesign:Card Grid.Column="0" Padding="16" Margin="8">
+                    <StackPanel>
+                        <TextBlock Text="Recent Reservations" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <DataGrid
+                            ItemsSource="{Binding RecentReservations}"
+                            AutoGenerateColumns="False"
+                            CanUserAddRows="False"
+                            HeadersVisibility="Column"
+                            RowHeight="30"
+                            GridLinesVisibility="None"
+                            AlternatingRowBackground="#F5F5F5">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Client" Binding="{Binding ClientName}" Width="*"/>
+                                <DataGridTextColumn Header="Date" Binding="{Binding ReservationDate}" Width="*"/>
+                                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- RIGHT: Event Type Distribution -->
+                <materialDesign:Card Grid.Column="1" Padding="24" Margin="8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Event Type Distribution"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,10"/>
+
+                        <Grid Grid.Row="1"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              MinHeight="250"
+                              MinWidth="250">
+                            <lvc:PieChart
+                                Series="{Binding EventTypeSeries}"
+                                LegendPosition="Bottom"
+                                LegendTextSize="13"
+                                Height="300"
+                                Width="300" />
+                        </Grid>
+                    </Grid>
+                </materialDesign:Card>
+            </Grid>
         </Grid>
-
-        <!-- ================= Table ================= -->
-        <Grid Grid.Row="2">
-            <materialDesign:Card Padding="16" Margin="8">
-                <StackPanel>
-                    <TextBlock Text="Upcoming Reservations" FontSize="18" FontWeight="Bold" Margin="0 0 0 10"/>
-                    <DataGrid AutoGenerateColumns="False"
-                              HeadersVisibility="Column"
-                              CanUserAddRows="False">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Event Date" Binding="{Binding EventDate}"/>
-                            <DataGridTextColumn Header="Client Name" Binding="{Binding ClientName}"/>
-                            <DataGridTextColumn Header="Package" Binding="{Binding PackageName}"/>
-                            <DataGridTextColumn Header="Status" Binding="{Binding Status}"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </StackPanel>
-            </materialDesign:Card>
-        </Grid>
-    </Grid>
+    </Viewbox>
 </Page>
