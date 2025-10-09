@@ -1,6 +1,7 @@
-﻿using CATERINGMANAGEMENT.ViewModels;
-using System.Windows.Controls;
+﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+using CATERINGMANAGEMENT.ViewModels;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace CATERINGMANAGEMENT.View.Pages
 {
@@ -19,6 +20,8 @@ namespace CATERINGMANAGEMENT.View.Pages
             DataContext = _viewModel;
 
         }
+
+      
 
     }
 }

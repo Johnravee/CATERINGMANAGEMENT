@@ -77,7 +77,7 @@
 
 
 
-    <Grid Margin="20">
+        <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Title + New Item -->
@@ -298,53 +298,53 @@
         </Border>
 
         <!-- Pagination -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <TextBlock Text="Export Data as"
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <TextBlock Text="Export Data as"
             FontWeight="Medium"
             Foreground="#333"
             Margin="0,0,20,0"
             VerticalAlignment="Center"/>
-            <!-- CSV Button -->
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportCsvCommand}" Click="ExportAsCsv">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="FileCsv" Width="16" Height="16" Margin="0,0,4,0"/>
-                    <TextBlock Text="CSV"/>
-                </StackPanel>
-            </Button>
+                <!-- CSV Button -->
+                <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportCsvCommand}" Click="ExportAsCsv">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FileCsv" Width="16" Height="16" Margin="0,0,4,0"/>
+                        <TextBlock Text="CSV"/>
+                    </StackPanel>
+                </Button>
 
-            <!-- PDF Button -->
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportPdfCommand}" Click="ExportAsPDF">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="FileDocument" Width="16" Height="16" Margin="0,0,4,0"/>
-                    <TextBlock Text="PDF"/>
-                </StackPanel>
-            </Button>
+                <!-- PDF Button -->
+                <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportPdfCommand}" Click="ExportAsPDF">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FileDocument" Width="16" Height="16" Margin="0,0,4,0"/>
+                        <TextBlock Text="PDF"/>
+                    </StackPanel>
+                </Button>
 
-            <!-- Pagination Controls -->
-            <Button Style="{StaticResource ModernFlatButton}" 
+                <!-- Pagination Controls -->
+                <Button Style="{StaticResource ModernFlatButton}" 
                     Width="80" 
                     Command="{Binding PrevPageCommand}">
                     <TextBlock Text="Prev"/>
-            </Button>
+                </Button>
 
-            <TextBlock Text="{Binding CurrentPage}" 
+                <TextBlock Text="{Binding CurrentPage}" 
                    FontWeight="Bold" 
                    VerticalAlignment="Center"
                    Margin="10,0"/>
-            <TextBlock Text=" / " 
+                <TextBlock Text=" / " 
                        FontWeight="Bold" 
                        VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding TotalPages}" 
+                <TextBlock Text="{Binding TotalPages}" 
                        FontWeight="Bold" 
                        VerticalAlignment="Center"
                        Margin="10,0"/>
 
-            <Button Style="{StaticResource ModernFlatButton}" 
+                <Button Style="{StaticResource ModernFlatButton}" 
                     Width="80" 
                     Command="{Binding NextPageCommand}" >
-                                    <TextBlock Text="Next"/>
-            </Button>
-        </StackPanel>
+                    <TextBlock Text="Next"/>
+                </Button>
+            </StackPanel>
+        </Grid>
 
-    </Grid>
 </Page>

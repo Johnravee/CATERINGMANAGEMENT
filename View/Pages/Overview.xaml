@@ -8,8 +8,46 @@
       mc:Ignorable="d"
       Title="Overview">
 
+    <Page.Resources>
+        <materialDesign:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+        <Style x:Key="CenteredCellStyle" TargetType="DataGridCell">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#D1C4E9"/>
+                    <Setter Property="Foreground" Value="Black"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CenteredHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="#512DA8"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style x:Key="CenteredTextStyle" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="MaxWidth" Value="250"/>
+        </Style>
+    </Page.Resources>
+
+
     <Viewbox Stretch="Uniform">
-        <Grid Width="1300" Margin="0,20">
+        <Grid Width="1500" Margin="0,20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -26,7 +64,7 @@
                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel>
-                        <TextBlock Text="Dashboard Overview" FontSize="26" FontWeight="Bold" Foreground="#333"/>
+                        <TextBlock Text="Dashboard" FontSize="26" FontWeight="Bold" Foreground="#333"/>
                         <TextBlock Text="Here’s your catering report summary so far" FontSize="14" Foreground="#777"/>
                     </StackPanel>
                 </StackPanel>
@@ -38,14 +76,15 @@
                         Foreground="White"
                         FontWeight="SemiBold"
                         Cursor="Hand"
-                        Content="View Reports"
-                        Style="{StaticResource MaterialDesignRaisedButton}" />
+                        Content="PDF Report"
+                        
+                        Style="{StaticResource MaterialDesignRaisedButton}"  />
             </DockPanel>
 
             <!-- 🟦 TOP SECTION -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.3*"/>
+                    <ColumnDefinition Width="1.2*"/>
                     <ColumnDefinition Width="2*"/>
                 </Grid.ColumnDefinitions>
 
@@ -53,7 +92,7 @@
                 <WrapPanel Grid.Column="0" Margin="0,0,16,0">
                     <!-- Copy each card below and paste inside WrapPanel -->
                     <!-- Example Card -->
-                    <Border Background="#E3F2FD" CornerRadius="10" Padding="18" Margin="6" Width="220" Height="200">
+                    <Border Background="#E3F2FD" CornerRadius="10" Padding="18" Margin="6" Width="250" Height="200">
                         <StackPanel VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="ToolboxOutline"
@@ -61,14 +100,14 @@
                                                          Foreground="#1976D2" VerticalAlignment="Center"/>
                                 <TextBlock Text="Equipment" FontSize="18" FontWeight="SemiBold" Foreground="#1565C0"/>
                             </StackPanel>
-                            <TextBlock Text="20" FontSize="34" FontWeight="Bold" Foreground="#0D47A1" Margin="0,0,0,6"/>
-                            <TextBlock Text="+3.5% maintenance ready" FontSize="13" Foreground="#4CAF50"/>
+                            <TextBlock Text="{Binding DashboardCounters.TotalEquipments}" FontSize="34" FontWeight="Bold" Foreground="#0D47A1" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding DashboardCounters.DamagedEquipment, StringFormat={}{0} Damaged equipments}" Margin="0,10" FontSize="13" Foreground="#4CAF50"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Add the rest of KPI cards in the same style... -->
 
-                    <Border Background="#E8F5E9" CornerRadius="10" Padding="18" Margin="6" Width="220" Height="200">
+                    <Border Background="#E8F5E9" CornerRadius="10" Padding="18" Margin="6" Width="250" Height="200">
                         <StackPanel VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="AccountGroup"
@@ -76,12 +115,12 @@
                                                          Foreground="#2E7D32" VerticalAlignment="Center"/>
                                 <TextBlock Text="Workers" FontSize="18" FontWeight="SemiBold" Foreground="#2E7D32"/>
                             </StackPanel>
-                            <TextBlock Text="40" FontSize="34" FontWeight="Bold" Foreground="#1B5E20" Margin="0,0,0,6"/>
-                            <TextBlock Text="+2.1% this month" FontSize="13" Foreground="#4CAF50"/>
+                            <TextBlock Text="{Binding DashboardCounters.TotalWorkers}" FontSize="34" FontWeight="Bold" Foreground="#1B5E20" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding DashboardCounters.ActiveWorkers,  StringFormat={}{0} Active workers}"  FontSize="13" Foreground="#4CAF50" Margin="0,10"/>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#FFF3E0" CornerRadius="10" Padding="18" Margin="6" Width="220" Height="200">
+                    <Border Background="#FFF3E0" CornerRadius="10" Padding="18" Margin="6" Width="250" Height="200">
                         <StackPanel VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="SilverwareForkKnife"
@@ -89,12 +128,12 @@
                                                          Foreground="#FB8C00" VerticalAlignment="Center"/>
                                 <TextBlock Text="Kitchens" FontSize="18" FontWeight="SemiBold" Foreground="#FB8C00"/>
                             </StackPanel>
-                            <TextBlock Text="333" FontSize="34" FontWeight="Bold" Foreground="#E65100" Margin="0,0,0,6"/>
-                            <TextBlock Text="+1.8% active" FontSize="13" Foreground="#4CAF50"/>
+                            <TextBlock Text="{Binding DashboardCounters.TotalKitchenItems}" FontSize="34" FontWeight="Bold" Foreground="#E65100" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding DashboardCounters.KitchenLowStock,  StringFormat={}{0} Low stocks}" Margin="0,10" FontSize="13" Foreground="#4CAF50"/>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#F3E5F5" CornerRadius="10" Padding="18" Margin="6" Width="220" Height="200">
+                    <Border Background="#F3E5F5" CornerRadius="10" Padding="18" Margin="6" Width="250" Height="200">
                         <StackPanel VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="CalendarCheck"
@@ -102,8 +141,8 @@
                                                          Foreground="#8E24AA" VerticalAlignment="Center"/>
                                 <TextBlock Text="Reservations" FontSize="18" FontWeight="SemiBold" Foreground="#8E24AA"/>
                             </StackPanel>
-                            <TextBlock Text="500" FontSize="34" FontWeight="Bold" Foreground="#6A1B9A" Margin="0,0,0,6"/>
-                            <TextBlock Text="+5.7% compared to last month" FontSize="13" Foreground="#4CAF50"/>
+                            <TextBlock Text="{Binding DashboardCounters.TotalReservations}" FontSize="34" FontWeight="Bold" Foreground="#6A1B9A" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding DashboardCounters.PendingReservations,  StringFormat={}{0} Pending reservations}" Margin="0,10" FontSize="13" Foreground="#4CAF50"/>
                         </StackPanel>
                     </Border>
                 </WrapPanel>
@@ -123,6 +162,7 @@
 
                         <TextBlock Text="Reservations per Month" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
                         <lvc:CartesianChart
+                            x:Name="ReservationChartControl"
                             Height="260"
                             Series="{Binding ReservationSeries}"
                             XAxes="{Binding XAxes}"
@@ -141,23 +181,52 @@
                 <!-- LEFT: Recent Reservations -->
                 <materialDesign:Card Grid.Column="0" Padding="16" Margin="8">
                     <StackPanel>
-                        <TextBlock Text="Recent Reservations" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <TextBlock Text="Upcoming Reservations"
+                   FontSize="20"
+                   FontWeight="Bold"
+                   Foreground="#333"
+                   Margin="0,0,0,12"/>
+
                         <DataGrid
-                            ItemsSource="{Binding RecentReservations}"
-                            AutoGenerateColumns="False"
-                            CanUserAddRows="False"
-                            HeadersVisibility="Column"
-                            RowHeight="30"
-                            GridLinesVisibility="None"
-                            AlternatingRowBackground="#F5F5F5">
+                        ItemsSource="{Binding UpcomingReservation}"
+                        AutoGenerateColumns="False"
+                        CanUserAddRows="False"
+                        IsReadOnly="True"
+                        HeadersVisibility="Column"
+                        AlternatingRowBackground="#F0F0F0"
+                        Background="White"
+                        RowHeight="40"
+                        ColumnHeaderHeight="40"
+                        FontSize="14"
+                        FontFamily="Calibri"
+                        GridLinesVisibility="None"
+                        SelectionMode="Single"
+                        SelectionUnit="FullRow"
+                        BorderThickness="0"
+                        CellStyle="{StaticResource CenteredCellStyle}"
+                        ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}">
+
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Client" Binding="{Binding ClientName}" Width="*"/>
-                                <DataGridTextColumn Header="Date" Binding="{Binding ReservationDate}" Width="*"/>
-                                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*"/>
+                                <DataGridTextColumn Header="Receipt No."
+                                    Binding="{Binding ReceiptNumber}"
+                                    Width="*"
+                                    ElementStyle="{StaticResource CenteredTextStyle}"/>
+
+                                <DataGridTextColumn Header="Venue"
+                                    Binding="{Binding Venue}"
+                                    Width="*"
+                                    ElementStyle="{StaticResource CenteredTextStyle}"/>
+
+                                <DataGridTextColumn Header="Date"
+                                    Binding="{Binding EventDate, StringFormat='{}{0:MMMM dd, yyyy}'}"
+                                    Width="*"
+                                    ElementStyle="{StaticResource CenteredTextStyle}"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
                 </materialDesign:Card>
+
+
 
                 <!-- RIGHT: Event Type Distribution -->
                 <materialDesign:Card Grid.Column="1" Padding="24" Margin="8">
@@ -178,6 +247,7 @@
                               MinHeight="250"
                               MinWidth="250">
                             <lvc:PieChart
+                                x:Name="EventTypeChartControl"
                                 Series="{Binding EventTypeSeries}"
                                 LegendPosition="Bottom"
                                 LegendTextSize="13"

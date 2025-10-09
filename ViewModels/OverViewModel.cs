@@ -1,4 +1,6 @@
-﻿using CATERINGMANAGEMENT.Models;
+﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+using CATERINGMANAGEMENT.Helpers;
+using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
@@ -11,25 +13,26 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels
 {
     public class OverviewViewModel : INotifyPropertyChanged
     {
-        // Monthly Reservations
-        public ObservableCollection<MonthlyReservationSummary> MonthlyReservationSummaries { get; set; } = new();
+        // ===============================
+        // PROPERTIES
+        // ===============================
 
+        public ObservableCollection<MonthlyReservationSummary> MonthlyReservationSummaries { get; set; } = new();
         private ObservableCollection<MonthlyReservationSummary> _filteredSummaries = new();
 
-        public ISeries[] ReservationSeries { get; set; } = Array.Empty<ISeries>();
-        public Axis[] XAxes { get; set; } = Array.Empty<Axis>();
-        public Axis[] YAxes { get; set; } = Array.Empty<Axis>();
+        public ISeries[] ReservationSeries { get; private set; } = Array.Empty<ISeries>();
+        public Axis[] XAxes { get; private set; } = Array.Empty<Axis>();
+        public Axis[] YAxes { get; private set; } = Array.Empty<Axis>();
 
-        // Doughnut Chart (Event Type Distribution)
-        public ISeries[] EventTypeSeries { get; set; } = Array.Empty<ISeries>();
-        public string[] EventTypeLabels { get; set; } = Array.Empty<string>();
+        public ISeries[] EventTypeSeries { get; private set; } = Array.Empty<ISeries>();
 
-        // Year Selection
         private ObservableCollection<int> _availableYears = new();
         public ObservableCollection<int> AvailableYears
         {
@@ -52,11 +55,98 @@ namespace CATERINGMANAGEMENT.ViewModels
             }
         }
 
+        // ============= COUNTERS ================
+        private DashboardCounters _dashboardCounters = new DashboardCounters();
+        public DashboardCounters DashboardCounters
+        {
+            get => _dashboardCounters;
+            set
+            {
+                _dashboardCounters = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // ============= UPCOMING RESERVATION ================
+        private ObservableCollection<Reservation> _upcomingreservation = new();
+        public ObservableCollection<Reservation> UpcomingReservation
+        {
+            get => _upcomingreservation;
+            set
+            {
+                _upcomingreservation = value;
+                OnPropertyChanged();
+            }
+        }
+
+
+  
+
+        // ===============================
+        // CONSTRUCTOR
+        // ===============================
         public OverviewViewModel()
         {
+ 
+            _ = LoadDashboardCountersAsync();
             _ = LoadMonthlyReservationsAsync();
             _ = LoadEventTypeDistributionAsync();
+            _ = LoadUpcomingReservationsAsync();
         }
+
+      
+
+
+
+        // ===============================
+        // LOAD DASHBOARD COUNTERS
+        // ===============================
+        private async Task LoadDashboardCountersAsync()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+                var response = await client
+                    .From<DashboardCounters>()
+                    .Get();
+
+                var counters = response.Models.FirstOrDefault();
+
+                if (counters != null)
+                {
+                    DashboardCounters = counters;
+                    OnPropertyChanged(nameof(DashboardCounters));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading DashboardCounter reservations: {ex.Message}");
+            }
+        }
+
+        private async Task LoadUpcomingReservationsAsync()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+                var response = await client
+                    .From<Reservation>()
+                    .Select(@"id, receipt_number, event_date, venue")
+                    .Where( x => x.Status == "completed")
+                    .Get();
+
+                if (response.Models is not null)
+                {
+                    UpcomingReservation = new ObservableCollection<Reservation>(response.Models);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading completed reservations: {ex.Message}");
+            }
+        }
+
+
 
         // ===============================
         // MONTHLY RESERVATION CHART
@@ -66,9 +156,13 @@ namespace CATERINGMANAGEMENT.ViewModels
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-                var response = await client
-                    .From<MonthlyReservationSummary>()
-                    .Get();
+                var response = await client.From<MonthlyReservationSummary>().Get();
+
+                if (response?.Models == null)
+                {
+                    Console.WriteLine("[OverviewViewModel] LoadMonthlyReservationsAsync: no data returned.");
+                    return;
+                }
 
                 MonthlyReservationSummaries.Clear();
                 foreach (var item in response.Models)
@@ -84,24 +178,28 @@ namespace CATERINGMANAGEMENT.ViewModels
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[OverviewViewModel] Error loading reservations: {ex.Message}");
+                Console.WriteLine("[OverviewViewModel] Error in LoadMonthlyReservationsAsync (MonthlyReservationSummary): " + ex.Message);
             }
         }
 
         private void FilterByYear()
         {
+            if (MonthlyReservationSummaries.Count == 0)
+                return;
+
             _filteredSummaries = new ObservableCollection<MonthlyReservationSummary>(
                 MonthlyReservationSummaries
                     .Where(x => x.ReservationYear == SelectedYear)
                     .OrderBy(x => x.ReservationMonth)
             );
 
-            SetupChart();
+            SetupReservationChart();
         }
 
-        private void SetupChart()
+        private void SetupReservationChart()
         {
-            if (_filteredSummaries.Count == 0) return;
+            if (_filteredSummaries.Count == 0)
+                return;
 
             var labels = _filteredSummaries
                 .Select(x => CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(x.ReservationMonth))
@@ -150,21 +248,25 @@ namespace CATERINGMANAGEMENT.ViewModels
         }
 
         // ===============================
-        // EVENT TYPE DISTRIBUTION (DOUGHNUT)
+        // LOAD EVENT TYPE DISTRIBUTION
         // ===============================
         private async Task LoadEventTypeDistributionAsync()
         {
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-
                 var response = await client
                     .From<Reservation>()
-                    .Select("*, package:package_id(name)") // assuming event type is from Package.Name
+                    .Select("*, package:package_id(name)")
                     .Get();
 
                 var reservations = response.Models;
-                if (reservations.Count == 0) return;
+
+                if (reservations == null || reservations.Count == 0)
+                {
+                    Console.WriteLine("[OverviewViewModel] LoadEventTypeDistributionAsync: no reservations data.");
+                    return;
+                }
 
                 var eventTypeGroups = reservations
                     .Where(r => r.Package != null)
@@ -173,19 +275,18 @@ namespace CATERINGMANAGEMENT.ViewModels
                     .ToList();
 
                 var totalCount = eventTypeGroups.Sum(x => x.Count);
+                if (totalCount == 0) return;
 
-                // Material-inspired color palette
                 SKColor[] palette =
                 {
-            SKColor.Parse("#5B6AC9"),
-            SKColor.Parse("#7C83FD"),
-            SKColor.Parse("#96BAFF"),
-            SKColor.Parse("#B4F8C8"),
-            SKColor.Parse("#FFB4B4"),
-            SKColor.Parse("#FFD580")
-        };
+                    SKColor.Parse("#5B6AC9"),
+                    SKColor.Parse("#7C83FD"),
+                    SKColor.Parse("#96BAFF"),
+                    SKColor.Parse("#B4F8C8"),
+                    SKColor.Parse("#FFB4B4"),
+                    SKColor.Parse("#FFD580")
+                };
 
-                // Create pie series (no InnerRadius = full pie)
                 EventTypeSeries = eventTypeGroups
                     .Select((item, index) => new PieSeries<double>
                     {
@@ -195,12 +296,7 @@ namespace CATERINGMANAGEMENT.ViewModels
                         Stroke = new SolidColorPaint(SKColors.White) { StrokeThickness = 3 },
                         DataLabelsPaint = new SolidColorPaint(SKColors.White),
                         DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Middle,
-                        // Label displays event type and percentage
-                        DataLabelsFormatter = point =>
-                        {
-                            double percent = (point.Coordinate.PrimaryValue / totalCount) * 100;
-                            return $"{item.EventType}";
-                        }
+                        DataLabelsFormatter = point => item.EventType
                     })
                     .ToArray();
 
@@ -208,11 +304,9 @@ namespace CATERINGMANAGEMENT.ViewModels
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[OverviewViewModel] Error loading event type distribution: {ex.Message}");
+                Console.WriteLine("[OverviewViewModel] Error in LoadEventTypeDistributionAsync (Reservation view): " + ex.Message);
             }
         }
-
-
 
         // ===============================
         // INotifyPropertyChanged
