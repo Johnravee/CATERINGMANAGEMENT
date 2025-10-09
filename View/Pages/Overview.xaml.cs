@@ -1,6 +1,5 @@
 ﻿using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.ViewModels;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 
 namespace CATERINGMANAGEMENT.View.Pages
@@ -13,15 +12,13 @@ namespace CATERINGMANAGEMENT.View.Pages
         {
             InitializeComponent();
 
-        
             _viewModel = new OverviewViewModel();
 
-            
+            // Assign chart controls from XAML to ViewModel
+            _viewModel.ReservationChartElement = ReservationChart;
+            _viewModel.EventTypeChartElement = EventTypeChart;
+
             DataContext = _viewModel;
-
         }
-
-      
-
     }
 }
