@@ -3,9 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:viewmodel="clr-namespace:CATERINGMANAGEMENT.ViewModels"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-      xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
       mc:Ignorable="d"
       Background="#FAFAFA"
       FontFamily="Calibri"
@@ -277,7 +275,7 @@
                    VerticalAlignment="Center"/>
             
             <!-- Export CSV -->
-            <Button Style="{StaticResource ModernFlatButton}" Width="90" Margin="0,0,10,0" Click="ExportAsCsv">
+            <Button Style="{StaticResource ModernFlatButton}" Width="90" Margin="0,0,10,0" Command="{Binding ExportCsvCommand}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileCsv" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="CSV"/>
@@ -285,7 +283,7 @@
             </Button>
 
             <!-- Export PDF -->
-            <Button Style="{StaticResource ModernFlatButton}" Width="90" Margin="0,0,10,0" Click="ExportAsPDF">
+            <Button Style="{StaticResource ModernFlatButton}" Width="90" Margin="0,0,10,0" Command="{Binding ExportPdfCommand}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileDocument" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="PDF"/>

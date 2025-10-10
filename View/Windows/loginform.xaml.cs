@@ -1,7 +1,7 @@
 ﻿using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.View.Windows;
-using CATERINGMANAGEMENT.ViewModels;
+using CATERINGMANAGEMENT.ViewModels.AuthVM;
 using System;
 using System.Collections.Generic;
 using System.Linq;

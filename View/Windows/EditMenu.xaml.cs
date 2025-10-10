@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.ViewModels;
+using CATERINGMANAGEMENT.ViewModels.MenuVM;
 
 namespace CATERINGMANAGEMENT.View.Windows
 {

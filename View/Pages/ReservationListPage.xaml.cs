@@ -1,5 +1,4 @@
-﻿using CATERINGMANAGEMENT.ViewModel;
-
+﻿using CATERINGMANAGEMENT.ViewModels.ReservationVM;
 using System.Windows.Controls;
 
 namespace CATERINGMANAGEMENT.View.Pages

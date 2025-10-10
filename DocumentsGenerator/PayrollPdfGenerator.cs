@@ -1,7 +1,10 @@
-﻿using PdfSharp.Pdf;
-using PdfSharp.Drawing;
-using CATERINGMANAGEMENT.Models;
+﻿using CATERINGMANAGEMENT.Models;
 using Microsoft.Win32;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 
@@ -28,21 +31,27 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
             {
                 var page = doc.AddPage();
                 page.Orientation = PdfSharp.PageOrientation.Landscape;
-
                 var gfx = XGraphics.FromPdfPage(page);
+
                 double margin = 40;
                 double y = margin;
                 double contentWidth = page.Width - 2 * margin;
                 double lineHeight = 25;
 
+                // === Fonts ===
                 var titleFont = new XFont("Arial", 18, XFontStyleEx.Bold);
                 var subTitleFont = new XFont("Arial", 14, XFontStyleEx.Bold);
                 var headerFont = new XFont("Arial", 12, XFontStyleEx.Bold);
                 var font = new XFont("Arial", 11);
 
-                // --- Logo and Title Section ---
+                // === Colors ===
+                var headerColor = XColor.FromArgb(204, 163, 0); // golden yellow
+                var darkHeaderColor = XColor.FromArgb(153, 122, 0);
+                var headerBrush = new XSolidBrush(darkHeaderColor);
+
+                // === Logo and Company Info ===
                 string logoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "images", "oshdylogo.jpg");
-                double logoWidth = 80;
+                double logoWidth = 70;
                 double logoHeight = 0;
 
                 if (File.Exists(logoPath))
@@ -52,28 +61,28 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
                     gfx.DrawImage(logo, margin, y, logoWidth, logoHeight);
                 }
 
-                // Position the title text to the right of the logo
-                double textX = margin + logoWidth + 20;
+                double textX = margin + logoWidth + 15;
                 double textWidth = page.Width - textX - margin;
 
-                // Draw company name
                 gfx.DrawString("OSHDY Event Catering Services", titleFont, XBrushes.Black,
                     new XRect(textX, y, textWidth, 30), XStringFormats.TopLeft);
                 y += 30;
 
-                // Draw payroll report subtitle
                 gfx.DrawString("Payroll Report", subTitleFont, XBrushes.Black,
                     new XRect(textX, y, textWidth, 25), XStringFormats.TopLeft);
 
-                y += Math.Max(logoHeight, 50); // move below logo if logo is taller
+                y += Math.Max(logoHeight, 50) + 10;
 
-                // --- Payroll Details ---
-                gfx.DrawString($"Reservation: {reservationReceipt}", font, XBrushes.Black, new XPoint(margin, y)); y += lineHeight;
-                gfx.DrawString($"Event Date: {eventDate:MMMM dd, yyyy}", font, XBrushes.Black, new XPoint(margin, y)); y += 30;
+                // === Payroll Info ===
+                gfx.DrawString($"Reservation: {reservationReceipt}", font, XBrushes.Black, new XPoint(margin, y));
+                y += lineHeight;
+                gfx.DrawString($"Event Date: {eventDate:MMMM dd, yyyy}", font, XBrushes.Black, new XPoint(margin, y));
+                y += 30;
 
-                // --- Table Headers ---
+                // === Table Headers ===
                 string[] headers = { "Worker Name", "Role", "Salary" };
-                double[] colWidths = {
+                double[] colWidths =
+                {
                     contentWidth * 0.45,
                     contentWidth * 0.35,
                     contentWidth * 0.20
@@ -84,8 +93,8 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
                     double x = margin;
                     for (int i = 0; i < headers.Length; i++)
                     {
-                        gfx.DrawRectangle(XPens.Black, XBrushes.LightGray, x, y, colWidths[i], lineHeight);
-                        gfx.DrawString(headers[i], headerFont, XBrushes.Black,
+                        gfx.DrawRectangle(XPens.Black, headerBrush, x, y, colWidths[i], lineHeight);
+                        gfx.DrawString(headers[i], headerFont, XBrushes.White,
                             new XRect(x + 5, y + 5, colWidths[i] - 10, lineHeight), XStringFormats.TopLeft);
                         x += colWidths[i];
                     }
@@ -111,7 +120,7 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
                     y += lineHeight;
                 }
 
-                // --- Table Content ---
+                // === Draw Table ===
                 DrawTableHeader();
 
                 decimal total = 0;
@@ -127,23 +136,32 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
                         DrawTableHeader();
                     }
 
-                    string workerName = payroll.Worker.Name;
-                    string role = payroll.Worker.Role ?? "-";
+                    string workerName = payroll.Worker?.Name ?? "-";
+                    string role = payroll.Worker?.Role ?? "-";
                     string gross = $"₱{(payroll.GrossPay ?? 0):N2}";
 
                     DrawTableRow(workerName, role, gross);
                     total += payroll.GrossPay ?? 0;
                 }
 
-                // --- Footer: Total + Signature ---
-                y += 50;
+                // === Total ===
+                y += 40;
+                gfx.DrawString($"Total Payroll Cost: ₱{total:N2}", headerFont, XBrushes.Black,
+                    new XRect(margin, y, contentWidth, lineHeight), XStringFormats.TopLeft);
 
-                double totalX = page.Width - margin - gfx.MeasureString($"Total Payroll Cost: ₱{total:N2}", headerFont).Width;
-                gfx.DrawString($"Total Cost: ₱{total:N2}", headerFont, XBrushes.Black, new XPoint(totalX, y));
+                // === Date Generated ===
+                y += 30;
+                gfx.DrawString($"Date Generated: {DateTime.Now:MMMM dd, yyyy - h:mm tt}", font, XBrushes.Gray,
+                    new XRect(margin, y, contentWidth, lineHeight), XStringFormats.TopLeft);
 
-
-                // Save PDF
+                // === Save and Open ===
                 doc.Save(saveDialog.FileName);
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = saveDialog.FileName,
+                    UseShellExecute = true
+                });
+
                 MessageBox.Show("Payroll report PDF generated successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }

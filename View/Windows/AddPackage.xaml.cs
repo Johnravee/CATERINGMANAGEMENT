@@ -1,5 +1,5 @@
 ﻿using System.Windows;
-using CATERINGMANAGEMENT.ViewModels;
+using CATERINGMANAGEMENT.ViewModels.PackageVM;
 
 namespace CATERINGMANAGEMENT.View.Windows
 {

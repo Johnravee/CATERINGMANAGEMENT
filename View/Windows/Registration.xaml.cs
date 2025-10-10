@@ -1,4 +1,4 @@
-﻿using CATERINGMANAGEMENT.ViewModels;
+﻿using CATERINGMANAGEMENT.ViewModels.AuthVM;
 using System;
 using System.Collections.Generic;
 using System.Linq;

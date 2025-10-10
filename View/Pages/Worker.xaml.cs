@@ -1,4 +1,4 @@
-﻿using CATERINGMANAGEMENT.ViewModels;
+﻿using CATERINGMANAGEMENT.ViewModels.WorkerVM;
 using System.Windows.Controls;
 
 namespace CATERINGMANAGEMENT.View.Pages

@@ -3,7 +3,6 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:viewmodel="clr-namespace:CATERINGMANAGEMENT.ViewModel"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       mc:Ignorable="d"
       Background="#FAFAFA"
@@ -73,9 +72,7 @@
         </Style>
     </Page.Resources>
 
-    <Page.DataContext>
-        <viewmodel:ReservationListViewModel/>
-    </Page.DataContext>
+
 
     <Grid Margin="20">
         <Grid.RowDefinitions>

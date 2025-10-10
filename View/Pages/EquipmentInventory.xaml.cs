@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 using CATERINGMANAGEMENT.DocumentsGenerator;
-using CATERINGMANAGEMENT.ViewModels;
+using CATERINGMANAGEMENT.ViewModels.EquipmentsVM;
 
 
 namespace CATERINGMANAGEMENT.View.Pages
@@ -20,37 +20,6 @@ namespace CATERINGMANAGEMENT.View.Pages
             {
                 await _viewModel.LoadItems();
             };
-        }
-
-        private void ExportAsCsv(object sender, System.Windows.RoutedEventArgs e)
-        {
-            DatagridToCsv.ExportToCsv(
-               EquipmentDataGrid.ItemsSource,
-               "EquipmentsInventory.csv",
-               "Id",
-               "BaseUrl",
-               "RequestClientOptions",
-               "TableName",
-               "PrimaryKey",
-               "UpdatedAt",
-               "CreatedAt"
-           );
-        }
-
-        [Obsolete]
-        private void ExportAsPDF(object sender, System.Windows.RoutedEventArgs e)
-        {
-            DataGridToPdf.DataGridToPDF(
-                EquipmentDataGrid.ItemsSource,
-                "EquipmentsInventory.pdf",
-                "Id",
-                "BaseUrl",
-                "RequestClientOptions",
-                "TableName",
-                "PrimaryKey",
-                "UpdatedAt",
-                "CreatedAt"
-                );
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
-using CATERINGMANAGEMENT.ViewModels;
+﻿using CATERINGMANAGEMENT.ViewModels.DashboardVM;
 using System.Windows.Controls;
 
 namespace CATERINGMANAGEMENT.View.Pages

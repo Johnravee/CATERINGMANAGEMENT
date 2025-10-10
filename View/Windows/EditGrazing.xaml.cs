@@ -1,5 +1,5 @@
 ﻿using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.ViewModels;
+using CATERINGMANAGEMENT.ViewModels.GrazingVM;
 using System.Windows;
 
 namespace CATERINGMANAGEMENT.View.Windows

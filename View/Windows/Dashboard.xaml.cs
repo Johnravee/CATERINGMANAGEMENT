@@ -1,6 +1,6 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.View.Pages;
-using CATERINGMANAGEMENT.ViewModels;
+using CATERINGMANAGEMENT.ViewModels.DashboardVM;
 using System.Windows;
 using System.Windows.Input;
 

@@ -1,7 +1,7 @@
 ﻿using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
-using CATERINGMANAGEMENT.ViewModels;
+using CATERINGMANAGEMENT.ViewModels.PayrollVM;
 using System;
 using System.Linq;
 using System.Windows;
