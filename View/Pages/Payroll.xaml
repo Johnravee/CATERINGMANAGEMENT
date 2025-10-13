@@ -14,7 +14,7 @@
       FontSize="14">
 
     <Page.Resources>
-
+        <materialDesign:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <local:NullToStringConverter x:Key="NullToStringConverter" />
         <!-- Centered TextBlock -->
         <Style x:Key="CenteredTextStyle" TargetType="TextBlock">
@@ -206,15 +206,29 @@
             </DataGrid.Columns>
         </DataGrid>
 
+        <!-- Loading Overlay -->
+        <Border Grid.RowSpan="5"
+        Background="#80000000"
+        Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+        CornerRadius="8">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                     IsIndeterminate="True"
+                     Width="60"
+                     Height="60"
+                     Foreground="White  "/>
+            </StackPanel>
+        </Border>
+
         <!-- Pagination -->
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Style="{StaticResource ModernFlatButton}" Width="80">
+            <Button Style="{StaticResource ModernFlatButton}" Width="80" Command="{Binding PrevPageCommand}" >
                 <TextBlock Text="Prev"/>
             </Button>
-            <TextBlock Text="1" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
+            <TextBlock Text="{Binding CurrentPage}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
             <TextBlock Text="/" FontWeight="Bold" VerticalAlignment="Center"/>
-            <TextBlock Text="10" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
-            <Button Style="{StaticResource ModernFlatButton}" Width="80">
+            <TextBlock Text="{Binding TotalPages}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
+            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding NextPageCommand}" Width="80">
                 <TextBlock Text="Next"/>
             </Button>
         </StackPanel>

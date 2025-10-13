@@ -161,8 +161,6 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
                     FileName = saveDialog.FileName,
                     UseShellExecute = true
                 });
-
-                MessageBox.Show("Payroll report PDF generated successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
     }

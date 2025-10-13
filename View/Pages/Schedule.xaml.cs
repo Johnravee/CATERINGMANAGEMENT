@@ -19,7 +19,7 @@ namespace CATERINGMANAGEMENT.View.Pages
             {
                 if (DataContext is SchedulingViewModel vm)
                 {
-                    await vm.LoadData();
+                    await vm.LoadPage();
                 }
             };
         }

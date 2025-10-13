@@ -216,7 +216,7 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
 
             // ===== FOOTER =====
             gfx.DrawLine(penDivider, marginLeft, page.Height - 60, page.Width - marginRight, page.Height - 60);
-            gfx.DrawString("Prepared by OSHDY Catering Services", fontSmall, XBrushes.Gray,
+            gfx.DrawString("Prepared by OSHDY Event Catering Services", fontSmall, XBrushes.Gray,
                 new XRect(marginLeft, page.Height - 50, page.Width - marginRight, 20), XStringFormats.BottomLeft);
 
             // ===== SAVE PDF =====

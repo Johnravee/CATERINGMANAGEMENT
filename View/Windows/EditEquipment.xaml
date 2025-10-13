@@ -60,7 +60,7 @@
                   BorderBrush="#D1D5DB">
                     <ComboBoxItem Content="Good" Foreground="LimeGreen"/>
                     <ComboBoxItem Content="Needs Repair" Foreground="Orange"/>
-                    <ComboBoxItem Content="Bad" Foreground="Red"/>
+                    <ComboBoxItem Content="Damaged" Foreground="Red"/>
                 </ComboBox>
 
             </StackPanel>
