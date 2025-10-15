@@ -2,27 +2,35 @@
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 {
     public class EquipmentViewModel : INotifyPropertyChanged
     {
-        private ObservableCollection<Equipment> _equipmentItems = new();
-        private ObservableCollection<Equipment> _filteredEquipmentItems = new();
+        private readonly EquipmentService _equipmentService = new();
 
-        private const int PageSize = 20;
+        public ObservableCollection<Equipment> Items { get; set; } = new();
 
-        public ObservableCollection<Equipment> Items
+        private string _searchText = string.Empty;
+        public string SearchText
         {
-            get => _filteredEquipmentItems;
-            set { _filteredEquipmentItems = value; OnPropertyChanged(); }
+            get => _searchText;
+            set
+            {
+                _searchText = value;
+                OnPropertyChanged();
+                _ = ApplySearchFilter();
+            }
         }
 
         private int _totalCount;
@@ -45,6 +53,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             get => _goodConditionCount;
             set { _goodConditionCount = value; OnPropertyChanged(); }
         }
+
         private bool _isLoading;
         public bool IsLoading
         {
@@ -52,18 +61,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             set { _isLoading = value; OnPropertyChanged(); }
         }
 
-        private string _searchText = string.Empty;
-        public string SearchText
-        {
-            get => _searchText;
-            set
-            {
-                _searchText = value;
-                OnPropertyChanged();
-                ApplySearchFilter();
-            }
-        }
-
+        private const int PageSize = 20;
         private int _currentPage = 1;
         public int CurrentPage
         {
@@ -78,82 +76,53 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        public ICommand DeleteEquipmentCommand { get; set; }
-        public ICommand EditEquipmentCommand { get; set; }
-        public ICommand AddEquipmentCommand { get; set; }
-        public ICommand LoadMoreCommand { get; set; }
-        public ICommand NextPageCommand { get; set; }
-        public ICommand PrevPageCommand { get; set; }
-        public ICommand ExportPdfCommand { get; set; }
-        public ICommand ExportCsvCommand { get; set; }
+        public ICommand DeleteEquipmentCommand { get; }
+        public ICommand EditEquipmentCommand { get; }
+        public ICommand AddEquipmentCommand { get; }
+        public ICommand NextPageCommand { get; }
+        public ICommand PrevPageCommand { get; }
+        public ICommand ExportPdfCommand { get; }
+        public ICommand ExportCsvCommand { get; }
 
         public EquipmentViewModel()
         {
-            DeleteEquipmentCommand = new RelayCommand<Equipment>(async (e) => await DeleteEquipment(e));
-            EditEquipmentCommand = new RelayCommand<Equipment>(async (e) => await EditEquipment(e));
-            AddEquipmentCommand = new RelayCommand(() => AddNewEquipment());
-           
-
-            NextPageCommand = new RelayCommand(async () => await NextPage(), () => CurrentPage < TotalPages);
-            PrevPageCommand = new RelayCommand(async () => await PrevPage(), () => CurrentPage > 1);
-
+            DeleteEquipmentCommand = new RelayCommand<Equipment>(async e => await DeleteEquipment(e));
+            EditEquipmentCommand = new RelayCommand<Equipment>(async e => await EditEquipment(e));
+            AddEquipmentCommand = new RelayCommand(AddNewEquipment);
+            NextPageCommand = new RelayCommand(async () => await LoadPage(CurrentPage + 1), () => CurrentPage < TotalPages);
+            PrevPageCommand = new RelayCommand(async () => await LoadPage(CurrentPage - 1), () => CurrentPage > 1);
             ExportPdfCommand = new RelayCommand(async () => await ExportAsPdf());
             ExportCsvCommand = new RelayCommand(async () => await ExportAsCsv());
-        }
 
-        public async Task LoadItems()
-        {
-            IsLoading = true;
-            try
-            {
-                _equipmentItems.Clear();
-                Items.Clear();
-                await LoadPage(1);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading equipment items:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
+            _ = LoadPage(1);
         }
 
         public async Task LoadPage(int pageNumber)
         {
             IsLoading = true;
+
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
-                int from = (pageNumber - 1) * PageSize;
-                int to = from + PageSize - 1;
-
-                var response = await client
-                    .From<Equipment>()
-                    .Range(from, to)
-                    .Order(x => x.UpdatedAt, Ordering.Descending)
-                    .Get();
-
-                _equipmentItems.Clear();
-                if (response.Models != null)
-                {
-                    foreach (var item in response.Models)
-                        _equipmentItems.Add(item);
-                }
-
-               
-
-                ApplySearchFilter();
-                await LoadEquipmentSummary();
-                UpdatePagination();
+                Items.Clear();
+                var equipments = await _equipmentService.GetEquipmentsAsync(pageNumber, PageSize);
+                foreach (var item in equipments)
+                    Items.Add(item);
 
                 CurrentPage = pageNumber;
+
+                var summary = await _equipmentService.GetEquipmentSummaryAsync();
+                if (summary != null)
+                {
+                    TotalCount = summary.TotalCount;
+                    DamagedCount = summary.DamagedCount;
+                    GoodConditionCount = summary.GoodCount;
+                    TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"❌ Error loading data:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex.Message);
             }
             finally
             {
@@ -161,153 +130,82 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             }
         }
 
-        private async Task NextPage()
+        private async Task ApplySearchFilter()
         {
-            if (CurrentPage < TotalPages)
-                await LoadPage(CurrentPage + 1);
-        }
-
-        private async Task PrevPage()
-        {
-            if (CurrentPage > 1)
-                await LoadPage(CurrentPage - 1);
-        }
-
-
-        // Search query
-        private async void ApplySearchFilter()
-        {
-            var query = _searchText?.Trim().ToLower() ?? "";
-
-            if (string.IsNullOrWhiteSpace(query))
+            if (string.IsNullOrWhiteSpace(SearchText))
             {
-                Items = new ObservableCollection<Equipment>(_equipmentItems);
+                await LoadPage(CurrentPage);
+                return;
             }
-            else
-            {
-                try
-                {
-                    IsLoading = true;
-                    var client = await SupabaseService.GetClientAsync();
 
-                    var response = await client
-                        .From<Equipment>()
-                        .Filter(x => x.ItemName, Operator.ILike, $"%{query}%")
-                        .Get();
-
-                    if (response.Models != null)
-                        Items = new ObservableCollection<Equipment>(response.Models);
-                    else
-                        Items = new ObservableCollection<Equipment>();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error searching equipment:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                finally
-                {
-                    IsLoading = false;
-                }
-            }
-        }
-
-        public async Task LoadEquipmentSummary()
-        {
+            IsLoading = true;
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-
                 var response = await client
-                    .From<EquipmentSummary>()
+                    .From<Equipment>()
+                    .Filter(x => x.ItemName, Supabase.Postgrest.Constants.Operator.ILike, $"%{SearchText}%")
                     .Get();
 
-                if (response.Models != null && response.Models.Count > 0)
-                {
-                    var summary = response.Models[0];
-                    TotalCount = summary.TotalCount;
-                    DamagedCount = summary.DamagedCount;
-                    GoodConditionCount = summary.GoodCount;
-
-                    OnPropertyChanged(nameof(TotalCount));
-                    OnPropertyChanged(nameof(DamagedCount));
-                    OnPropertyChanged(nameof(GoodConditionCount));
-                }
+                Items = new ObservableCollection<Equipment>(response.Models ?? new List<Equipment>());
+                OnPropertyChanged(nameof(Items));
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading equipment summary:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error($"Error during search: {ex.Message}");
+                MessageBox.Show($"Error filtering data:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
-
-        private void UpdatePagination()
-        {
-
-            TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
-            OnPropertyChanged(nameof(CurrentPage));
-            OnPropertyChanged(nameof(TotalPages));
-        }
-
 
         private async Task DeleteEquipment(Equipment item)
         {
             if (item == null) return;
 
-            var result = MessageBox.Show($"Are you sure you want to delete {item.ItemName}?",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var confirm = MessageBox.Show($"Are you sure you want to delete {item.ItemName}?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes) return;
 
-            if (result != MessageBoxResult.Yes) return;
+            IsLoading = true;
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                await client
-                    .From<Equipment>()
-                    .Where(e => e.Id == item.Id)
-                    .Delete();
-
-                _equipmentItems.Remove(item);
-                ApplySearchFilter();
-                await LoadEquipmentSummary();
+                bool deleted = await _equipmentService.DeleteEquipmentAsync(item.Id ?? 0);
+                if (deleted)
+                {
+                    Items.Remove(item);
+                    await LoadPage(CurrentPage);
+                    AppLogger.Success($"Deleted equipment: {item.ItemName}");
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error deleting equipment:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex.Message);
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
-
 
         private async Task EditEquipment(Equipment item)
         {
             if (item == null) return;
 
             var editWindow = new EditEquipments(item);
-            bool? result = editWindow.ShowDialog();
-
-            if (result == true && editWindow.Equipments != null)
+            if (editWindow.ShowDialog() == true && editWindow.Equipments != null)
             {
-                try
+                var updated = await _equipmentService.UpdateEquipmentAsync(editWindow.Equipments);
+                if (updated != null)
                 {
-                    editWindow.Equipments.UpdatedAt = DateTime.UtcNow;
-                    var client = await SupabaseService.GetClientAsync();
-                    var response = await client
-                        .From<Equipment>()
-                        .Where(e => e.Id == editWindow.Equipments.Id)
-                        .Update(editWindow.Equipments);
+                    var index = Items.IndexOf(item);
+                    if (index >= 0)
+                        Items[index] = updated;
 
-                    if (response.Models != null && response.Models.Count > 0)
-                    {
-                        var index = _equipmentItems.IndexOf(item);
-                        if (index >= 0)
-                            _equipmentItems[index] = response.Models[0];
-
-                        ApplySearchFilter();
-                        await LoadEquipmentSummary();
-                        MessageBox.Show("Equipment item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error updating equipment:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Equipment updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
@@ -315,124 +213,107 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
         private void AddNewEquipment()
         {
             var addWindow = new EquipmentItemAdd();
-            bool? result = addWindow.ShowDialog();
-
-            if (result == true && addWindow.NewEquipment != null)
+            if (addWindow.ShowDialog() == true && addWindow.NewEquipment != null)
             {
-                InsertEquipmentItem(addWindow.NewEquipment);
+                _ = InsertEquipmentItem(addWindow.NewEquipment);
             }
         }
 
-        private async void InsertEquipmentItem(Equipment item)
+        private async Task InsertEquipmentItem(Equipment item)
         {
             if (item == null) return;
 
+            IsLoading = true;
+
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                var response = await client.From<Equipment>().Insert(item);
-
-                if (response.Models != null && response.Models.Count > 0)
+                var inserted = await _equipmentService.InsertEquipmentAsync(item);
+                if (inserted != null)
                 {
-                    _equipmentItems.Add(response.Models[0]);
-                    ApplySearchFilter();
-                    await LoadEquipmentSummary();
-                    MessageBox.Show("Equipment item added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Items.Add(inserted);
+                    await LoadPage(CurrentPage);
+                    MessageBox.Show("New equipment added!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error adding equipment item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error adding equipment:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex.Message);
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
         private async Task<List<Equipment>> FetchAllEquipments()
         {
-            var client = await SupabaseService.GetClientAsync();
-            var response = await client
-                .From<Equipment>()
-                .Order(e => e.ItemName, Supabase.Postgrest.Constants.Ordering.Ascending)
-                .Get();
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+                var response = await client
+                    .From<Equipment>()
+                    .Order(x => x.ItemName, Supabase.Postgrest.Constants.Ordering.Ascending)
+                    .Get();
 
-            return response.Models;
+                return response.Models ?? new List<Equipment>();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Error fetching all equipment: {ex.Message}");
+                return new List<Equipment>();
+            }
         }
-
 
         private async Task ExportAsPdf()
         {
             try
             {
                 IsLoading = true;
-
                 var equipments = await FetchAllEquipments();
-                if (equipments == null || equipments.Count == 0)
+                if (equipments.Count == 0)
                 {
-                    MessageBox.Show("No equipment data available to export.", "Info",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("No equipment data available to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
-                DataGridToPdf.DataGridToPDF(
-                    equipments,
-                    "Equipments_Inventory_Report",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "UpdatedAt",
-                    "CreatedAt"
-                );
+                DataGridToPdf.DataGridToPDF(equipments, "Equipments_Inventory_Report", "Id", "BaseUrl", "RequestClientOptions", "TableName", "PrimaryKey", "UpdatedAt", "CreatedAt");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting PDF:\n{ex.Message}",
-                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error($"Error exporting to PDF: {ex.Message}");
+                MessageBox.Show($"Export failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsLoading = false;
             }
         }
-
 
         private async Task ExportAsCsv()
         {
             try
             {
                 IsLoading = true;
-
                 var equipments = await FetchAllEquipments();
-                if (equipments == null || equipments.Count == 0)
+                if (equipments.Count == 0)
                 {
-                    MessageBox.Show("No equipment data available to export.", "Info",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("No equipment data available to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
-                DatagridToCsv.ExportToCsv(
-                    equipments,
-                    "EquipmentsInventory.csv",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "UpdatedAt",
-                    "CreatedAt"
-                );
+                DatagridToCsv.ExportToCsv(equipments, "EquipmentsInventory.csv", "Id", "BaseUrl", "RequestClientOptions", "TableName", "PrimaryKey", "UpdatedAt", "CreatedAt");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting CSV:\n{ex.Message}",
-                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error($"Error exporting to CSV: {ex.Message}");
+                MessageBox.Show($"Export failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsLoading = false;
             }
         }
-
 
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>

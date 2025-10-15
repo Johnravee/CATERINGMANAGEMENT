@@ -21,8 +21,11 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         protected void OnPropertyChanged([CallerMemberName] string name = "") =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        public ObservableCollection<Reservation> AllReservations { get; } = new();
-        public ObservableCollection<Reservation> FilteredReservations { get; } = new();
+        public ObservableCollection<Reservation> AllReservations { get => _allReservations; set { _allReservations = value; OnPropertyChanged(); } }
+        private ObservableCollection<Reservation> _allReservations = new();
+
+        public ObservableCollection<Reservation> FilteredReservations { get => _filteredReservations; set { _filteredReservations = value; OnPropertyChanged(); } }
+        private ObservableCollection<Reservation> _filteredReservations = new();
 
         public ICommand ViewReservationCommand { get; }
         public ICommand DeleteReservationCommand { get; }
@@ -47,7 +50,19 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public Reservation? SelectedReservation { get => _selectedReservation; set { _selectedReservation = value; OnPropertyChanged(); } }
         private Reservation? _selectedReservation;
 
-        public string SearchText { get => _searchText; set { _searchText = value; OnPropertyChanged(); ApplySearchFilter(); } }
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                _searchText = value;
+                OnPropertyChanged();
+                if (!string.IsNullOrWhiteSpace(_searchText))
+                    ApplySearchFilter();
+                else
+                    FilteredReservations = new ObservableCollection<Reservation>(AllReservations);
+            }
+        }
         private string _searchText = string.Empty;
 
         public int CurrentPage { get => _currentPage; set { _currentPage = value; OnPropertyChanged(); } }
@@ -62,35 +77,59 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public ReservationListViewModel()
         {
             ViewReservationCommand = new RelayCommand<Reservation>(ViewReservation);
-            DeleteReservationCommand = new RelayCommand<Reservation>(async (res) => await DeleteReservation(res));;
+            DeleteReservationCommand = new RelayCommand<Reservation>(async (res) => await DeleteReservation(res));
             NextPageCommand = new RelayCommand(async () => await LoadReservations(CurrentPage + 1), () => CurrentPage < TotalPages);
             PrevPageCommand = new RelayCommand(async () => await LoadReservations(CurrentPage - 1), () => CurrentPage > 1);
+
+            _ = Task.Run(SubscribeToRealtime);
         }
 
-        // 🟢 Load Reservations
         public async Task LoadReservations(int pageNumber = 1)
         {
             IsLoading = true;
             try
             {
-                var reservations = await _reservationService.GetReservationsAsync(pageNumber, PageSize);
-                AllReservations.Clear();
-                FilteredReservations.Clear();
+                AppLogger.Info("Loading reservations...");
 
-                foreach (var res in reservations)
+                var reservationsTask = _reservationService.GetReservationsAsync(pageNumber, PageSize);
+                var countsTask = _reservationService.GetReservationStatusCountsAsync();
+
+                await Task.WhenAll(reservationsTask, countsTask);
+
+                var reservations = reservationsTask.Result;
+                var counts = countsTask.Result;
+
+                AllReservations = new ObservableCollection<Reservation>(reservations);
+                FilteredReservations = new ObservableCollection<Reservation>(reservations);
+
+                if (counts != null)
                 {
-                    AllReservations.Add(res);
-                    FilteredReservations.Add(res);
+                    TotalCount = counts.TotalReservations;
+                    PendingCount = counts.Pending;
+                    ConfirmedCount = counts.Confirmed;
+                    CancelledCount = counts.Canceled;
+
+                    TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+                }
+                else
+                {
+                    TotalCount = 0;
+                    TotalPages = 1;
+                    PendingCount = 0;
+                    ConfirmedCount = 0;
+                    CancelledCount = 0;
                 }
 
-                TotalCount = await _reservationService.GetTotalCountAsync();
-                TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
                 CurrentPage = pageNumber;
 
-                UpdateReservationCounts();
-                ApplySearchFilter();
+                if (!string.IsNullOrWhiteSpace(SearchText))
+                    ApplySearchFilter();
 
-                await SubscribeToRealtime();
+                AppLogger.Success("Reservations loaded successfully.");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Error loading reservations: {ex.Message}", showToUser: true);
             }
             finally
             {
@@ -98,73 +137,79 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             }
         }
 
-        // 🟢 Realtime Subscription
         private async Task SubscribeToRealtime()
         {
-            var client = await SupabaseService.GetClientAsync();
-            var channel = client.Realtime.Channel("realtime", "public", "reservations");
-            await channel.Subscribe();
-
-            channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
+            try
             {
-                var updated = change.Model<Reservation>();
-                if (updated == null) return;
+                var client = await SupabaseService.GetClientAsync();
+                var channel = client.Realtime.Channel("realtime", "public", "reservations");
+                await channel.Subscribe();
 
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                AppLogger.Info("Subscribed to realtime reservation updates.");
+
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
                 {
-                    var existing = AllReservations.FirstOrDefault(r => r.Id == updated.Id);
-                    if (existing != null)
-                    {
-                        var index = AllReservations.IndexOf(existing);
-                        AllReservations[index] = updated;
-                    }
-                    else
-                    {
-                        AllReservations.Add(updated);
-                    }
+                    var updated = change.Model<Reservation>();
+                    if (updated == null) return;
 
-                    UpdateReservationCounts();
-                    ApplySearchFilter();
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var existing = AllReservations.FirstOrDefault(r => r.Id == updated.Id);
+                        if (existing != null)
+                        {
+                            var index = AllReservations.IndexOf(existing);
+                            AllReservations[index] = updated;
+                        }
+                        else
+                        {
+                            AllReservations.Add(updated);
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(SearchText))
+                            ApplySearchFilter();
+                    });
                 });
-            });
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Error subscribing to realtime updates: {ex.Message}");
+            }
         }
-
-      
 
         private async Task DeleteReservation(Reservation reservation)
         {
-            if (await _reservationService.DeleteReservationAsync(reservation))
+            try
             {
-                AllReservations.Remove(reservation);
-                FilteredReservations.Remove(reservation);
-                UpdateReservationCounts();
+                if (await _reservationService.DeleteReservationAsync(reservation))
+                {
+                    AllReservations.Remove(reservation);
+                    FilteredReservations.Remove(reservation);
+
+                    AppLogger.Success($"Deleted reservation ID: {reservation.Id}");
+                }
+                else
+                {
+                    MessageBox.Show("Failed to delete reservation.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    AppLogger.Error($"Failed to delete reservation with ID {reservation.Id}", showToUser: false);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Error deleting reservation: {ex.Message}", showToUser: true);
             }
         }
 
         private void ApplySearchFilter()
         {
             var query = SearchText?.Trim().ToLower() ?? "";
-            FilteredReservations.Clear();
+            var results = AllReservations.Where(r =>
+                (r.ReceiptNumber ?? "").ToLower().Contains(query) ||
+                (r.Celebrant ?? "").ToLower().Contains(query) ||
+                (r.Venue ?? "").ToLower().Contains(query) ||
+                (r.Location ?? "").ToLower().Contains(query) ||
+                (r.Status ?? "").ToLower().Contains(query)).ToList();
 
-            var results = string.IsNullOrEmpty(query)
-                ? AllReservations
-                : AllReservations.Where(r =>
-                    (r.ReceiptNumber ?? "").ToLower().Contains(query) ||
-                    (r.Celebrant ?? "").ToLower().Contains(query) ||
-                    (r.Venue ?? "").ToLower().Contains(query) ||
-                    (r.Location ?? "").ToLower().Contains(query) ||
-                    (r.Status ?? "").ToLower().Contains(query));
-
-            foreach (var res in results)
-                FilteredReservations.Add(res);
-        }
-
-        private void UpdateReservationCounts()
-        {
-            TotalCount = AllReservations.Count;
-            PendingCount = AllReservations.Count(r => r.Status?.ToLower() == "pending");
-            ConfirmedCount = AllReservations.Count(r => r.Status?.ToLower() == "confirmed");
-            CancelledCount = AllReservations.Count(r => r.Status?.ToLower() == "canceled");
+            FilteredReservations = new ObservableCollection<Reservation>(results);
         }
 
         private async Task ViewReservation(Reservation reservation)
@@ -174,31 +219,30 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             try
             {
                 SelectedReservation = reservation;
-
-                // 🆕 Re-fetch full reservation with joined data
                 var updated = await _reservationService.GetReservationWithJoinsAsync(reservation.Id);
 
                 if (updated != null)
                 {
                     SelectedReservation = updated;
 
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
                         var detailsWindow = new ReservationDetails(updated);
                         detailsWindow.ShowDialog();
                     });
+
+                    AppLogger.Success($"Opened reservation details for ID {reservation.Id}");
                 }
                 else
                 {
                     MessageBox.Show("Failed to load reservation details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    AppLogger.Error($"Failed to load reservation details for ID {reservation.Id}", showToUser: false);
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"❌ Error viewing reservation: {ex.Message}");
-                MessageBox.Show($"Unexpected error.\n\n{ex.Message}", "Error");
+                AppLogger.Error($"Error viewing reservation: {ex.Message}", showToUser: true);
             }
         }
-
     }
 }

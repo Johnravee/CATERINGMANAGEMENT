@@ -18,7 +18,7 @@ namespace CATERINGMANAGEMENT.View.Pages
 
             Loaded += async (_, __) =>
             {
-                await _viewModel.LoadItems();
+                await _viewModel.LoadPage(1);
             };
         }
     }

@@ -46,7 +46,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public ICommand GenerateContractCommand { get; }
         public ICommand UpdateReservationCommand { get; }
 
-
         private readonly EmailService _emailService;
         private readonly ContractMailer _contractMailer;
         private readonly ReservationService _reservationService = new();
@@ -64,8 +63,8 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
             GenerateContractCommand = new RelayCommand(async () => await GenerateContractAsync());
             UpdateReservationCommand = new RelayCommand(async () => await UpdateReservationAsync());
+
             Task.Run(LoadReservationMenuOrdersAsync);
-     
         }
 
         private async Task LoadReservationMenuOrdersAsync()
@@ -73,6 +72,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             try
             {
                 IsLoading = true;
+                AppLogger.Info($"Loading menu orders for reservation ID {Reservation.Id}");
 
                 var orders = await _reservationService.GetReservationMenuOrdersAsync(Reservation.Id);
 
@@ -84,10 +84,12 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                         ReservationMenuOrders.Add(order);
                     }
                 });
+
+                AppLogger.Success($"Loaded {orders.Count} menu orders for reservation ID {Reservation.Id}");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load menu orders.\n\n{ex.Message}", "Error");
+                AppLogger.Error($"Failed to load menu orders: {ex.Message}", showToUser: true);
             }
             finally
             {
@@ -95,22 +97,30 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             }
         }
 
-       
-
         private async Task UpdateReservationAsync()
         {
             try
             {
                 IsLoading = true;
+                AppLogger.Info($"Updating reservation ID {Reservation.Id}");
+
                 var updated = await _reservationService.UpdateReservationAsync(Reservation);
 
                 if (updated != null)
+                {
                     await LoadReservationMenuOrdersAsync();
+                    AppLogger.Success($"Reservation ID {Reservation.Id} updated successfully.");
                     MessageBox.Show("Reservation updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    AppLogger.Error($"Reservation update returned null for ID {Reservation.Id}", showToUser: true);
+                    MessageBox.Show("Failed to update reservation.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to update reservation.\n\n{ex.Message}", "Error");
+                AppLogger.Error($"Error updating reservation: {ex.Message}", showToUser: true);
             }
             finally
             {
@@ -133,6 +143,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             try
             {
                 IsLoading = true;
+                AppLogger.Info($"Generating contract for reservation ID {Reservation.Id}");
 
                 await Task.Run(async () =>
                 {
@@ -149,36 +160,17 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                         throw new Exception("Failed to send the contract email.");
                 });
 
-                MessageBox.Show("Contract generated and sent successfully!", "Success");
+                AppLogger.Success($"Contract generated and emailed for reservation ID {Reservation.Id}");
 
-                var result = MessageBox.Show("Do you want to print the contract now?",
-                    "Print Contract", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = saveDialog.FileName,
-                        UseShellExecute = true,
-                        Verb = "open"
-                    });
-                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unexpected error occurred.\n\n{ex.Message}", "Error");
+                AppLogger.Error($"Error generating/sending contract: {ex.Message}", showToUser: true);
             }
             finally
             {
                 IsLoading = false;
             }
         }
-
-       
-
-       
-
-          
-        
     }
 }
