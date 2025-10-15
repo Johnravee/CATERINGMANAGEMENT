@@ -6,7 +6,7 @@ namespace CATERINGMANAGEMENT.Services.Data
 {
     public class ReservationService
     {
-        // Load reservations with joins (pagination)
+        //  Get paginated reservations with joins
         public async Task<List<Reservation>> GetReservationsAsync(int pageNumber, int pageSize)
         {
             try
@@ -38,7 +38,7 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        // Count total reservations
+        //  Get reservation count
         public async Task<int> GetTotalCountAsync()
         {
             try
@@ -56,17 +56,17 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        // ✅ Update ANY field (not just status)
+        //  Update reservation
         public async Task<Reservation?> UpdateReservationAsync(Reservation reservation)
         {
             if (reservation == null) return null;
 
             try
             {
+                Debug.WriteLine("🔁 UpdateReservationAsync called");
                 var client = await SupabaseService.GetClientAsync();
 
-                // Update all editable fields (you can adjust as needed)
-                var updateResponse = await client
+                await client
                     .From<Reservation>()
                     .Where(x => x.Id == reservation.Id)
                     .Set(r => r.Status, reservation.Status)
@@ -78,7 +78,6 @@ namespace CATERINGMANAGEMENT.Services.Data
                     .Set(r => r.KidsQty, reservation.KidsQty)
                     .Update();
 
-                // Fetch updated record with joins
                 var refreshed = await client
                     .From<Reservation>()
                     .Where(x => x.Id == reservation.Id)
@@ -100,7 +99,7 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        // Delete
+        //  Delete reservation
         public async Task<bool> DeleteReservationAsync(Reservation reservation)
         {
             if (reservation == null) return false;
@@ -108,7 +107,12 @@ namespace CATERINGMANAGEMENT.Services.Data
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-                await client.From<Reservation>().Where(x => x.Id == reservation.Id).Delete();
+
+                await client
+                    .From<Reservation>()
+                    .Where(x => x.Id == reservation.Id)
+                    .Delete();
+
                 return true;
             }
             catch (Exception ex)
@@ -117,5 +121,59 @@ namespace CATERINGMANAGEMENT.Services.Data
                 return false;
             }
         }
+
+        //  Get all menu orders for a reservation
+        public async Task<List<ReservationMenuOrder>> GetReservationMenuOrdersAsync(long reservationId)
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                var response = await client
+                    .From<ReservationMenuOrder>()
+                    .Select("*, menu_options(*)")
+                    .Where(x => x.ReservationId == reservationId)
+                    .Get();
+
+                Debug.WriteLine("📦 RAW Supabase JSON Response:");
+                Debug.WriteLine(response.Content);
+
+                return response.Models ?? new List<ReservationMenuOrder>();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error loading menu orders: {ex.Message}");
+                return new List<ReservationMenuOrder>();
+            }
+        }
+
+
+        public async Task<Reservation?> GetReservationWithJoinsAsync(long reservationId)
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                var result = await client
+                    .From<Reservation>()
+                    .Where(x => x.Id == reservationId)
+                    .Select(@"
+                *,
+                profile:profile_id(*),
+                thememotif:theme_motif_id(*),
+                grazing:grazing_id(*),
+                package:package_id(*)
+            ")
+                    .Single();
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error getting reservation with joins: {ex.Message}");
+                return null;
+            }
+        }
+
     }
 }

@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
@@ -25,7 +26,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
         public ICommand ViewReservationCommand { get; }
         public ICommand DeleteReservationCommand { get; }
-        public ICommand UpdateReservationCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
 
@@ -62,8 +62,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public ReservationListViewModel()
         {
             ViewReservationCommand = new RelayCommand<Reservation>(ViewReservation);
-            DeleteReservationCommand = new RelayCommand<Reservation>(async (res) => await DeleteReservation(res));
-            UpdateReservationCommand = new RelayCommand<Reservation>(async (res) => await UpdateReservation(res));
+            DeleteReservationCommand = new RelayCommand<Reservation>(async (res) => await DeleteReservation(res));;
             NextPageCommand = new RelayCommand(async () => await LoadReservations(CurrentPage + 1), () => CurrentPage < TotalPages);
             PrevPageCommand = new RelayCommand(async () => await LoadReservations(CurrentPage - 1), () => CurrentPage > 1);
         }
@@ -130,23 +129,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             });
         }
 
-        private async Task UpdateReservation(Reservation reservation)
-        {
-            var updated = await _reservationService.UpdateReservationAsync(reservation);
-            if (updated == null) return;
-
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
-            {
-                var existing = AllReservations.FirstOrDefault(r => r.Id == updated.Id);
-                if (existing != null)
-                {
-                    var index = AllReservations.IndexOf(existing);
-                    AllReservations[index] = updated;
-                }
-                UpdateReservationCounts();
-                ApplySearchFilter();
-            });
-        }
+      
 
         private async Task DeleteReservation(Reservation reservation)
         {
@@ -184,19 +167,38 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             CancelledCount = AllReservations.Count(r => r.Status?.ToLower() == "canceled");
         }
 
-        private Task ViewReservation(Reservation reservation)
+        private async Task ViewReservation(Reservation reservation)
         {
-            if (reservation == null) return Task.CompletedTask;
-            SelectedReservation = reservation;
-            Debug.WriteLine($"📄 Viewing reservation: {reservation.Id} | {reservation.Celebrant}");
+            if (reservation == null) return;
 
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            try
             {
-                var detailsWindow = new ReservationDetails(reservation, UpdateReservationCommand);
-                detailsWindow.ShowDialog();
-            });
+                SelectedReservation = reservation;
 
-            return Task.CompletedTask;
+                // 🆕 Re-fetch full reservation with joined data
+                var updated = await _reservationService.GetReservationWithJoinsAsync(reservation.Id);
+
+                if (updated != null)
+                {
+                    SelectedReservation = updated;
+
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var detailsWindow = new ReservationDetails(updated);
+                        detailsWindow.ShowDialog();
+                    });
+                }
+                else
+                {
+                    MessageBox.Show("Failed to load reservation details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error viewing reservation: {ex.Message}");
+                MessageBox.Show($"Unexpected error.\n\n{ex.Message}", "Error");
+            }
         }
+
     }
 }

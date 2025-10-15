@@ -3,213 +3,203 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="Reservation Details"
-        Height="750" Width="500"
+        Height="800" Width="750"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource MaterialDesignPaper}"
-        FontFamily="Calibri"
-        FontSize="18"
+        FontFamily="Segoe UI"
+        FontSize="16"
         Style="{StaticResource MaterialDesignWindow}"
-        WindowStyle="None"
-        AllowsTransparency="False"
         ResizeMode="CanResize">
-
-    <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <materialDesign:BundledTheme BaseTheme="Light"
-                                             PrimaryColor="DeepPurple"
-                                             SecondaryColor="Purple" />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </Window.Resources>
 
     <materialDesign:DialogHost x:Name="LoaderDialogHost">
         <materialDesign:DialogHost.DialogContent>
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar IsIndeterminate="True"
                              Width="60" Height="60"
                              Style="{StaticResource MaterialDesignCircularProgressBar}" />
-                <TextBlock Text="Generating contract and sending email..."
-                           Margin="0,15,0,0"
-                           FontSize="14"
-                           FontWeight="SemiBold"
-                           Foreground="Black"
-                           HorizontalAlignment="Center" />
+                <TextBlock Text="Loading..." Margin="0,10,0,0"
+                           FontWeight="Bold" HorizontalAlignment="Center"/>
             </StackPanel>
         </materialDesign:DialogHost.DialogContent>
 
         <Grid>
-            <!-- Main Layout WITHOUT IMAGE -->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
 
-                <!-- Reservation Form -->
-                <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0">
-                    <Border Background="White" Padding="20" CornerRadius="10">
-                        <StackPanel>
+            <!-- Header (matching ReservationListPage style) -->
+            <StackPanel Margin="20">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="CalendarCheckOutline"
+                                             Width="28" Height="28"
+                                             Foreground="#673AB7"
+                                             Margin="0,0,10,0"/>
+                    <TextBlock Text="Reservation Details"
+                               FontSize="26"
+                               FontWeight="Bold"
+                               Foreground="#333"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
 
-                            <TextBlock Text="Reservation Details"
-                                       FontSize="24"
-                                       FontWeight="Bold"
-                                       Margin="0,0,0,20"
-                                       Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                <TextBlock FontSize="14"
+                           Foreground="Gray"
+                           Margin="0,4,0,20"
+                           Text="Detailed information for a specific reservation"/>
+            </StackPanel>
 
-                            <!-- Fields -->
-                            <TextBox Text="{Binding ReceiptNumber}"
-                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Receipt Number"
-                                     Margin="0,0,0,10"
-                                     IsReadOnly="True"
-                                     />
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="20,100,20,20">
+                <StackPanel>
 
-                            <TextBox Text="{Binding Celebrant}"
-                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Celebrant"
-                                     Margin="0,0,0,10" 
-                                     />
+                    <!-- Receipt Number -->
+                    <TextBlock Text="Receipt Number" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding Reservation.ReceiptNumber}" IsReadOnly="True"
+                             materialDesign:HintAssist.Hint="Receipt Number"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             Margin="0,0,0,15"/>
 
-                            <TextBox Text="{Binding Venue}"
-                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Venue"
-                                     Margin="0,0,0,10" 
-                                     />
+                    <!-- Celebrant -->
+                    <TextBlock Text="Celebrant" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding Reservation.Celebrant}" 
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}" 
+                             Margin="0,0,0,15"/>
 
-                            <TextBox Text="{Binding Profile.FullName}"
-                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Client Name"
-                                     Margin="0,0,0,10"
-                                     />
+                    <!-- Venue -->
+                    <TextBlock Text="Venue" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding Reservation.Venue}" 
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}" 
+                             Margin="0,0,0,15"/>
 
-                            <TextBox Text="{Binding Profile.Email}"
-                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Email"
-                                     Margin="0,0,0,10"
-                                     />
+                    <!-- Location -->
+                    <TextBlock Text="Location" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding Reservation.Location}" 
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}" 
+                             Margin="0,0,0,15"/>
 
-                            <TextBox Text="{Binding ThemeMotif.Name}"
-                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Theme / Motif"
-                                     Margin="0,0,0,10"
-                                     />
+                    <!-- Event Date & Time -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
 
-                            <TextBox Text="{Binding Package.Name}"
-                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Package"
-                                     Margin="0,0,0,10"
-                                     />
-
-                            <TextBox Text="{Binding Grazing.Name}"
-                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Grazing Table"
-                                     Margin="0,0,0,10"
-                                     />
-
-                            <TextBox Text="{Binding Location}"
-                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                     materialDesign:HintAssist.Hint="Location"
-                                     Margin="0,0,0,10" 
-                                     />
-
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="20" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <DatePicker SelectedDate="{Binding EventDate}"
-                                            Grid.Column="0"
-                                            materialDesign:HintAssist.Hint="Event Date" />
-
-                                <TextBox Text="{Binding EventTime}"
-                                         Grid.Column="2"
-                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                         materialDesign:HintAssist.Hint="Event Time" 
-                                          />
-                            </Grid>
-
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="20" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBox Text="{Binding AdultsQty}"
-                                         Grid.Column="0"
-                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                         materialDesign:HintAssist.Hint="Adults Qty"
-                                         />
-
-                                <TextBox Text="{Binding KidsQty}"
-                                         Grid.Column="2"
-                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                         materialDesign:HintAssist.Hint="Kids Qty"
-                                         />
-                            </Grid>
-
-                            <ComboBox SelectedValue="{Binding Status}"
-                                      SelectedValuePath="Content"
-                                      Style="{StaticResource MaterialDesignComboBox}"
-                                      materialDesign:HintAssist.Hint="Status"
-                                      Margin="0,0,0,10">
-                                <ComboBoxItem Content="pending" />
-                                <ComboBoxItem Content="confirmed" />
-                                <ComboBoxItem Content="contractsigning" />
-                                <ComboBoxItem Content="completed" />
-                                <ComboBoxItem Content="done" />
-                                <ComboBoxItem Content="canceled" />
-                            </ComboBox>
-
-                            <!-- Button Section -->
-                            <StackPanel Orientation="Horizontal"
-                                        HorizontalAlignment="Right"
-                                        Margin="0,20,0,0">
-
-                                <!-- Cancel Button -->
-                                <Button Style="{StaticResource MaterialDesignOutlinedButton}"
-                                        Padding="12,6"
-                                        Click="CancelButton_Click"
-                                        Margin="0,0,8,0">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <materialDesign:PackIcon Kind="Cancel" Width="20" Height="20" Margin="0,0,6,0"/>
-                                        <TextBlock Text="Cancel" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </Button>
-
-                                <!-- Update Button -->
-                                <Button Style="{StaticResource MaterialDesignRaisedButton}"
-                                        Background="#673AB7"
-                                        Foreground="White"
-                                        Padding="12,6"
-                                        Margin="0,0,8,0"
-                                        Command="{Binding UpdateReservationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <materialDesign:PackIcon Kind="ContentSaveEdit" Width="20" Height="20" Margin="0,0,6,0" />
-                                        <TextBlock Text="Update" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </Button>
-
-                                <!-- Generate Contract Button -->
-                                <Button Style="{StaticResource MaterialDesignRaisedButton}"
-                                        Background="#3949AB"
-                                        Foreground="White"
-                                        Click="GenerateContractButton_Click"
-                                        Padding="12,6">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <materialDesign:PackIcon Kind="FilePdfBox" Width="20" Height="20" Margin="0,0,6,0" />
-                                        <TextBlock Text="Generate Contract" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
-
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Event Date" Margin="0,0,0,5"/>
+                            <DatePicker SelectedDate="{Binding Reservation.EventDate}" />
                         </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Event Time" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Reservation.EventTime}" 
+                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Adults & Kids Qty -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Adults Quantity" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Reservation.AdultsQty, StringFormat={}{0:0}}" 
+                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Kids Quantity" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Reservation.KidsQty, StringFormat={}{0:0}}" 
+                                     Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Reservation Status -->
+                    <TextBlock Text="Reservation Status" Margin="0,0,0,5"/>
+                    <ComboBox SelectedValue="{Binding Reservation.Status}" 
+                              SelectedValuePath="Content"
+                              Style="{StaticResource MaterialDesignComboBox}"
+                              Margin="0,0,0,20">
+                        <ComboBoxItem Content="pending"/>
+                        <ComboBoxItem Content="confirmed"/>
+                        <ComboBoxItem Content="contractsigning"/>
+                        <ComboBoxItem Content="completed"/>
+                        <ComboBoxItem Content="done"/>
+                        <ComboBoxItem Content="canceled"/>
+                    </ComboBox>
+
+                    <!-- Client and Package Info -->
+                    <GroupBox Header="Client &amp; Package Info"
+                              FontWeight="SemiBold"
+                              Padding="10"
+                              Margin="0,10,0,20">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Reservation.Profile.FullName}" Margin="0,4"/>
+                            <TextBlock Text="{Binding Reservation.Profile.Email}" Margin="0,4"/>
+                            <TextBlock Text="{Binding Reservation.Package.Name}" Margin="0,4"/>
+                            <TextBlock Text="{Binding Reservation.Grazing.Name}" Margin="0,4"/>
+                            <TextBlock Text="{Binding Reservation.ThemeMotif.Name}" Margin="0,4"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Menu Orders -->
+                    <TextBlock Text="Menu Orders"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryHueMidBrush}"
+                               Margin="0,0,0,10"/>
+
+                    <Border BorderThickness="1"
+                            BorderBrush="#DDD"
+                            CornerRadius="4"
+                            Padding="8"
+                            Margin="0,0,0,20">
+                        <ListView ItemsSource="{Binding ReservationMenuOrders}"
+                                  SelectedItem="{Binding SelectedMenuOrder}"
+                                  Style="{StaticResource MaterialDesignListView}"
+                                  Height="180">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Dish" 
+                                                    DisplayMemberBinding="{Binding menu_options.Name}" 
+                                                    Width="300"/>
+                                    <GridViewColumn Header="Added At" 
+                                                    DisplayMemberBinding="{Binding CreatedAt, StringFormat='{}{0:MMM dd, yyyy HH:mm}'}"
+                                                    Width="180"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
                     </Border>
-                </ScrollViewer>
-            </Grid>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,10,0,0"
+                             >
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                Command="{Binding UpdateReservationCommand}"
+                                Background="#673AB7"
+                                Foreground="White"
+                                Padding="12,6">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ContentSave"/>
+                                <TextBlock Text="Update" Margin="6,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                Command="{Binding GenerateContractCommand}"
+                                Background="#3949AB"
+                                Foreground="White"
+                                Padding="12,6">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FilePdfBox"/>
+                                <TextBlock Text="Contract" Margin="6,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
     </materialDesign:DialogHost>
 </Window>
