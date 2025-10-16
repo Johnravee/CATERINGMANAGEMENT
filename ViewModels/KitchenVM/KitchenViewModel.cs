@@ -1,24 +1,21 @@
 ﻿using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 {
-    public class KitchenViewModel : INotifyPropertyChanged
+    public class KitchenViewModel : BaseViewModel
     {
-        private ObservableCollection<Kitchen> _kitchenItems = new(); // master list
-        private ObservableCollection<Kitchen> _filteredKitchenItems = new(); // filtered view
+        private readonly KitchenService _kitchenService = new();
+        private ObservableCollection<Kitchen> _kitchenItems = new();
+        private ObservableCollection<Kitchen> _filteredKitchenItems = new();
 
         private const int PageSize = 20;
- 
 
         public ObservableCollection<Kitchen> Items
         {
@@ -45,11 +42,10 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             {
                 _searchText = value;
                 OnPropertyChanged();
-                ApplySearchFilter();
+                _ = ApplySearchFilter();
             }
         }
 
-        // Pagination properties
         private int _currentPage = 1;
         public int CurrentPage
         {
@@ -64,11 +60,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        // Commands
         public ICommand DeleteKitchenItemCommand { get; set; }
         public ICommand EditKitchenItemCommand { get; set; }
         public ICommand AddKitchenItemCommand { get; set; }
-        public ICommand LoadMoreCommand { get; set; }
         public ICommand NextPageCommand { get; set; }
         public ICommand PrevPageCommand { get; set; }
         public ICommand ExportPdfCommand { get; set; }
@@ -77,17 +71,14 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
         public KitchenViewModel()
         {
             DeleteKitchenItemCommand = new RelayCommand<Kitchen>(async (k) => await DeleteKitchenItem(k));
-            EditKitchenItemCommand = new RelayCommand<Kitchen>(async (k) => await EditKitchenItem(k));
+            EditKitchenItemCommand = new RelayCommand<Kitchen>((k) => EditKitchenItem(k));
             AddKitchenItemCommand = new RelayCommand(() => AddNewKitchenItem());
-
             NextPageCommand = new RelayCommand(async () => await NextPage(), () => CurrentPage < TotalPages);
             PrevPageCommand = new RelayCommand(async () => await PrevPage(), () => CurrentPage > 1);
-
             ExportPdfCommand = new RelayCommand(async () => await ExportAsPdf());
             ExportCsvCommand = new RelayCommand(async () => await ExportAsCsv());
         }
 
-        // Load first page
         public async Task LoadItems()
         {
             IsLoading = true;
@@ -95,12 +86,11 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             {
                 _kitchenItems.Clear();
                 Items.Clear();
-
                 await LoadPage(1);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading kitchen items:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Error loading kitchen items:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -108,39 +98,21 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             }
         }
 
-        // Load specific page
         public async Task LoadPage(int pageNumber)
         {
             IsLoading = true;
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
-                int from = (pageNumber - 1) * PageSize;
-                int to = from + PageSize - 1;
-
-                var response = await client
-                    .From<Kitchen>()
-                    .Range(from, to)
-                    .Order(x => x.UpdatedAt, Ordering.Descending)
-                    .Get();
-
-                _kitchenItems.Clear();
-                if (response.Models != null)
-                {
-                    foreach (var item in response.Models)
-                        _kitchenItems.Add(item);
-                }
-
-                ApplySearchFilter();
-               await LoadKitchenSummary();
-                UpdatePagination();
-
+                var list = await _kitchenService.GetKitchenPageAsync(pageNumber, PageSize);
+                _kitchenItems = new ObservableCollection<Kitchen>(list);
+                await ApplySearchFilter();
+                await LoadKitchenSummary();
                 CurrentPage = pageNumber;
+                UpdatePagination();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Error loading page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -160,223 +132,105 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 await LoadPage(CurrentPage - 1);
         }
 
-     
-
-        // Search Query
-        private async void ApplySearchFilter()
+        private async Task ApplySearchFilter()
         {
-            var query = _searchText?.Trim().ToLower() ?? "";
-
-            if (string.IsNullOrWhiteSpace(query))
+            IsLoading = true;
+            try
             {
-                Items = new ObservableCollection<Kitchen>(_kitchenItems);
+                if (string.IsNullOrWhiteSpace(SearchText))
+                {
+                    Items = new ObservableCollection<Kitchen>(_kitchenItems);
+                }
+                else
+                {
+                    var results = await _kitchenService.SearchKitchenItemsAsync(SearchText);
+                    Items = new ObservableCollection<Kitchen>(results);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    IsLoading = true;
-                    var client = await SupabaseService.GetClientAsync();
-
-                    var response = await client
-                        .From<Kitchen>()
-                        .Filter(x => x.ItemName, Operator.ILike, $"%{query}%")
-                        .Get();
-
-                    if (response.Models != null)
-                        Items = new ObservableCollection<Kitchen>(response.Models);
-                    else
-                        Items = new ObservableCollection<Kitchen>();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error searching equipment:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                finally
-                {
-                    IsLoading = false;
-                }
+                ShowMessage($"Search error:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
         public async Task LoadKitchenSummary()
         {
-            try
+            var summary = await _kitchenService.GetKitchenSummaryAsync();
+            if (summary != null)
             {
-                var client = await SupabaseService.GetClientAsync();
+                TotalCount = summary.TotalCount;
+                NormalStockCount = summary.NormalCount;
+                LowStockCount = summary.LowCount;
 
-                var response = await client
-                    .From<KitchenSummary>()
-                    .Get();
-
-                if (response.Models != null && response.Models.Count > 0)
-                {
-                    var summary = response.Models[0];
-                    TotalCount = summary.TotalCount;
-                    NormalStockCount = summary.NormalCount;
-                    LowStockCount = summary.LowCount;
-
-                    OnPropertyChanged(nameof(TotalCount));
-                    OnPropertyChanged(nameof(NormalStockCount));
-                    OnPropertyChanged(nameof(LowStockCount));
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading equipment summary:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                OnPropertyChanged(nameof(TotalCount));
+                OnPropertyChanged(nameof(NormalStockCount));
+                OnPropertyChanged(nameof(LowStockCount));
             }
         }
 
-
-
         private void UpdatePagination()
         {
-         
-            TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize); 
+            TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
             OnPropertyChanged(nameof(CurrentPage));
             OnPropertyChanged(nameof(TotalPages));
         }
 
-        // Delete Kitchen Item
         private async Task DeleteKitchenItem(Kitchen item)
         {
             if (item == null) return;
 
-            var result = MessageBox.Show($"Are you sure you want to delete {item.ItemName}?",
+            var confirm = MessageBox.Show($"Are you sure you want to delete {item.ItemName}?",
                 "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
-            if (result != MessageBoxResult.Yes) return;
+            if (confirm != MessageBoxResult.Yes) return;
 
-            try
+            bool success = await _kitchenService.DeleteKitchenItemAsync(item.Id);
+
+            if (success)
             {
-                var client = await SupabaseService.GetClientAsync();
-                await client.From<Kitchen>().Where(k => k.Id == item.Id).Delete();
-
                 _kitchenItems.Remove(item);
-                ApplySearchFilter();
-               await LoadKitchenSummary();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error deleting kitchen item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                await ApplySearchFilter();
+                await LoadKitchenSummary();
             }
         }
 
-        // Edit Kitchen Item
-        private async Task EditKitchenItem(Kitchen item)
+        private void EditKitchenItem(Kitchen item)
         {
             if (item == null) return;
 
-            var editWindow = new EditKitchenItem(item);
-            bool? result = editWindow.ShowDialog();
-
-            if (result == true && editWindow.KitchenItem != null)
-            {
-                try
-                {
-                    editWindow.KitchenItem.UpdatedAt = DateTime.UtcNow;
-
-                    var client = await SupabaseService.GetClientAsync();
-                    var response = await client.From<Kitchen>()
-                        .Where(k => k.Id == editWindow.KitchenItem.Id)
-                        .Update(editWindow.KitchenItem);
-
-                    if (response.Models != null && response.Models.Count > 0)
-                    {
-                        var index = _kitchenItems.IndexOf(item);
-                        if (index >= 0)
-                            _kitchenItems[index] = response.Models[0];
-
-                        ApplySearchFilter();
-                       await LoadKitchenSummary();
-                        MessageBox.Show("Kitchen item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error updating kitchen item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
+            var editWindow = new EditKitchenItem(item, this);
+            editWindow.ShowDialog();
         }
 
-        // Add new kitchen item
         private void AddNewKitchenItem()
         {
-            var addWindow = new KitchenItemAdd();
-            bool? result = addWindow.ShowDialog();
-
-            if (result == true && addWindow.KitchenItem != null)
-            {
-                InsertKitchenItem(addWindow.KitchenItem);
-            }
+            var addWindow = new KitchenItemAdd(this);
+            addWindow.ShowDialog();
         }
 
-        private async void InsertKitchenItem(Kitchen item)
-        {
-            if (item == null) return;
-
-            try
-            {
-                var client = await SupabaseService.GetClientAsync();
-                var response = await client.From<Kitchen>().Insert(item);
-
-                if (response.Models != null && response.Models.Count > 0)
-                {
-                    _kitchenItems.Add(response.Models[0]);
-                    ApplySearchFilter();
-                   await LoadKitchenSummary();
-                    MessageBox.Show("Kitchen item added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error adding kitchen item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private async Task<List<Kitchen>> FetchAllKitchenItems()
-        {
-            var client = await SupabaseService.GetClientAsync();
-            var response = await client
-                .From<Kitchen>()
-                .Order(e => e.ItemName, Ordering.Ascending)
-                .Get();
-
-            return response.Models;
-        }
-
-
+      
 
         private async Task ExportAsPdf()
         {
+            IsLoading = true;
             try
             {
-                IsLoading = true;
-
-                var kitchenItems = await FetchAllKitchenItems();
-                if (kitchenItems == null || kitchenItems.Count == 0)
+                var data = await _kitchenService.GetAllKitchenItemsAsync();
+                if (data == null || data.Count == 0)
                 {
-                    MessageBox.Show("No equipment data available to export.", "Info",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShowMessage("No data to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
-                DataGridToPdf.DataGridToPDF(
-                    kitchenItems,
-                    "Kitchen_Inventory_Report",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "UpdatedAt",
-                    "CreatedAt"
-                );
+                DataGridToPdf.DataGridToPDF(data, "Kitchen_Inventory_Report", "Id", "BaseUrl", "RequestClientOptions", "TableName", "PrimaryKey", "UpdatedAt", "CreatedAt");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting PDF:\n{ex.Message}",
-                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Export PDF failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -386,44 +240,26 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 
         private async Task ExportAsCsv()
         {
+            IsLoading = true;
             try
             {
-                IsLoading = true;
-
-                var kitchenItems = await FetchAllKitchenItems();
-                if (kitchenItems == null || kitchenItems.Count == 0)
+                var data = await _kitchenService.GetAllKitchenItemsAsync();
+                if (data == null || data.Count == 0)
                 {
-                    MessageBox.Show("No equipment data available to export.", "Info",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShowMessage("No data to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
-                DatagridToCsv.ExportToCsv(
-                    kitchenItems,
-                    "Kitchen_Inventory_Report",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "UpdatedAt",
-                    "CreatedAt"
-                );
+                DatagridToCsv.ExportToCsv(data, "Kitchen_Inventory_Report", "Id", "BaseUrl", "RequestClientOptions", "TableName", "PrimaryKey", "UpdatedAt", "CreatedAt");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting CSV:\n{ex.Message}",
-                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Export CSV failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsLoading = false;
             }
         }
-
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
