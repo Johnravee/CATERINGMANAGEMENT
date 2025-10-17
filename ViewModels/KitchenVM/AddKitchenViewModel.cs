@@ -1,4 +1,10 @@
-﻿using CATERINGMANAGEMENT.Models;
+﻿/*
+ * FILE: AddKitchenItemViewModel.cs
+ * PURPOSE: Handles the logic for adding new kitchen inventory items in the Kitchen module.
+ *           Connected to the AddKitchenItem window and interacts with KitchenService for database operations.
+ */
+
+using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services.Data;
 using System;
@@ -47,7 +53,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
         {
             try
             {
-                // Validate inputs
+                // ✅ Basic validation
                 if (string.IsNullOrWhiteSpace(ItemName))
                 {
                     AppLogger.Info("Validation failed: Item name is empty.");
@@ -69,6 +75,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                     return;
                 }
 
+                // ✅ Create new item
                 var newItem = new Kitchen
                 {
                     ItemName = ItemName.Trim(),
@@ -85,7 +92,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 {
                     AppLogger.Success($"Inserted kitchen item: {inserted.Id} - {inserted.ItemName}");
                     ShowMessage("Kitchen item added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    await _parentViewModel.LoadPage(1);
+                    await _parentViewModel.LoadPage(1); // refresh list
                     CloseWindow();
                 }
                 else
@@ -96,11 +103,12 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             }
             catch (Exception ex)
             {
-                AppLogger.Error(ex, "An error occurred while adding kitchen item.");
+                AppLogger.Error(ex, "Error while adding kitchen item.");
                 ShowMessage($"Unexpected error:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        // ✅ Closes the add window after successful save
         private void CloseWindow()
         {
             foreach (Window window in Application.Current.Windows)

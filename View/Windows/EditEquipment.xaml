@@ -5,10 +5,10 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#F9FAFB"
-        FontFamily="Segoe UI">
+        FontFamily="Segoe UI"
+        Title="Edit Equipment">
 
-    <Border CornerRadius="12" Background="White" Padding="20" Margin="10"
-            Effect="{DynamicResource DropShadow}">
+    <Border CornerRadius="12" Background="White" Padding="20" Margin="10">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -45,24 +45,22 @@
                          FontSize="14"
                          Background="#F3F4F6"
                          BorderThickness="1"
-                         BorderBrush="#D1D5DB"
-                         PreviewTextInput="QuantityTextBox_PreviewTextInput"/>
+                         BorderBrush="#D1D5DB" />
             </StackPanel>
 
             <!-- Condition -->
             <StackPanel Grid.Row="3" Margin="0,0,0,15">
                 <TextBlock Text="Condition" Foreground="#555" Margin="0,0,0,4"/>
                 <ComboBox SelectedValue="{Binding Condition, UpdateSourceTrigger=PropertyChanged}"
-                  SelectedValuePath="Content"
-                  FontSize="14"
-                  Padding="6"
-                  Background="#F3F4F6"
-                  BorderBrush="#D1D5DB">
+                          SelectedValuePath="Content"
+                          FontSize="14"
+                          Padding="6"
+                          Background="#F3F4F6"
+                          BorderBrush="#D1D5DB">
                     <ComboBoxItem Content="Good" Foreground="LimeGreen"/>
                     <ComboBoxItem Content="Needs Repair" Foreground="Orange"/>
                     <ComboBoxItem Content="Damaged" Foreground="Red"/>
                 </ComboBox>
-
             </StackPanel>
 
             <!-- Notes -->
@@ -89,11 +87,11 @@
                         Foreground="#333"
                         BorderBrush="#D1D5DB"
                         BorderThickness="1"/>
-                <Button Content="Update"
+                <Button Content="Save"
                         Width="90"
                         Height="32"
                         IsDefault="True"
-                        Click="UpdatEquipment_Click"
+                        Command="{Binding SaveCommand}"
                         Background="#4F46E5"
                         Foreground="White"
                         BorderThickness="0"/>

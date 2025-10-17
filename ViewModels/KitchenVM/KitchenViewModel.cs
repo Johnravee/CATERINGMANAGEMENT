@@ -1,9 +1,19 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+﻿/*
+ * FILE: KitchenViewModel.cs
+ * PURPOSE: Acts as the main ViewModel for the Kitchen Inventory page.
+ *          Handles data loading, pagination, searching, CRUD actions,
+ *          and exporting of kitchen items to PDF or CSV.
+ */
+
+using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
+using System;
 using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -12,20 +22,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
     public class KitchenViewModel : BaseViewModel
     {
         private readonly KitchenService _kitchenService = new();
-        private ObservableCollection<Kitchen> _kitchenItems = new();
-        private ObservableCollection<Kitchen> _filteredKitchenItems = new();
+        private CancellationTokenSource? _searchDebounceToken;
 
-        private const int PageSize = 20;
-
-        public ObservableCollection<Kitchen> Items
-        {
-            get => _filteredKitchenItems;
-            set { _filteredKitchenItems = value; OnPropertyChanged(); }
-        }
-
-        public int TotalCount { get; set; }
-        public int LowStockCount { get; set; }
-        public int NormalStockCount { get; set; }
+        public ObservableCollection<Kitchen> Items { get; set; } = new();
 
         private bool _isLoading;
         public bool IsLoading
@@ -42,10 +41,11 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             {
                 _searchText = value;
                 OnPropertyChanged();
-                _ = ApplySearchFilter();
+                _ = ApplySearchFilterDebounced();
             }
         }
 
+        private const int PageSize = 20;
         private int _currentPage = 1;
         public int CurrentPage
         {
@@ -60,182 +60,192 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        public ICommand DeleteKitchenItemCommand { get; set; }
-        public ICommand EditKitchenItemCommand { get; set; }
-        public ICommand AddKitchenItemCommand { get; set; }
-        public ICommand NextPageCommand { get; set; }
-        public ICommand PrevPageCommand { get; set; }
-        public ICommand ExportPdfCommand { get; set; }
-        public ICommand ExportCsvCommand { get; set; }
+        public int TotalCount { get; set; }
+        public int LowStockCount { get; set; }
+        public int NormalStockCount { get; set; }
+
+        public ICommand DeleteKitchenItemCommand { get; }
+        public ICommand EditKitchenItemCommand { get; }
+        public ICommand AddKitchenItemCommand { get; }
+        public ICommand NextPageCommand { get; }
+        public ICommand PrevPageCommand { get; }
+        public ICommand ExportPdfCommand { get; }
+        public ICommand ExportCsvCommand { get; }
 
         public KitchenViewModel()
         {
-            DeleteKitchenItemCommand = new RelayCommand<Kitchen>(async (k) => await DeleteKitchenItem(k));
-            EditKitchenItemCommand = new RelayCommand<Kitchen>((k) => EditKitchenItem(k));
-            AddKitchenItemCommand = new RelayCommand(() => AddNewKitchenItem());
-            NextPageCommand = new RelayCommand(async () => await NextPage(), () => CurrentPage < TotalPages);
-            PrevPageCommand = new RelayCommand(async () => await PrevPage(), () => CurrentPage > 1);
+            DeleteKitchenItemCommand = new RelayCommand<Kitchen>(async k => await DeleteKitchenItem(k));
+            EditKitchenItemCommand = new RelayCommand<Kitchen>(EditKitchenItem);
+            AddKitchenItemCommand = new RelayCommand(AddNewKitchenItem);
+            NextPageCommand = new RelayCommand(async () => await LoadPage(CurrentPage + 1), () => CurrentPage < TotalPages);
+            PrevPageCommand = new RelayCommand(async () => await LoadPage(CurrentPage - 1), () => CurrentPage > 1);
             ExportPdfCommand = new RelayCommand(async () => await ExportAsPdf());
             ExportCsvCommand = new RelayCommand(async () => await ExportAsCsv());
+
+            _ = LoadPage(1);
         }
 
-        public async Task LoadItems()
-        {
-            IsLoading = true;
-            try
-            {
-                _kitchenItems.Clear();
-                Items.Clear();
-                await LoadPage(1);
-            }
-            catch (Exception ex)
-            {
-                ShowMessage($"Error loading kitchen items:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
+        /// <summary>
+        /// Loads a specific page of kitchen data and summary in parallel.
+        /// </summary>
         public async Task LoadPage(int pageNumber)
         {
+            if (IsLoading) return;
             IsLoading = true;
+
             try
             {
-                var list = await _kitchenService.GetKitchenPageAsync(pageNumber, PageSize);
-                _kitchenItems = new ObservableCollection<Kitchen>(list);
-                await ApplySearchFilter();
-                await LoadKitchenSummary();
+                var listTask = _kitchenService.GetKitchenPageAsync(pageNumber, PageSize);
+                var summaryTask = _kitchenService.GetKitchenSummaryAsync();
+
+                await Task.WhenAll(listTask, summaryTask);
+
+                var list = listTask.Result ?? new List<Kitchen>();
+                var summary = summaryTask.Result;
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Items = new ObservableCollection<Kitchen>(list);
+                    OnPropertyChanged(nameof(Items));
+                });
+
+                if (summary != null)
+                {
+                    TotalCount = summary.TotalCount;
+                    NormalStockCount = summary.NormalCount;
+                    LowStockCount = summary.LowCount;
+                    TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
+                }
+
                 CurrentPage = pageNumber;
-                UpdatePagination();
             }
             catch (Exception ex)
             {
                 ShowMessage($"Error loading page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex.Message);
             }
-            finally
+            finally { IsLoading = false; }
+        }
+
+        /// <summary>
+        /// Debounced search (waits 400ms after typing stops).
+        /// </summary>
+        private async Task ApplySearchFilterDebounced()
+        {
+            _searchDebounceToken?.Cancel();
+            var cts = new CancellationTokenSource();
+            _searchDebounceToken = cts;
+
+            try
             {
-                IsLoading = false;
+                await Task.Delay(400, cts.Token);
+                await ApplySearchFilter();
             }
-        }
-
-        private async Task NextPage()
-        {
-            if (CurrentPage < TotalPages)
-                await LoadPage(CurrentPage + 1);
-        }
-
-        private async Task PrevPage()
-        {
-            if (CurrentPage > 1)
-                await LoadPage(CurrentPage - 1);
+            catch (TaskCanceledException) { }
         }
 
         private async Task ApplySearchFilter()
         {
+            if (IsLoading) return;
             IsLoading = true;
+
             try
             {
                 if (string.IsNullOrWhiteSpace(SearchText))
                 {
-                    Items = new ObservableCollection<Kitchen>(_kitchenItems);
+                    await LoadPage(CurrentPage);
+                    return;
                 }
-                else
+
+                var result = await _kitchenService.SearchKitchenItemsAsync(SearchText);
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    var results = await _kitchenService.SearchKitchenItemsAsync(SearchText);
-                    Items = new ObservableCollection<Kitchen>(results);
-                }
+                    Items = new ObservableCollection<Kitchen>(result ?? new List<Kitchen>());
+                    OnPropertyChanged(nameof(Items));
+                });
             }
             catch (Exception ex)
             {
                 ShowMessage($"Search error:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex.Message);
             }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        public async Task LoadKitchenSummary()
-        {
-            var summary = await _kitchenService.GetKitchenSummaryAsync();
-            if (summary != null)
-            {
-                TotalCount = summary.TotalCount;
-                NormalStockCount = summary.NormalCount;
-                LowStockCount = summary.LowCount;
-
-                OnPropertyChanged(nameof(TotalCount));
-                OnPropertyChanged(nameof(NormalStockCount));
-                OnPropertyChanged(nameof(LowStockCount));
-            }
-        }
-
-        private void UpdatePagination()
-        {
-            TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
-            OnPropertyChanged(nameof(CurrentPage));
-            OnPropertyChanged(nameof(TotalPages));
+            finally { IsLoading = false; }
         }
 
         private async Task DeleteKitchenItem(Kitchen item)
         {
             if (item == null) return;
 
-            var confirm = MessageBox.Show($"Are you sure you want to delete {item.ItemName}?",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var confirm = MessageBox.Show(
+                $"Delete {item.ItemName}?", "Confirm Delete",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (confirm != MessageBoxResult.Yes) return;
 
-            bool success = await _kitchenService.DeleteKitchenItemAsync(item.Id);
-
-            if (success)
+            IsLoading = true;
+            try
             {
-                _kitchenItems.Remove(item);
-                await ApplySearchFilter();
-                await LoadKitchenSummary();
+                if (await _kitchenService.DeleteKitchenItemAsync(item.Id))
+                {
+                    Items.Remove(item);
+                    await LoadPage(CurrentPage);
+                }
             }
+            catch (Exception ex)
+            {
+                ShowMessage($"Delete failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex.Message);
+            }
+            finally { IsLoading = false; }
         }
 
         private void EditKitchenItem(Kitchen item)
         {
             if (item == null) return;
-
-            var editWindow = new EditKitchenItem(item, this);
-            editWindow.ShowDialog();
+            new EditKitchenItem(item, this).ShowDialog();
         }
 
         private void AddNewKitchenItem()
         {
-            var addWindow = new KitchenItemAdd(this);
-            addWindow.ShowDialog();
+            new KitchenItemAdd(this).ShowDialog();
         }
 
-      
+        private async Task<List<Kitchen>> FetchAllKitchenItems()
+        {
+            try
+            {
+                return await _kitchenService.GetAllKitchenItemsAsync() ?? new List<Kitchen>();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Fetch all error: {ex.Message}");
+                return new List<Kitchen>();
+            }
+        }
 
         private async Task ExportAsPdf()
         {
             IsLoading = true;
             try
             {
-                var data = await _kitchenService.GetAllKitchenItemsAsync();
-                if (data == null || data.Count == 0)
+                var data = await FetchAllKitchenItems();
+                if (data.Count == 0)
                 {
                     ShowMessage("No data to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
-                DataGridToPdf.DataGridToPDF(data, "Kitchen_Inventory_Report", "Id", "BaseUrl", "RequestClientOptions", "TableName", "PrimaryKey", "UpdatedAt", "CreatedAt");
+                DataGridToPdf.DataGridToPDF(
+                    data, "Kitchen_Inventory_Report",
+                    "Id", "BaseUrl", "RequestClientOptions",
+                    "TableName", "PrimaryKey", "UpdatedAt", "CreatedAt");
             }
             catch (Exception ex)
             {
                 ShowMessage($"Export PDF failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex.Message);
             }
-            finally
-            {
-                IsLoading = false;
-            }
+            finally { IsLoading = false; }
         }
 
         private async Task ExportAsCsv()
@@ -243,23 +253,24 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             IsLoading = true;
             try
             {
-                var data = await _kitchenService.GetAllKitchenItemsAsync();
-                if (data == null || data.Count == 0)
+                var data = await FetchAllKitchenItems();
+                if (data.Count == 0)
                 {
                     ShowMessage("No data to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
-                DatagridToCsv.ExportToCsv(data, "Kitchen_Inventory_Report", "Id", "BaseUrl", "RequestClientOptions", "TableName", "PrimaryKey", "UpdatedAt", "CreatedAt");
+                DatagridToCsv.ExportToCsv(
+                    data, "Kitchen_Inventory_Report",
+                    "Id", "BaseUrl", "RequestClientOptions",
+                    "TableName", "PrimaryKey", "UpdatedAt", "CreatedAt");
             }
             catch (Exception ex)
             {
                 ShowMessage($"Export CSV failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex.Message);
             }
-            finally
-            {
-                IsLoading = false;
-            }
+            finally { IsLoading = false; }
         }
     }
 }

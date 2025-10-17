@@ -1,4 +1,11 @@
-﻿using CATERINGMANAGEMENT.Models;
+﻿/*
+ * FILE: EditKitchenItemViewModel.cs
+ * PURPOSE: Handles the logic for editing existing kitchen inventory items.
+ *           Connected to the EditKitchenItem window and updates data through KitchenService.
+ */
+
+
+using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services.Data;
 using System.Windows;
@@ -10,6 +17,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
     {
         public Kitchen KitchenItem { get; }
         private readonly KitchenViewModel _parentViewModel;
+        private readonly KitchenService _kitchenService;
 
         private string _itemName;
         public string ItemName
@@ -34,8 +42,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 
         public ICommand SaveCommand { get; }
 
-        private readonly KitchenService _kitchenService;
-
         public EditKitchenItemViewModel(Kitchen item, KitchenViewModel parentViewModel)
         {
             KitchenItem = item ?? throw new ArgumentNullException(nameof(item));
@@ -45,15 +51,16 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             _unit = item.Unit ?? string.Empty;
 
             _kitchenService = new KitchenService();
+            _parentViewModel = parentViewModel;
 
             SaveCommand = new RelayCommand(async () => await SaveAsync());
-            _parentViewModel = parentViewModel;
         }
 
         private async Task SaveAsync()
         {
             try
             {
+                // ✅ Basic validation
                 if (string.IsNullOrWhiteSpace(ItemName))
                 {
                     AppLogger.Info("Validation failed: Item name is empty.");
@@ -68,18 +75,19 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                     return;
                 }
 
+                // ✅ Apply changes to model
                 KitchenItem.ItemName = ItemName;
                 KitchenItem.Quantity = qty;
                 KitchenItem.Unit = Unit;
                 KitchenItem.UpdatedAt = DateTime.UtcNow;
 
-                AppLogger.Info($"Attempting to update kitchen item: {KitchenItem.Id} - {KitchenItem.ItemName}");
+                AppLogger.Info($"Updating kitchen item: {KitchenItem.Id} - {KitchenItem.ItemName}");
 
                 var updated = await _kitchenService.UpdateKitchenItemAsync(KitchenItem);
 
                 if (updated != null)
                 {
-                    await _parentViewModel.LoadPage(1);
+                    await _parentViewModel.LoadPage(1); // refresh list after save
                     AppLogger.Success($"Kitchen item updated successfully: {updated.Id} - {updated.ItemName}");
                     ShowMessage("Kitchen item updated successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     CloseWindow();
@@ -92,11 +100,12 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             }
             catch (Exception ex)
             {
-                AppLogger.Error(ex, "An error occurred while updating kitchen item.");
+                AppLogger.Error(ex, "Error while updating kitchen item.");
                 ShowMessage($"Unexpected error:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        // ✅ Closes window after successful update
         private void CloseWindow()
         {
             foreach (Window window in Application.Current.Windows)

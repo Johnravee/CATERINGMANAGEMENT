@@ -14,7 +14,7 @@ namespace CATERINGMANAGEMENT.View.Pages
             _viewModel = new KitchenViewModel();
             DataContext = _viewModel;
 
-            Loaded += async (_, __) => { await _viewModel.LoadItems(); };
+            Loaded += async (_, __) => { await _viewModel.LoadPage(1); };
         }
 
        
