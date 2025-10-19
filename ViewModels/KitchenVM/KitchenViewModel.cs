@@ -60,9 +60,27 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        public int TotalCount { get; set; }
-        public int LowStockCount { get; set; }
-        public int NormalStockCount { get; set; }
+        // ✅ Summary counts (with notifications)
+        private int _totalCount;
+        public int TotalCount
+        {
+            get => _totalCount;
+            set { _totalCount = value; OnPropertyChanged(); }
+        }
+
+        private int _lowStockCount;
+        public int LowStockCount
+        {
+            get => _lowStockCount;
+            set { _lowStockCount = value; OnPropertyChanged(); }
+        }
+
+        private int _normalStockCount;
+        public int NormalStockCount
+        {
+            get => _normalStockCount;
+            set { _normalStockCount = value; OnPropertyChanged(); }
+        }
 
         public ICommand DeleteKitchenItemCommand { get; }
         public ICommand EditKitchenItemCommand { get; }
@@ -121,7 +139,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             }
             catch (Exception ex)
             {
-                ShowMessage($"Error loading page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Error loading kitchen items:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 AppLogger.Error(ex.Message);
             }
             finally { IsLoading = false; }
@@ -166,7 +184,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             }
             catch (Exception ex)
             {
-                ShowMessage($"Search error:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Search failed:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 AppLogger.Error(ex.Message);
             }
             finally { IsLoading = false; }
@@ -210,25 +228,12 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             new KitchenItemAdd(this).ShowDialog();
         }
 
-        private async Task<List<Kitchen>> FetchAllKitchenItems()
-        {
-            try
-            {
-                return await _kitchenService.GetAllKitchenItemsAsync() ?? new List<Kitchen>();
-            }
-            catch (Exception ex)
-            {
-                AppLogger.Error($"Fetch all error: {ex.Message}");
-                return new List<Kitchen>();
-            }
-        }
-
         private async Task ExportAsPdf()
         {
             IsLoading = true;
             try
             {
-                var data = await FetchAllKitchenItems();
+                var data = await _kitchenService.GetKitchenPageAsync(1, int.MaxValue);
                 if (data.Count == 0)
                 {
                     ShowMessage("No data to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -253,7 +258,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             IsLoading = true;
             try
             {
-                var data = await FetchAllKitchenItems();
+                var data = await _kitchenService.GetKitchenPageAsync(1, int.MaxValue);
                 if (data.Count == 0)
                 {
                     ShowMessage("No data to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);

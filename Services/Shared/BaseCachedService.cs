@@ -7,7 +7,7 @@ namespace CATERINGMANAGEMENT.Services.Shared
     public abstract class BaseCachedService
     {
         protected readonly IMemoryCache _cache;
-        private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(2);
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(10);
 
         // Track keys for invalidation
         private readonly HashSet<string> _cacheKeys = new();

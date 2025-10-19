@@ -234,30 +234,6 @@ namespace CATERINGMANAGEMENT.Services.Data
         }
 
         /// <summary>
-        /// Retrieves all kitchen items ordered by name.
-        /// No cache used to avoid stale bulk data.
-        /// </summary>
-        /// <returns>List of all kitchen items</returns>
-        public async Task<List<Kitchen>> GetAllKitchenItemsAsync()
-        {
-            try
-            {
-                var client = await GetClientAsync();
-                var response = await client
-                    .From<Kitchen>()
-                    .Order(k => k.ItemName, Ordering.Ascending)
-                    .Get();
-
-                return response.Models ?? new List<Kitchen>();
-            }
-            catch (Exception ex)
-            {
-                AppLogger.Error($"Error loading all kitchen items: {ex.Message}");
-                return new List<Kitchen>();
-            }
-        }
-
-        /// <summary>
         /// Clears all related kitchen cache entries.
         /// Called after insert, update, or delete.
         /// </summary>

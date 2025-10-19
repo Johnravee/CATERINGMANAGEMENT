@@ -225,70 +225,29 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             }
         }
 
-        private async Task EditEquipment(Equipment item)
+        private Task EditEquipment(Equipment item)
         {
-            if (item == null) return;
+            if (item == null)
+                return Task.CompletedTask;
             new EditEquipments(item, this).ShowDialog();
+            return Task.CompletedTask;
         }
 
         private void AddNewEquipment()
         {
-            var addWindow = new EquipmentItemAdd();
-            if (addWindow.ShowDialog() == true && addWindow.NewEquipment != null)
-                _ = InsertEquipmentItem(addWindow.NewEquipment);
+            new EquipmentItemAdd(this).ShowDialog();
         }
 
-        private async Task InsertEquipmentItem(Equipment item)
-        {
-            if (item == null) return;
-            IsLoading = true;
+       
 
-            try
-            {
-                var inserted = await _equipmentService.InsertEquipmentAsync(item);
-                if (inserted != null)
-                {
-                    Items.Add(inserted);
-                    await LoadPage(CurrentPage);
-                    MessageBox.Show("✅ New equipment added!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error adding:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                AppLogger.Error(ex.Message);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task<List<Equipment>> FetchAllEquipments()
-        {
-            try
-            {
-                var client = await SupabaseService.GetClientAsync();
-                var response = await client
-                    .From<Equipment>()
-                    .Order(x => x.ItemName, Supabase.Postgrest.Constants.Ordering.Ascending)
-                    .Get();
-
-                return response.Models ?? new List<Equipment>();
-            }
-            catch (Exception ex)
-            {
-                AppLogger.Error($"FetchAll error: {ex.Message}");
-                return new List<Equipment>();
-            }
-        }
+      
 
         private async Task ExportAsPdf()
         {
             try
             {
                 IsLoading = true;
-                var equipments = await FetchAllEquipments();
+                var equipments = await _equipmentService.GetEquipmentsAsync(1, int.MaxValue);
                 if (equipments.Count == 0)
                 {
                     MessageBox.Show("No equipment data to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -311,7 +270,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             try
             {
                 IsLoading = true;
-                var equipments = await FetchAllEquipments();
+                var equipments = await _equipmentService.GetEquipmentsAsync(1, int.MaxValue);
                 if (equipments.Count == 0)
                 {
                     MessageBox.Show("No equipment data to export.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);

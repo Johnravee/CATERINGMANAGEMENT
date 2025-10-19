@@ -1,0 +1,30 @@
+﻿<Window x:Class="CATERINGMANAGEMENT.View.Windows.EditScheduleWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Edit Schedule" Height="300" Width="400"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="10">
+        <StackPanel>
+            <TextBlock Text="Assigned Workers:" FontWeight="Bold" Margin="0,0,0,10"/>
+
+            <ListBox ItemsSource="{Binding AssignedWorkers}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Name}" Width="200"/>
+                            <Button Content="Remove"
+                                    Command="{Binding DataContext.RemoveWorkerCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}" Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Button Content="Close"
+                    HorizontalAlignment="Right"
+                    Margin="0,10,0,0"
+                    Command="{Binding CloseCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>

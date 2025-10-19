@@ -19,10 +19,7 @@ namespace CATERINGMANAGEMENT.Services.Data
     {
         private Supabase.Client? _client;
 
-        /// <summary>
-        /// Default constructor calling base caching service constructor.
-        /// </summary>
-        public ReservationService() : base() { }
+        
 
         /// <summary>
         /// Lazy loads and returns a Supabase client instance for database operations.

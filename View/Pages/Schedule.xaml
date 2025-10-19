@@ -157,6 +157,7 @@
                              FontSize="14"
                              Padding="4,2"
                              VerticalContentAlignment="Center"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              materialDesign:HintAssist.Hint="Search reservation or worker..."/>
                 </DockPanel>
             </Border>
@@ -198,7 +199,7 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Style="{StaticResource ModernFlatButton}" 
                                 ToolTip="Edit"
-                                Command="{Binding DataContext.EditScheduleCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                Command="{Binding DataContext.EditScheduledWorkerCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                 CommandParameter="{Binding}">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="Pencil" Width="16" Height="16" Margin="0,0,4,0"/>

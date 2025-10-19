@@ -15,13 +15,7 @@ namespace CATERINGMANAGEMENT.View.Pages
             //AuthGuard.RequireAuthentication(this);
             DataContext = new SchedulingViewModel();
 
-            Loaded += async (_, __) =>
-            {
-                if (DataContext is SchedulingViewModel vm)
-                {
-                    await vm.LoadPage();
-                }
-            };
+           
         }
     }
 }

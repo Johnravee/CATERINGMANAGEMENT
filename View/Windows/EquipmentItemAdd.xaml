@@ -5,10 +5,10 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#F9FAFB"
-        FontFamily="Segoe UI">
+        FontFamily="Segoe UI"
+        Title="Add Equipment">
 
-    <Border CornerRadius="12" Background="White" Padding="20" Margin="10" 
-            Effect="{DynamicResource DropShadow}">
+    <Border CornerRadius="12" Background="White" Padding="20" Margin="10">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -29,77 +29,50 @@
             <!-- Item Name -->
             <StackPanel Grid.Row="1" Margin="0,0,0,15">
                 <TextBlock Text="Item Name" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox x:Name="ItemNameTextBox"
-                         Padding="8"
-                         FontSize="14"
-                         Background="#F3F4F6"
-                         BorderThickness="1"
-                         BorderBrush="#D1D5DB"/>
+                <TextBox Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="8" FontSize="14"
+                         Background="#F3F4F6" BorderThickness="1" BorderBrush="#D1D5DB"/>
             </StackPanel>
 
             <!-- Quantity -->
             <StackPanel Grid.Row="2" Margin="0,0,0,15">
                 <TextBlock Text="Quantity" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox x:Name="QuantityTextBox"
-                         Padding="8"
-                         FontSize="14"
-                         Background="#F3F4F6"
-                         BorderThickness="1"
-                         BorderBrush="#D1D5DB"
-                         PreviewTextInput="QuantityTextBox_PreviewTextInput"/>
+                <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                         Padding="8" FontSize="14"
+                         Background="#F3F4F6" BorderThickness="1" BorderBrush="#D1D5DB"
+                         />
             </StackPanel>
 
             <!-- Condition -->
             <StackPanel Grid.Row="3" Margin="0,0,0,15">
                 <TextBlock Text="Condition" Foreground="#555" Margin="0,0,0,4"/>
-                <ComboBox x:Name="ConditionComboBox"
-                          SelectedIndex="0"
-                          FontSize="14"
-                          Padding="6"
-                          Background="#F3F4F6"
-                          BorderBrush="#D1D5DB">
-                    <ComboBoxItem Content="New" Foreground="Green"/>
-                    <ComboBoxItem Content="Fair" Foreground="Goldenrod"/>
-                    <ComboBoxItem Content="Good" Foreground="LimeGreen"/>
-                    <ComboBoxItem Content="Needs Repair" Foreground="Orange"/>
-                    <ComboBoxItem Content="Bad" Foreground="Red"/>
-                
+                <ComboBox SelectedValue="{Binding Condition}" SelectedValuePath="Content"
+                          FontSize="14" Padding="6"
+                          Background="#F3F4F6" BorderBrush="#D1D5DB">
+                    <ComboBoxItem Content="New"/>
+                    <ComboBoxItem Content="Good"/>
+                    <ComboBoxItem Content="Fair"/>
+                    <ComboBoxItem Content="Needs Repair"/>
+                    <ComboBoxItem Content="Bad"/>
                 </ComboBox>
+
             </StackPanel>
 
             <!-- Notes -->
             <StackPanel Grid.Row="4" Margin="0,0,0,15">
                 <TextBlock Text="Notes" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox x:Name="NotesTextBox"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         Height="80"
-                         Padding="8"
-                         FontSize="14"
-                         Background="#F3F4F6"
-                         BorderBrush="#D1D5DB"/>
+                <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="80" Padding="8" FontSize="14"
+                         Background="#F3F4F6" BorderBrush="#D1D5DB"/>
             </StackPanel>
 
             <!-- Buttons -->
             <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Content="Cancel"
-                        Width="90"
-                        Height="32"
-                        Margin="0,0,10,0"
-                        Click="Cancel_Click"
-                        Background="#E5E7EB"
-                        Foreground="#333"
-                        BorderBrush="#D1D5DB"
-                        BorderThickness="1"
-                        />
-                <Button Content="Add"
-                        Width="90"
-                        Height="32"
-                        Click="Add_Click"
-                        Background="#4F46E5"
-                        Foreground="White"
-                        BorderThickness="0"
-                       />
+                <Button Content="Add" Width="90" Height="32"
+                        Command="{Binding SaveCommand}"
+                        Background="#4F46E5" Foreground="White"
+                        BorderThickness="0"/>
             </StackPanel>
         </Grid>
     </Border>

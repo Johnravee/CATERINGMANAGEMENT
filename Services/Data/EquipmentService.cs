@@ -218,6 +218,7 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
+
         /// <summary>
         /// Helper method to invalidate cache entries related to equipment,
         /// such as equipment summaries.
