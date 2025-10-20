@@ -11,7 +11,8 @@ using System.Windows.Input;
 namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
     /// <summary>
-    /// ViewModel for editing an existing grouped schedule and managing assigned workers.
+    /// ViewModel for editing assigned workers in a reservation.
+    /// Only parses names & IDs for removal.
     /// </summary>
     public class EditScheduleViewModel : BaseViewModel
     {
@@ -20,6 +21,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
         public GroupedScheduleView GroupedSchedule { get; }
 
+        /// <summary>
+        /// List of assigned workers with their IDs
+        /// </summary>
         public ObservableCollection<Worker> AssignedWorkers { get; } = new();
 
         public ICommand RemoveWorkerCommand { get; }
@@ -30,33 +34,45 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             GroupedSchedule = groupedSchedule ?? throw new ArgumentNullException(nameof(groupedSchedule));
             _parentViewModel = parentViewModel;
 
-            // Parse assigned workers (assuming comma-separated string from view)
-            if (!string.IsNullOrEmpty(groupedSchedule.AssignedWorkers))
-            {
-                var workerNames = groupedSchedule.AssignedWorkers.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                foreach (var name in workerNames)
-                {
-                    AssignedWorkers.Add(new Worker { Name = name.Trim() });
-                }
-            }
+            ParseAssignedWorkers();
 
             RemoveWorkerCommand = new RelayCommand<Worker>(async w => await RemoveWorkerAsync(w));
             CloseCommand = new RelayCommand(CloseWindow);
         }
 
-        private async Task RemoveWorkerAsync(Worker worker)
+        private void ParseAssignedWorkers()
         {
-            if (worker == null)
+            if (string.IsNullOrEmpty(GroupedSchedule.AssignedWorkers) ||
+                string.IsNullOrEmpty(GroupedSchedule.AssignedWorkerIds))
                 return;
 
+            var names = GroupedSchedule.AssignedWorkers.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var ids = GroupedSchedule.AssignedWorkerIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 0; i < Math.Min(names.Length, ids.Length); i++)
+            {
+                if (long.TryParse(ids[i].Trim(), out long workerId))
+                {
+                    AssignedWorkers.Add(new Worker
+                    {
+                        Id = (int)workerId,
+                        Name = names[i].Trim()
+                    });
+                }
+            }
+        }
+
+        private async Task RemoveWorkerAsync(Worker worker)
+        {
+            if (worker == null) return;
+
             var confirm = MessageBox.Show(
-                $"Are you sure you want to remove {worker.Name} from this schedule?",
-                "Confirm Removal",
+                $"Remove {worker.Name} from this reservation?",
+                "Confirm",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
-            if (confirm != MessageBoxResult.Yes)
-                return;
+            if (confirm != MessageBoxResult.Yes) return;
 
             bool success = await _schedulingService.RemoveWorkerFromScheduleAsync(GroupedSchedule.ReservationId, worker.Id);
 
@@ -64,10 +80,11 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             {
                 AssignedWorkers.Remove(worker);
                 AppLogger.Info($"Removed worker {worker.Name} from reservation {GroupedSchedule.ReservationId}");
-                MessageBox.Show("✅ Worker removed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Refresh parent view
                 await _parentViewModel.ReloadDataAsync();
+
+                MessageBox.Show("✅ Worker removed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {

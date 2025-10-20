@@ -40,6 +40,9 @@ namespace CATERINGMANAGEMENT.Models
         [Column("assigned_workers")]
         public string? AssignedWorkers { get; set; }
 
+        [Column("assigned_worker_ids")]
+        public string? AssignedWorkerIds { get; set; }   
+
         [Column("assigned_on")]
         public DateTime AssignedOn { get; set; }
     }

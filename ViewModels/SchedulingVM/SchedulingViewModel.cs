@@ -1,9 +1,9 @@
 ﻿/*
  * FILE: SchedulingViewModel.cs
- * PURPOSE: Acts as the main ViewModel for the Scheduling page.
- *          Handles the loading of both current schedules and completed reservations
- *          (ready to be scheduled). Supports pagination, refreshing,
- *          and integration with the AssignWorker window.
+ * PURPOSE: Main ViewModel for the Scheduling page.
+ *          Handles loading schedules, completed reservations,
+ *          pagination, searching (with debounce), and integration
+ *          with AssignWorker and EditSchedule windows.
  */
 
 using CATERINGMANAGEMENT.Helpers;
@@ -13,6 +13,8 @@ using CATERINGMANAGEMENT.View.Windows;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -22,12 +24,13 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
     public class SchedulingViewModel : BaseViewModel
     {
         private readonly SchedulingService _schedulingService = new();
+        private CancellationTokenSource? _searchDebounceToken;
 
         // ✅ Data collections
         public ObservableCollection<GroupedScheduleView> Schedules { get; set; } = new();
         public ObservableCollection<Reservation> CompletedReservations { get; set; } = new();
 
-        // ✅ UI state flags
+        // ✅ UI state
         private bool _isLoading;
         public bool IsLoading
         {
@@ -42,7 +45,8 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _isRefreshing = value; OnPropertyChanged(); }
         }
 
-        // ✅ Pagination info
+        // ✅ Pagination
+        private const int PageSize = 10;
         private int _currentPage = 1;
         public int CurrentPage
         {
@@ -57,13 +61,25 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        private const int PageSize = 10;
+        // ✅ Search
+        private string _searchText = string.Empty;
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                _searchText = value;
+                OnPropertyChanged();
+                _ = ApplySearchDebouncedAsync();
+            }
+        }
 
         // ✅ Commands
         public ICommand RefreshCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
         public ICommand OpenAssignWorkerCommand { get; }
+        public ICommand OpenEditScheduleCommand { get; }
 
         public SchedulingViewModel()
         {
@@ -71,12 +87,13 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             NextPageCommand = new RelayCommand(async () => await LoadSchedulesAsync(CurrentPage + 1), () => CurrentPage < TotalPages);
             PrevPageCommand = new RelayCommand(async () => await LoadSchedulesAsync(CurrentPage - 1), () => CurrentPage > 1);
             OpenAssignWorkerCommand = new RelayCommand(OpenAssignWorkerWindow);
+            OpenEditScheduleCommand = new RelayCommand<GroupedScheduleView>(OpenEditScheduleWindow);
 
             _ = ReloadDataAsync();
         }
 
         /// <summary>
-        /// Reloads both schedules and completed reservations.
+        /// Reload both schedules and completed reservations.
         /// </summary>
         public async Task ReloadDataAsync()
         {
@@ -98,7 +115,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         }
 
         /// <summary>
-        /// Loads paginated schedules for display in the main scheduling DataGrid.
+        /// Load paged schedules.
         /// </summary>
         public async Task LoadSchedulesAsync(int pageNumber)
         {
@@ -125,14 +142,11 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 AppLogger.Error($"❌ Error loading schedules: {ex.Message}");
                 ShowMessage($"Error loading schedules:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                IsLoading = false;
-            }
+            finally { IsLoading = false; }
         }
 
         /// <summary>
-        /// Loads reservations with status "completed" (ready for scheduling).
+        /// Load completed reservations (ready for scheduling).
         /// </summary>
         public async Task LoadCompletedReservationsAsync()
         {
@@ -157,7 +171,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         }
 
         /// <summary>
-        /// Opens the AssignWorker window for assigning workers to a reservation.
+        /// Opens AssignWorker window.
         /// </summary>
         private void OpenAssignWorkerWindow()
         {
@@ -172,5 +186,78 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 ShowMessage($"Failed to open AssignWorker window:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private void OpenEditScheduleWindow(GroupedScheduleView groupedSchedule)
+        {
+            if (groupedSchedule == null) return;
+
+            try
+            {
+                var editWindow = new EditScheduleWindow(groupedSchedule, this);
+                editWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"❌ Failed to open EditSchedule window: {ex.Message}");
+                ShowMessage($"Failed to open EditSchedule window:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Debounced search: wait 400ms after typing stops before applying filter.
+        /// </summary>
+        private async Task ApplySearchDebouncedAsync()
+        {
+            _searchDebounceToken?.Cancel();
+            var cts = new CancellationTokenSource();
+            _searchDebounceToken = cts;
+
+            try
+            {
+                await Task.Delay(400, cts.Token);
+                await ApplySearchAsync();
+            }
+            catch (TaskCanceledException) { }
+        }
+
+        /// <summary>
+        /// Apply search filter to schedules.
+        /// </summary>
+        private async Task ApplySearchAsync()
+        {
+            if (IsLoading) return;
+            IsLoading = true;
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(SearchText))
+                {
+                    var (schedules, totalCount) = await _schedulingService.GetPagedGroupedSchedulesAsync(CurrentPage);
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        Schedules = new ObservableCollection<GroupedScheduleView>(schedules ?? new List<GroupedScheduleView>());
+                        OnPropertyChanged(nameof(Schedules));
+                    });
+
+                    TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
+                    return;
+                }
+
+                var results = await _schedulingService.SearchGroupedSchedulesAsync(SearchText);
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Schedules = new ObservableCollection<GroupedScheduleView>(results ?? new List<GroupedScheduleView>());
+                    OnPropertyChanged(nameof(Schedules));
+                });
+
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"❌ Search failed: {ex.Message}");
+                ShowMessage($"Search failed:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally { IsLoading = false; }
+        }
+
     }
 }
