@@ -1,5 +1,6 @@
-﻿using CATERINGMANAGEMENT.View.Pages;
-using CATERINGMANAGEMENT.ViewModels;
+﻿using CATERINGMANAGEMENT.Helpers;
+using CATERINGMANAGEMENT.View.Pages;
+using CATERINGMANAGEMENT.ViewModels.DashboardVM;
 using System.Windows;
 using System.Windows.Input;
 
@@ -14,11 +15,15 @@ namespace CATERINGMANAGEMENT.View.Windows
         public Dashboard()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             MainFrame.Navigate(new Overview());
             _viewModel = new DashboardViewModel();
             DataContext = _viewModel;
+
         }
+
+
+  
 
         private void HandleDashboard_Drag(object sender, MouseButtonEventArgs e)
         {
@@ -58,7 +63,35 @@ namespace CATERINGMANAGEMENT.View.Windows
             MainFrame.Navigate(new Workers());
         }
 
+        private void BtnPayroll_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Payroll());
+        }
 
+        private void BtnMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Menu());
+        }
+
+        private void BtnPackages_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Package());
+        }
+
+        private void BtnThemeMotif_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new ThemeMotif());
+        }
+
+        private void BtnGrazingOptions_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new GrazingOptions());
+        }
+
+        private void BtnFeedBack_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(new Feedback());
+        }
         private void ExitAppBtnHandler(object sender, MouseButtonEventArgs e)
         {
             Application.Current.Shutdown();
@@ -83,9 +116,5 @@ namespace CATERINGMANAGEMENT.View.Windows
             }
         }
 
-        private void BtnChat_Click(object sender, RoutedEventArgs e)
-        {
-            MainFrame.Navigate(new ChatMessage());
-        }
     }
 }

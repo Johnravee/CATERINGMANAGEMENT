@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System.Collections;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -54,9 +55,11 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
 
             // Save file
             File.WriteAllText(saveFileDialog.FileName, sb.ToString(), Encoding.UTF8);
-
-            // Show success message
-            MessageBox.Show("CSV file has been saved successfully!", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = saveFileDialog.FileName,
+                UseShellExecute = true
+            });    
         }
     }
 }

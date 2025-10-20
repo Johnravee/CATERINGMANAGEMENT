@@ -1,49 +1,16 @@
 ﻿using CATERINGMANAGEMENT.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using CATERINGMANAGEMENT.ViewModels.EquipmentsVM;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace CATERINGMANAGEMENT.View.Windows
 {
-    /// <summary>
-    /// Interaction logic for EditEquipments.xaml
-    /// </summary>
     public partial class EditEquipments : Window
     {
-        public Equipment Equipments { get; set; }
-        public EditEquipments(Equipment equipments)
+        public EditEquipments(Equipment equipment, EquipmentViewModel parentVM)
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
-            Equipments = equipments ?? throw new ArgumentNullException(nameof(equipments));
-            DataContext = Equipments;
+            var viewModel = new EditEquipmentViewModel(equipment, parentVM);
+            DataContext = viewModel;
         }
-
-
-        private void UpdatEquipment_Click(object sender, RoutedEventArgs e)
-        {
-            // Close dialog with "OK" result
-            this.DialogResult = true;
-            this.Close();
-        }
-
-        private void QuantityTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
-            // Allow only digits
-            Regex regex = new Regex("[^0-9]+");
-            e.Handled = regex.IsMatch(e.Text);
-        }
-
     }
 }

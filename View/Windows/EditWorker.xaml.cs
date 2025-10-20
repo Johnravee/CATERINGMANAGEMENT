@@ -16,7 +16,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public EditWorker(Worker existingWorker)
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             Worker = existingWorker ?? throw new ArgumentNullException(nameof(existingWorker));
             DataContext = Worker;
 

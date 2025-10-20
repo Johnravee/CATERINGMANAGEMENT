@@ -24,25 +24,33 @@
             <!-- Item Name -->
             <StackPanel Grid.Row="1" Margin="0,0,0,15">
                 <TextBlock Text="Item Name" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox x:Name="ItemNameTextBox" Padding="8" FontSize="14" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1"/>
+                <TextBox 
+                    Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}" 
+                    Padding="8" FontSize="14" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1"/>
             </StackPanel>
 
             <!-- Unit -->
             <StackPanel Grid.Row="2" Margin="0,0,0,15">
                 <TextBlock Text="Unit" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox x:Name="UnitTextBox" Padding="8" FontSize="14" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1"/>
+                <TextBox 
+                    Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}" 
+                    Padding="8" FontSize="14" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1"/>
             </StackPanel>
 
             <!-- Quantity -->
             <StackPanel Grid.Row="3" Margin="0,0,0,15">
                 <TextBlock Text="Quantity" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox x:Name="QuantityTextBox" Padding="8" FontSize="14" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1" PreviewTextInput="QuantityTextBox_PreviewTextInput"/>
+                <TextBox 
+                    Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" 
+                    Padding="8" FontSize="14" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1"/>
             </StackPanel>
 
             <!-- Buttons -->
             <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Content="Cancel" Width="90" Height="32" Margin="0,0,10,0" Click="Cancel_Click" Background="#E5E7EB" Foreground="#333" BorderBrush="#D1D5DB" BorderThickness="1"/>
-                <Button Content="Save" Width="90" Height="32" Click="Save_Click" Background="#4F46E5" Foreground="White" BorderThickness="0"/>
+                <Button 
+                    Content="Save" Width="90" Height="32" 
+                    Command="{Binding SaveCommand}" 
+                    Background="#4F46E5" Foreground="White" BorderThickness="0"/>
             </StackPanel>
         </Grid>
     </Border>

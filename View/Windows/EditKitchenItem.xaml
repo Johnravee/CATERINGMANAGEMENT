@@ -59,28 +59,19 @@
                          FontSize="14"
                          Background="#F3F4F6"
                          BorderThickness="1"
-                         BorderBrush="#D1D5DB"
-                         PreviewTextInput="QuantityTextBox_PreviewTextInput"/>
+                         BorderBrush="#D1D5DB"/>
             </StackPanel>
 
-            <!-- Buttons -->
+            <!-- Button -->
             <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Content="Cancel"
-                        Width="90"
-                        Height="32"
-                        Margin="0,0,10,0"
-                        Click="Cancel_Click"
-                        Background="#E5E7EB"
-                        Foreground="#333"
-                        BorderBrush="#D1D5DB"
-                        BorderThickness="1"/>
                 <Button Content="Save"
                         Width="90"
                         Height="32"
-                        Click="Save_Click"
                         Background="#4F46E5"
                         Foreground="White"
-                        BorderThickness="0"/>
+                        BorderThickness="0"
+                        Command="{Binding SaveCommand}"
+                        />
             </StackPanel>
         </Grid>
     </Border>

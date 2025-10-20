@@ -1,5 +1,4 @@
-﻿using CATERINGMANAGEMENT.ViewModel;
-
+﻿using CATERINGMANAGEMENT.ViewModels.ReservationVM;
 using System.Windows.Controls;
 
 namespace CATERINGMANAGEMENT.View.Pages
@@ -12,7 +11,7 @@ namespace CATERINGMANAGEMENT.View.Pages
         public ReservationListPage()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             DataContext = new ReservationListViewModel();
 
             Loaded += async (_, _) =>

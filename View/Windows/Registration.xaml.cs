@@ -1,4 +1,4 @@
-﻿using CATERINGMANAGEMENT.ViewModels;
+﻿using CATERINGMANAGEMENT.ViewModels.AuthVM;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +24,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public Registration()
         {
             InitializeComponent();
-            AuthGuard.PreventAccessIfAuthenticated(this);
+            //AuthGuard.PreventAccessIfAuthenticated(this);
             _viewModel = new RegistrationViewModel();
             DataContext = _viewModel;
             

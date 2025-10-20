@@ -26,7 +26,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public AddWorker()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
         }
 
         private void AddWorker_Click(object sender, RoutedEventArgs e)
@@ -83,6 +83,11 @@ namespace CATERINGMANAGEMENT.View.Windows
             this.Close();
         }
 
+
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
         private static bool IsValidEmail(string email)
         {
             try

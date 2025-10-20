@@ -1,17 +1,16 @@
-﻿using PdfSharp.Pdf;
+﻿using CATERINGMANAGEMENT.Models;
 using PdfSharp.Drawing;
-using CATERINGMANAGEMENT.Models;
-using System;
+using PdfSharp.Pdf;
+using System.Diagnostics;
 using System.IO;
 
 namespace CATERINGMANAGEMENT.DocumentsGenerator
 {
     internal class ContractPdfGenerator
     {
-        [Obsolete]
         public static void Generate(Reservation reservation, string savePath)
         {
-            string imagePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "images", "contract.png");
+            string imagePath = "Assets/images/contract.png";
 
             if (!File.Exists(imagePath))
                 throw new FileNotFoundException("Contract template image not found.", imagePath);
@@ -19,6 +18,7 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
             using (var document = new PdfDocument())
             {
                 var page = document.AddPage();
+                page.Size = PdfSharp.PageSize.A4;
                 var gfx = XGraphics.FromPdfPage(page);
                 var bgImage = XImage.FromFile(imagePath);
 
@@ -57,6 +57,11 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
 
                 // Save the document
                 document.Save(savePath);
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = savePath,
+                    UseShellExecute = true
+                });
             }
         }
     }

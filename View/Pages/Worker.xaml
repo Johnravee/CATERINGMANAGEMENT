@@ -3,9 +3,9 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:viewmodel="clr-namespace:CATERINGMANAGEMENT.ViewModels"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-      xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF" d:DataContext="{d:DesignInstance Type=viewmodel:WorkersViewModel}"
+      xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF" 
+     
       mc:Ignorable="d"
       Background="#FAFAFA"
       FontFamily="Calibri"
@@ -105,7 +105,7 @@
             <Button Grid.Column="1" Style="{StaticResource ModernFlatButton}" Padding="10" Width="100" Command="{Binding AddWorkerCommand}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" Margin="0,0,4,0"/>
-                    <TextBlock Text="New Worker"/>
+                    <TextBlock Text="New"/>
                 </StackPanel>
             </Button>
         </Grid>
@@ -161,7 +161,7 @@
                 <DataGridTextColumn Header="Contact" Binding="{Binding Contact}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
                 <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
                 <DataGridTextColumn Header="Salary" Binding="{Binding Salary}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                <DataGridTextColumn Header="Hire Date" Binding="{Binding HireDate}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Hire Date" Binding="{Binding HireDate, StringFormat='MM-dd-yyyy'}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
                 <DataGridTemplateColumn Header="Status" Width="*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

@@ -115,7 +115,8 @@
                         Background="#E5E7EB"
                         Foreground="#333"
                         BorderBrush="#D1D5DB"
-                        BorderThickness="1"/>
+                        BorderThickness="1" 
+                        Click="Cancel_Click"/>
                 <Button Content="Add"
                         Width="90"
                         Height="32"

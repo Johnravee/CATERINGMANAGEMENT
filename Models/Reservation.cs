@@ -1,6 +1,7 @@
 ﻿using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace CATERINGMANAGEMENT.Models
@@ -42,7 +43,6 @@ namespace CATERINGMANAGEMENT.Models
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
-        // Foreign Keys (for internal use)
         [Column("profile_id")]
         public long ProfileId { get; set; }
 
@@ -55,8 +55,8 @@ namespace CATERINGMANAGEMENT.Models
         [Column("grazing_id")]
         public long GrazingId { get; set; }
 
-        // --- Related Tables (joined results from Supabase)
-        [JsonPropertyName("profile")] 
+        // --- Related Tables
+        [JsonPropertyName("profile")]
         public Profile? Profile { get; set; }
 
         [JsonPropertyName("thememotif")]
@@ -67,5 +67,8 @@ namespace CATERINGMANAGEMENT.Models
 
         [JsonPropertyName("package")]
         public Package? Package { get; set; }
+
+        [JsonPropertyName("menu_orders")]
+        public List<ReservationMenuOrder>? MenuOrders { get; set; }
     }
 }

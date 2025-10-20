@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 using CATERINGMANAGEMENT.DocumentsGenerator;
-using CATERINGMANAGEMENT.ViewModels;
+using CATERINGMANAGEMENT.ViewModels.EquipmentsVM;
 
 
 namespace CATERINGMANAGEMENT.View.Pages
@@ -12,45 +12,14 @@ namespace CATERINGMANAGEMENT.View.Pages
         public EquipmentsInventory()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
+            //AuthGuard.RequireAuthentication(this);
             _viewModel = new EquipmentViewModel();
             DataContext = _viewModel;
 
             Loaded += async (_, __) =>
             {
-                await _viewModel.LoadItems();
+                await _viewModel.LoadPage(1);
             };
-        }
-
-        private void ExportAsCsv(object sender, System.Windows.RoutedEventArgs e)
-        {
-            DatagridToCsv.ExportToCsv(
-               EquipmentDataGrid.ItemsSource,
-               "EquipmentsInventory.csv",
-               "Id",
-               "BaseUrl",
-               "RequestClientOptions",
-               "TableName",
-               "PrimaryKey",
-               "UpdatedAt",
-               "CreatedAt"
-           );
-        }
-
-        [Obsolete]
-        private void ExportAsPDF(object sender, System.Windows.RoutedEventArgs e)
-        {
-            DataGridToPdf.DataGridToPDF(
-                EquipmentDataGrid.ItemsSource,
-                "EquipmentsInventory.pdf",
-                "Id",
-                "BaseUrl",
-                "RequestClientOptions",
-                "TableName",
-                "PrimaryKey",
-                "UpdatedAt",
-                "CreatedAt"
-                );
         }
     }
 }

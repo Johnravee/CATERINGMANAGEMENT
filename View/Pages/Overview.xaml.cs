@@ -1,49 +1,23 @@
-﻿using LiveChartsCore;
-using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.WPF;
-using System.Collections.Generic;
+﻿using CATERINGMANAGEMENT.ViewModels.DashboardVM;
 using System.Windows.Controls;
 
 namespace CATERINGMANAGEMENT.View.Pages
 {
     public partial class Overview : Page
     {
-        public IEnumerable<ISeries> ReservationSeries { get; set; }
-        public IEnumerable<Axis> XAxes { get; set; }
-        public IEnumerable<Axis> YAxes { get; set; }
+        private readonly OverviewViewModel _viewModel;
 
         public Overview()
         {
             InitializeComponent();
-            AuthGuard.RequireAuthentication(this);
-            // Sample data for bar chart
-            ReservationSeries = new List<ISeries>
-            {
-                new ColumnSeries<int>
-                {
-                    Name = "Reservations",
-                    Values = new[] { 10, 15, 8, 20, 12, 25, 18, 22, 17, 19, 14, 21 }
-                }
-            };
 
-            XAxes = new List<Axis>
-            {
-                new Axis
-                {
-                    Labels = new[]
-                    {
-                        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                    }
-                }
-            };
+            _viewModel = new OverviewViewModel();
 
-            YAxes = new List<Axis>
-            {
-                new Axis { Name = "Reservations Count" }
-            };
+            // Assign chart controls from XAML to ViewModel
+            _viewModel.ReservationChartElement = ReservationChart;
+            _viewModel.EventTypeChartElement = EventTypeChart;
 
-            DataContext = this;
+            DataContext = _viewModel;
         }
     }
 }
