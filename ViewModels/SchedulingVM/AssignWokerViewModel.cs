@@ -1,11 +1,11 @@
-﻿using CATERINGMANAGEMENT.Helpers;
+﻿// ViewModel for assigning workers to reservations, with search, selection, and batch assignment logic.
+
+using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -15,17 +15,17 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
     public class AssignWorkersViewModel : BaseViewModel
     {
         private readonly AssignWorkerService _assignWorkerService = new();
-
         private readonly SchedulingViewModel _parentViewModel;
 
+        // Data collections
         public ObservableCollection<Reservation> Reservations { get; } = new();
         public ObservableCollection<Worker> Workers { get; } = new();
         public ObservableCollection<Worker> AssignedWorkers { get; } = new();
 
         private readonly CollectionViewSource _filteredWorkers = new();
-
         public ICollectionView FilteredWorkers => _filteredWorkers.View;
 
+        // Selected reservation
         private Reservation? _selectedReservation;
         public Reservation? SelectedReservation
         {
@@ -33,6 +33,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _selectedReservation = value; OnPropertyChanged(); }
         }
 
+        // Search
         private string? _searchText;
         public string? SearchText
         {
@@ -45,6 +46,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             }
         }
 
+        // UI state
         private bool _isLoading;
         public bool IsLoading
         {
@@ -52,6 +54,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _isLoading = value; OnPropertyChanged(); }
         }
 
+        // Commands
         public ICommand AssignWorkerCommand { get; }
         public ICommand RemoveAssignedWorkerCommand { get; }
         public ICommand BatchAssignCommand { get; }
@@ -60,7 +63,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         public AssignWorkersViewModel(SchedulingViewModel parentViewModel)
         {
             _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
-           
 
             AssignWorkerCommand = new RelayCommand<Worker>(ToggleAssign);
             RemoveAssignedWorkerCommand = new RelayCommand<Worker>(RemoveAssignedWorker);
@@ -78,15 +80,16 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             if (e.Item is Worker worker)
             {
                 if (string.IsNullOrWhiteSpace(SearchText))
-                    e.Accepted = true;
-                else
                 {
-                    string query = SearchText.ToLower();
-                    e.Accepted = (worker.Name?.ToLower().Contains(query) ?? false)
-                              || (worker.Role?.ToLower().Contains(query) ?? false)
-                              || (worker.Email?.ToLower().Contains(query) ?? false)
-                              || (worker.Contact?.ToLower().Contains(query) ?? false);
+                    e.Accepted = true;
+                    return;
                 }
+
+                string query = SearchText.ToLower();
+                e.Accepted = (worker.Name?.ToLower().Contains(query) ?? false)
+                          || (worker.Role?.ToLower().Contains(query) ?? false)
+                          || (worker.Email?.ToLower().Contains(query) ?? false)
+                          || (worker.Contact?.ToLower().Contains(query) ?? false);
             }
         }
 
@@ -124,7 +127,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             }
             catch (Exception ex)
             {
-                AppLogger.Error(ex, "Failed to load data.");
+                AppLogger.Error(ex, "Failed to load data");
                 ShowMessage($"Error loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -144,27 +147,23 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             try
             {
                 IsLoading = true;
-
                 var emailTasks = new List<Task<bool>>();
                 bool anyFailed = false;
 
                 foreach (var worker in AssignedWorkers)
                 {
                     bool assigned = await _assignWorkerService.AssignWorkerAsync(worker, SelectedReservation);
-
                     if (!assigned)
                     {
                         AppLogger.Error($"Failed to assign worker {worker.Name} (ID: {worker.Id})");
-                        ShowMessage($"❌ Failed to assign {worker.Name}.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ShowMessage($"Failed to assign {worker.Name}.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         anyFailed = true;
                         continue;
                     }
 
-                    // Queue email task
                     emailTasks.Add(_assignWorkerService.SendEmailAsync(worker, SelectedReservation));
                 }
 
-                // Wait for all emails to complete
                 bool[] emailResults = await Task.WhenAll(emailTasks);
 
                 for (int i = 0; i < emailResults.Length; i++)
@@ -179,23 +178,21 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 await Task.Delay(500);
                 await _parentViewModel.ReloadDataAsync();
 
-
                 if (!anyFailed)
-                    ShowMessage("✅ Workers successfully assigned and emails sent!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShowMessage("Workers successfully assigned and emails sent.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 CloseWindow();
             }
             catch (Exception ex)
             {
-                AppLogger.Error(ex, "Error during batch assign workers.");
-                ShowMessage($"Error assigning workers:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error during batch assign workers");
+                ShowMessage($"Error assigning workers: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsLoading = false;
             }
         }
-
 
         private void CloseWindow()
         {

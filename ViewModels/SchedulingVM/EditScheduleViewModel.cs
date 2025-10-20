@@ -1,31 +1,27 @@
-﻿using CATERINGMANAGEMENT.Helpers;
+﻿// ViewModel for managing and removing assigned workers from a reservation, with logging and UI commands.
+
+using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Threading.Tasks;
 
 namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
-    /// <summary>
-    /// ViewModel for editing assigned workers in a reservation.
-    /// Only parses names & IDs for removal.
-    /// </summary>
     public class EditScheduleViewModel : BaseViewModel
     {
+        // Services
         private readonly SchedulingService _schedulingService = new();
         private readonly SchedulingViewModel _parentViewModel;
 
+        // Data
         public GroupedScheduleView GroupedSchedule { get; }
-
-        /// <summary>
-        /// List of assigned workers with their IDs
-        /// </summary>
         public ObservableCollection<Worker> AssignedWorkers { get; } = new();
 
+        // Commands
         public ICommand RemoveWorkerCommand { get; }
         public ICommand CloseCommand { get; }
 
@@ -34,12 +30,21 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             GroupedSchedule = groupedSchedule ?? throw new ArgumentNullException(nameof(groupedSchedule));
             _parentViewModel = parentViewModel;
 
-            ParseAssignedWorkers();
+            try
+            {
+                ParseAssignedWorkers();
+                AppLogger.Info($"Parsed {AssignedWorkers.Count} assigned workers for reservation {GroupedSchedule.ReservationId}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, $"Failed to parse assigned workers for reservation {GroupedSchedule.ReservationId}");
+            }
 
             RemoveWorkerCommand = new RelayCommand<Worker>(async w => await RemoveWorkerAsync(w));
             CloseCommand = new RelayCommand(CloseWindow);
         }
 
+        // Public methods
         private void ParseAssignedWorkers()
         {
             if (string.IsNullOrEmpty(GroupedSchedule.AssignedWorkers) ||
@@ -74,21 +79,28 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
             if (confirm != MessageBoxResult.Yes) return;
 
-            bool success = await _schedulingService.RemoveWorkerFromScheduleAsync(GroupedSchedule.ReservationId, worker.Id);
-
-            if (success)
+            try
             {
-                AssignedWorkers.Remove(worker);
-                AppLogger.Info($"Removed worker {worker.Name} from reservation {GroupedSchedule.ReservationId}");
+                bool success = await _schedulingService.RemoveWorkerFromScheduleAsync(GroupedSchedule.ReservationId, worker.Id);
 
-                // Refresh parent view
-                await _parentViewModel.ReloadDataAsync();
+                if (success)
+                {
+                    AssignedWorkers.Remove(worker);
+                    AppLogger.Success($"Removed worker '{worker.Name}' from reservation {GroupedSchedule.ReservationId}");
 
-                MessageBox.Show("✅ Worker removed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    await _parentViewModel.ReloadDataAsync();
+
+                    MessageBox.Show("Worker removed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    AppLogger.Error($"Failed to remove worker '{worker.Name}' from reservation {GroupedSchedule.ReservationId}", showToUser: false);
+                    MessageBox.Show("Failed to remove worker.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("❌ Failed to remove worker.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Failed to remove worker from schedule.");
             }
         }
 

@@ -7,10 +7,8 @@
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services.Data;
-using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 

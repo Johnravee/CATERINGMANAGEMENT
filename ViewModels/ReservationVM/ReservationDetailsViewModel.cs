@@ -1,18 +1,18 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+﻿/*
+ * FILE: ReservationDetailsViewModel.cs
+ * PURPOSE: Handles reservation details, including menu orders, updates, and contract PDF generation/emailing.
+ */
+
+using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Mailer;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
 using Microsoft.Win32;
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 

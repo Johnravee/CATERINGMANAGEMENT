@@ -1,20 +1,15 @@
 ﻿/*
  * FILE: ReservationListViewModel.cs
- * PURPOSE: Acts as the main ViewModel for managing reservations.
- *          Handles loading, pagination, status counts, search (with debounce),
- *          deletion, and realtime updates through Supabase Realtime.
+ * PURPOSE: Main ViewModel for managing reservations, including loading, pagination, search, deletion, and realtime updates.
  */
+
 
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
-using System;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
