@@ -2,7 +2,6 @@
 using CATERINGMANAGEMENT.ViewModels.SchedulingVM;
 using System.Windows;
 
-
 namespace CATERINGMANAGEMENT.View.Windows
 {
     /// <summary>
@@ -10,11 +9,10 @@ namespace CATERINGMANAGEMENT.View.Windows
     /// </summary>
     public partial class EditScheduleWindow : Window
     {
-        public EditScheduleWindow(GroupSchedule groupSchedule, SchedulingViewModel parentViewModel)
+        public EditScheduleWindow(GroupedScheduleView groupedSchedule, SchedulingViewModel parentViewModel)
         {
             InitializeComponent();
-            var viewModel = new EditScheduleViewModel(groupSchedule, parentViewModel);
-            DataContext = viewModel;
+            DataContext = new EditScheduleViewModel(groupedSchedule, parentViewModel);
         }
     }
 }

@@ -1,24 +1,29 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
-using CATERINGMANAGEMENT.Mailer;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Data;
+using System.Windows.Input;
 
-namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
+namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
-    public class AssignWorkersViewModel : INotifyPropertyChanged
+    public class AssignWorkersViewModel : BaseViewModel
     {
+        private readonly AssignWorkerService _assignWorkerService = new();
+
+        private readonly SchedulingViewModel _parentViewModel;
+
         public ObservableCollection<Reservation> Reservations { get; } = new();
         public ObservableCollection<Worker> Workers { get; } = new();
         public ObservableCollection<Worker> AssignedWorkers { get; } = new();
 
         private readonly CollectionViewSource _filteredWorkers = new();
+
         public ICollectionView FilteredWorkers => _filteredWorkers.View;
 
         private Reservation? _selectedReservation;
@@ -47,18 +52,20 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             set { _isLoading = value; OnPropertyChanged(); }
         }
 
-
         public ICommand AssignWorkerCommand { get; }
         public ICommand RemoveAssignedWorkerCommand { get; }
         public ICommand BatchAssignCommand { get; }
         public ICommand CancelCommand { get; }
 
-        public AssignWorkersViewModel()
+        public AssignWorkersViewModel(SchedulingViewModel parentViewModel)
         {
-            AssignWorkerCommand = new RelayCommand<Worker>(w => ToggleAssign(w));
-            RemoveAssignedWorkerCommand = new RelayCommand<Worker>(w => RemoveAssignedWorker(w));
+            _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
+           
+
+            AssignWorkerCommand = new RelayCommand<Worker>(ToggleAssign);
+            RemoveAssignedWorkerCommand = new RelayCommand<Worker>(RemoveAssignedWorker);
             BatchAssignCommand = new RelayCommand(async () => await BatchAssignWorkers());
-            CancelCommand = new RelayCommand(() => CloseWindow());
+            CancelCommand = new RelayCommand(CloseWindow);
 
             _filteredWorkers.Source = Workers;
             _filteredWorkers.Filter += ApplyFilter;
@@ -105,26 +112,20 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             {
                 IsLoading = true;
 
-                var client = await SupabaseService.GetClientAsync();
-
-                var reservations = await client
-                    .From<Reservation>()
-                    .Select("*, package:package_id(*)")
-                    .Where(r => r.Status == "completed")
-                    .Get();
-
+                var reservations = await _assignWorkerService.GetCompletedReservationsAsync();
                 Reservations.Clear();
-                foreach (var r in reservations.Models) Reservations.Add(r);
+                foreach (var r in reservations) Reservations.Add(r);
 
-                var workers = await client.From<Worker>().Get();
+                var workers = await _assignWorkerService.GetAllWorkersAsync();
                 Workers.Clear();
-                foreach (var w in workers.Models) Workers.Add(w);
+                foreach (var w in workers) Workers.Add(w);
 
                 FilteredWorkers.Refresh();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading data: {ex.Message}");
+                AppLogger.Error(ex, "Failed to load data.");
+                ShowMessage($"Error loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -136,7 +137,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
         {
             if (SelectedReservation == null || AssignedWorkers.Count == 0)
             {
-                MessageBox.Show("Please select a reservation and at least one worker.");
+                ShowMessage("Please select a reservation and at least one worker.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -144,55 +145,50 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             {
                 IsLoading = true;
 
-                var client = await SupabaseService.GetClientAsync();
-
-                var mailer = new AssignWorkerMailer(new EmailService());
-
+                var emailTasks = new List<Task<bool>>();
+                bool anyFailed = false;
 
                 foreach (var worker in AssignedWorkers)
                 {
-                    var parameters = new
+                    bool assigned = await _assignWorkerService.AssignWorkerAsync(worker, SelectedReservation);
+
+                    if (!assigned)
                     {
-                        p_worker_id = worker.Id,
-                        p_reservation_id = (int)SelectedReservation.Id,
-                        p_paid_status = "Unpaid",
-                        p_paid_date = (DateTime?)null
-                    };
-
-                    var rpcResponse = await client.Rpc("insert_payroll_and_scheduling", parameters);
-
-                    if (rpcResponse.ResponseMessage == null || !rpcResponse.ResponseMessage.IsSuccessStatusCode)
-                    {
-                        string errorContent = rpcResponse.ResponseMessage != null
-                            ? await rpcResponse.ResponseMessage.Content.ReadAsStringAsync()
-                            : "No response received from server.";
-
-                        MessageBox.Show($"Failed to assign worker {worker.Name} (ID: {worker.Id}): {errorContent}");
+                        AppLogger.Error($"Failed to assign worker {worker.Name} (ID: {worker.Id})");
+                        ShowMessage($"❌ Failed to assign {worker.Name}.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        anyFailed = true;
                         continue;
                     }
 
-                    // Send email after successful insert
-                    bool emailSent = await mailer.SendWorkerScheduleEmailAsync(
-                        worker.Email ?? "",
-                        worker.Name ?? "Staff",
-                        worker.Role ?? "Staff",
-                        SelectedReservation.Package?.Name ?? "Event",
-                        SelectedReservation.EventDate.ToString("MMMM dd, yyyy"),
-                        SelectedReservation.Venue ?? "Venue"
-                    );
+                    // Queue email task
+                    emailTasks.Add(_assignWorkerService.SendEmailAsync(worker, SelectedReservation));
+                }
 
-                    if (!emailSent)
+                // Wait for all emails to complete
+                bool[] emailResults = await Task.WhenAll(emailTasks);
+
+                for (int i = 0; i < emailResults.Length; i++)
+                {
+                    if (!emailResults[i])
                     {
-                        Console.WriteLine($"Failed to send email to {worker.Name} ({worker.Email})");
+                        var failedWorker = AssignedWorkers.ElementAt(i);
+                        AppLogger.Error($"Email failed to send to {failedWorker.Name} ({failedWorker.Email})", showToUser: false);
                     }
                 }
 
-                MessageBox.Show("Workers successfully assigned and emails sent!");
+                await Task.Delay(500);
+                await _parentViewModel.ReloadDataAsync();
+
+
+                if (!anyFailed)
+                    ShowMessage("✅ Workers successfully assigned and emails sent!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
                 CloseWindow();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error assigning workers:\n{ex.Message}");
+                AppLogger.Error(ex, "Error during batch assign workers.");
+                ShowMessage($"Error assigning workers:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -200,14 +196,11 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             }
         }
 
+
         private void CloseWindow()
         {
             var win = Application.Current.Windows.OfType<AssignWorker>().FirstOrDefault();
             win?.Close();
         }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

@@ -1,4 +1,5 @@
-﻿using CATERINGMANAGEMENT.ViewModels.WorkerVM;
+﻿using CATERINGMANAGEMENT.Models;
+using CATERINGMANAGEMENT.ViewModels.SchedulingVM;
 using System.Windows;
 
 
@@ -9,13 +10,12 @@ namespace CATERINGMANAGEMENT.View.Windows
     /// </summary>
     public partial class AssignWorker : Window
     {
-        private readonly AssignWorkersViewModel _vm;
-        public AssignWorker()
+        public AssignWorker(SchedulingViewModel parentVM)
         {
             InitializeComponent();
             //AuthGuard.RequireAuthentication(this);
-            _vm = new AssignWorkersViewModel();
-            DataContext = _vm;
+            var viewModel = new AssignWorkersViewModel(parentVM);
+            DataContext = viewModel;
         }
 
       

@@ -1,10 +1,19 @@
-﻿using CATERINGMANAGEMENT.Helpers;
+﻿/*
+ * FILE: SchedulingViewModel.cs
+ * PURPOSE: Acts as the main ViewModel for the Scheduling page.
+ *          Handles the loading of both current schedules and completed reservations
+ *          (ready to be scheduled). Supports pagination, refreshing,
+ *          and integration with the AssignWorker window.
+ */
+
+using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -14,6 +23,11 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
     {
         private readonly SchedulingService _schedulingService = new();
 
+        // ✅ Data collections
+        public ObservableCollection<GroupedScheduleView> Schedules { get; set; } = new();
+        public ObservableCollection<Reservation> CompletedReservations { get; set; } = new();
+
+        // ✅ UI state flags
         private bool _isLoading;
         public bool IsLoading
         {
@@ -21,6 +35,14 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _isLoading = value; OnPropertyChanged(); }
         }
 
+        private bool _isRefreshing;
+        public bool IsRefreshing
+        {
+            get => _isRefreshing;
+            set { _isRefreshing = value; OnPropertyChanged(); }
+        }
+
+        // ✅ Pagination info
         private int _currentPage = 1;
         public int CurrentPage
         {
@@ -28,92 +50,80 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _currentPage = value; OnPropertyChanged(); }
         }
 
-        public int TotalPages { get; set; }
-        public int TotalCount { get; set; }
-
-        public ObservableCollection<Reservation> ContractSignedReservations { get; } = new();
-        public ObservableCollection<GroupSchedule> GroupedSchedules { get; } = new();
-
-        private string _searchText;
-        public string SearchText
+        private int _totalPages = 1;
+        public int TotalPages
         {
-            get => _searchText;
-            set
-            {
-                if (_searchText != value)
-                {
-                    _searchText = value;
-                    OnPropertyChanged();
-                    _ = DebounceSearchAsync(_searchText); // debounce search
-                }
-            }
+            get => _totalPages;
+            set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        private CancellationTokenSource _debounceCts;
+        private const int PageSize = 10;
 
-        public ICommand LoadPageCommand { get; }
+        // ✅ Commands
+        public ICommand RefreshCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
         public ICommand OpenAssignWorkerCommand { get; }
-        public ICommand EditScheduledWorkerCommand { get; }
 
         public SchedulingViewModel()
         {
-            LoadPageCommand = new RelayCommand(async () => await LoadPageAsync(CurrentPage));
-            NextPageCommand = new RelayCommand(async () => await NextPageAsync(), () => CurrentPage < TotalPages);
-            PrevPageCommand = new RelayCommand(async () => await PrevPageAsync(), () => CurrentPage > 1);
-            OpenAssignWorkerCommand = new RelayCommand(OpenAssignWorkerDialogAsync);
-            EditScheduledWorkerCommand = new RelayCommand<GroupSchedule>(OpenEditScheduleDialog);
+            RefreshCommand = new RelayCommand(async () => await ReloadDataAsync());
+            NextPageCommand = new RelayCommand(async () => await LoadSchedulesAsync(CurrentPage + 1), () => CurrentPage < TotalPages);
+            PrevPageCommand = new RelayCommand(async () => await LoadSchedulesAsync(CurrentPage - 1), () => CurrentPage > 1);
+            OpenAssignWorkerCommand = new RelayCommand(OpenAssignWorkerWindow);
 
-            _ = LoadPageAsync(1);
+            _ = ReloadDataAsync();
         }
 
-        // 🔹 Debounce search
-        private async Task DebounceSearchAsync(string query)
+        /// <summary>
+        /// Reloads both schedules and completed reservations.
+        /// </summary>
+        public async Task ReloadDataAsync()
         {
-            _debounceCts?.Cancel();
-            _debounceCts = new CancellationTokenSource();
-            var token = _debounceCts.Token;
+            if (IsRefreshing) return;
+            IsRefreshing = true;
 
             try
             {
-                await Task.Delay(400, token); // wait 400ms before running search
-                if (!token.IsCancellationRequested)
-                    await SearchSchedulesAsync(query);
-            }
-            catch (TaskCanceledException)
-            {
-                // Ignore cancelled searches
-            }
-        }
-
-        // 🔹 Main data loader (pagination)
-        private async Task LoadPageAsync(int pageNumber)
-        {
-            IsLoading = true;
-            try
-            {
-                var (reservations, totalCount) = await _schedulingService.GetCompletedReservationsPagedAsync(pageNumber);
-                TotalCount = totalCount;
-                TotalPages = (int)Math.Ceiling((double)TotalCount / 10);
-
-                ContractSignedReservations.Clear();
-                foreach (var reservation in reservations)
-                    ContractSignedReservations.Add(reservation);
-
-                var schedules = await _schedulingService.GetPagedSchedulesAsync(pageNumber);
-                var grouped = _schedulingService.GroupSchedules(schedules);
-
-                GroupedSchedules.Clear();
-                foreach (var g in grouped)
-                    GroupedSchedules.Add(g);
-
-                CurrentPage = pageNumber;
+                await Task.WhenAll(LoadSchedulesAsync(CurrentPage), LoadCompletedReservationsAsync());
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"❌ Error loading scheduling data: {ex.Message}");
-                MessageBox.Show($"Error loading scheduling data:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error($"❌ Error reloading data: {ex.Message}");
+            }
+            finally
+            {
+                IsRefreshing = false;
+            }
+        }
+
+        /// <summary>
+        /// Loads paginated schedules for display in the main scheduling DataGrid.
+        /// </summary>
+        public async Task LoadSchedulesAsync(int pageNumber)
+        {
+            if (IsLoading) return;
+            IsLoading = true;
+
+            try
+            {
+                var (schedules, totalCount) = await _schedulingService.GetPagedGroupedSchedulesAsync(pageNumber);
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Schedules = new ObservableCollection<GroupedScheduleView>(schedules ?? new List<GroupedScheduleView>());
+                    OnPropertyChanged(nameof(Schedules));
+                });
+
+                TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
+                CurrentPage = Math.Max(1, Math.Min(pageNumber, TotalPages == 0 ? 1 : TotalPages));
+
+                AppLogger.Info($"[FETCH] Loaded {Schedules.Count} schedules (Page {CurrentPage}/{TotalPages}).");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"❌ Error loading schedules: {ex.Message}");
+                ShowMessage($"Error loading schedules:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -121,62 +131,46 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             }
         }
 
-        private async Task NextPageAsync()
+        /// <summary>
+        /// Loads reservations with status "completed" (ready for scheduling).
+        /// </summary>
+        public async Task LoadCompletedReservationsAsync()
         {
-            if (CurrentPage < TotalPages)
-                await LoadPageAsync(CurrentPage + 1);
-        }
-
-        private async Task PrevPageAsync()
-        {
-            if (CurrentPage > 1)
-                await LoadPageAsync(CurrentPage - 1);
-        }
-
-        private async void OpenAssignWorkerDialogAsync()
-        {
-            var window = new AssignWorker
-            {
-                Owner = Application.Current.MainWindow,
-            };
-            window.ShowDialog();
-
-            await LoadPageAsync(CurrentPage);
-        }
-
-        // 🔹 Search logic
-        private async Task SearchSchedulesAsync(string query)
-        {
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                await LoadPageAsync(CurrentPage);
-                return;
-            }
-
-            IsLoading = true;
             try
             {
-                var results = await _schedulingService.SearchSchedulesAsync(query);
+                var completed = await _schedulingService.GetCompletedReservationsAsync();
 
-                GroupedSchedules.Clear();
-                foreach (var g in results)
-                    GroupedSchedules.Add(g);
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    CompletedReservations.Clear();
+                    foreach (var r in completed)
+                        CompletedReservations.Add(r);
+                });
+
+                AppLogger.Info($"[FETCH] Loaded {CompletedReservations.Count} completed reservations.");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"❌ Error searching schedules: {ex.Message}");
-            }
-            finally
-            {
-                IsLoading = false;
+                AppLogger.Error($"❌ Error loading completed reservations: {ex.Message}");
+                ShowMessage($"Error loading completed reservations:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        public async void OpenEditScheduleDialog(GroupSchedule groupSchedule)
+        /// <summary>
+        /// Opens the AssignWorker window for assigning workers to a reservation.
+        /// </summary>
+        private void OpenAssignWorkerWindow()
         {
-          new EditScheduleWindow(groupSchedule, this).ShowDialog();
-           
+            try
+            {
+                var assignWin = new AssignWorker(this);
+                assignWin.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"❌ Failed to open AssignWorker window: {ex.Message}");
+                ShowMessage($"Failed to open AssignWorker window:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
-
     }
 }

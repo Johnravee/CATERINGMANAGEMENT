@@ -91,7 +91,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
                 if (updated != null)
                 {
-                    await _parentViewModel.LoadPage(_parentViewModel.CurrentPage);
+                   
                     ShowMessage("✅ Equipment updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     CloseWindow();
                 }

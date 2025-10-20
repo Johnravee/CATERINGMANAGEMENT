@@ -1,6 +1,7 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,24 +10,35 @@ using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
+    /// <summary>
+    /// ViewModel for editing an existing grouped schedule and managing assigned workers.
+    /// </summary>
     public class EditScheduleViewModel : BaseViewModel
     {
         private readonly SchedulingService _schedulingService = new();
         private readonly SchedulingViewModel _parentViewModel;
-        public GroupSchedule GroupSchedule { get; }
+
+        public GroupedScheduleView GroupedSchedule { get; }
 
         public ObservableCollection<Worker> AssignedWorkers { get; } = new();
 
         public ICommand RemoveWorkerCommand { get; }
         public ICommand CloseCommand { get; }
 
-        public EditScheduleViewModel(GroupSchedule groupSchedule, SchedulingViewModel parentViewModel)
+        public EditScheduleViewModel(GroupedScheduleView groupedSchedule, SchedulingViewModel parentViewModel)
         {
-            GroupSchedule = groupSchedule ?? throw new ArgumentNullException(nameof(groupSchedule));
+            GroupedSchedule = groupedSchedule ?? throw new ArgumentNullException(nameof(groupedSchedule));
             _parentViewModel = parentViewModel;
 
-            foreach (var worker in groupSchedule.Workers)
-                AssignedWorkers.Add(worker);
+            // Parse assigned workers (assuming comma-separated string from view)
+            if (!string.IsNullOrEmpty(groupedSchedule.AssignedWorkers))
+            {
+                var workerNames = groupedSchedule.AssignedWorkers.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var name in workerNames)
+                {
+                    AssignedWorkers.Add(new Worker { Name = name.Trim() });
+                }
+            }
 
             RemoveWorkerCommand = new RelayCommand<Worker>(async w => await RemoveWorkerAsync(w));
             CloseCommand = new RelayCommand(CloseWindow);
@@ -34,26 +46,34 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
         private async Task RemoveWorkerAsync(Worker worker)
         {
-            //if (worker == null || GroupSchedule.Reservation == null) return;
+            if (worker == null)
+                return;
 
-            //var schedules = await _schedulingService.GetSchedulesByReservationId(GroupSchedule.Reservation.Id);
-            //var schedule = schedules.FirstOrDefault(s => s.WorkerId == worker.Id);
+            var confirm = MessageBox.Show(
+                $"Are you sure you want to remove {worker.Name} from this schedule?",
+                "Confirm Removal",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
 
-            //if (schedule != null)
-            //{
-            //    var result = await _schedulingService.RemoveWorkerFromScheduleAsync(schedule.Id, worker.Id);
-            //    if (result)
-            //    {
-            //        AssignedWorkers.Remove(worker);
-            //        ShowMessage("Worker removed from schedule.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-            //    }
-            //    else
-            //    {
-            //        ShowMessage("Failed to remove worker.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            //    }
-            //}
+            if (confirm != MessageBoxResult.Yes)
+                return;
+
+            bool success = await _schedulingService.RemoveWorkerFromScheduleAsync(GroupedSchedule.ReservationId, worker.Id);
+
+            if (success)
+            {
+                AssignedWorkers.Remove(worker);
+                AppLogger.Info($"Removed worker {worker.Name} from reservation {GroupedSchedule.ReservationId}");
+                MessageBox.Show("✅ Worker removed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Refresh parent view
+                await _parentViewModel.ReloadDataAsync();
+            }
+            else
+            {
+                MessageBox.Show("❌ Failed to remove worker.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
-
 
         private void CloseWindow()
         {
@@ -66,7 +86,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                     break;
                 }
             }
-  
         }
     }
 }
