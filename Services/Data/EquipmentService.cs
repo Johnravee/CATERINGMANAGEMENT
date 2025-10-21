@@ -10,15 +10,7 @@ namespace CATERINGMANAGEMENT.Services.Data
     /// </summary>
     public class EquipmentService : BaseCachedService
     {
-        private Supabase.Client? _client;
-
-        public EquipmentService() : base() { }
-
-        private async Task<Supabase.Client> GetClientAsync()
-        {
-            _client ??= await SupabaseService.GetClientAsync();
-            return _client;
-        }
+        private async Task<Supabase.Client> GetClientAsync() => await SupabaseService.GetClientAsync();
 
         public async Task<List<Equipment>> GetEquipmentsAsync(int pageNumber, int pageSize)
         {

@@ -1,23 +1,39 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+﻿/*
+ * FILE: PayrollWindowViewModel.cs
+ * PURPOSE: ViewModel for the PayrollWindow. 
+ *          Handles loading reservations, fetching payroll data for the selected reservation,
+ *          and generating payroll reports in PDF format.
+ *          
+ * RESPONSIBILITIES:
+ *  - Load all reservations from the PayrollService
+ *  - Track the selected reservation
+ *  - Load payroll records for the selected reservation
+ *  - Generate payroll PDF reports
+ *  - Display messages to the user for errors or missing data
+ */
+
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
+using CATERINGMANAGEMENT.DocumentsGenerator;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
 {
-    public class PayrollWindowViewModel : INotifyPropertyChanged
+    public class PayrollWindowViewModel : BaseViewModel
     {
-       private  Supabase.Client? _client;
+        #region Services
+        private readonly PayrollService _payrollService = new();
+        #endregion
 
+        #region Collections
         public ObservableCollection<Reservation> Reservations { get; } = new();
         public ObservableCollection<Payroll> Payrolls { get; } = new();
+        #endregion
 
+        #region Selected Items
         private Reservation? _selectedReservation;
         public Reservation? SelectedReservation
         {
@@ -28,48 +44,45 @@ namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
                 {
                     _selectedReservation = value;
                     OnPropertyChanged();
-                    _ = LoadPayrollsAsync(); // Async fire-and-forget
+                    _ = LoadPayrollsAsync();
                 }
             }
         }
+        #endregion
 
+        #region Commands
         public ICommand GeneratePayrollCommand { get; }
+        #endregion
 
+        #region Constructor
         public PayrollWindowViewModel()
         {
             GeneratePayrollCommand = new RelayCommand(async () => await GeneratePayrollAsync());
-
-            // Async constructor pattern
-            Task.Run(async () =>
-            {
-                _client = await SupabaseService.GetClientAsync();
-                await LoadReservationsAsync();
-            });
+            _ = InitializeAsync();
         }
+        #endregion
 
-        private async Task LoadReservationsAsync()
+        #region Initialization
+        private async Task InitializeAsync()
         {
             try
             {
-                var client = _client ?? await SupabaseService.GetClientAsync();
-
-                var response = await client
-                    .From<Reservation>()
-                    .Get();
-
+                var reservations = await _payrollService.GetAllReservationsAsync();
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Reservations.Clear();
-                    foreach (var res in response.Models)
+                    foreach (var res in reservations)
                         Reservations.Add(res);
                 });
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
-                MessageBox.Show($"Failed to load reservations: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Failed to load reservations: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
+        #region Payroll Loading
         private async Task LoadPayrollsAsync()
         {
             if (SelectedReservation == null)
@@ -80,59 +93,47 @@ namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
 
             try
             {
-                var client = _client ?? await SupabaseService.GetClientAsync();
-
-                var response = await client
-                    .From<Payroll>()
-                    .Select("*, workers(*)")
-                    .Filter("reservation_id", Operator.Equals, SelectedReservation.Id)
-                    .Get();
-
+                var payrolls = await _payrollService.GetPayrollsByReservationAsync(SelectedReservation.Id);
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Payrolls.Clear();
-                    foreach (var payroll in response.Models)
+                    foreach (var payroll in payrolls)
                         Payrolls.Add(payroll);
                 });
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
-                MessageBox.Show($"Failed to load payroll data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Failed to load payroll data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
-        private async Task GeneratePayrollAsync()
+        #region Payroll Generation
+        private Task GeneratePayrollAsync()
         {
             if (SelectedReservation == null)
             {
-                MessageBox.Show("Please select a reservation.", "Missing Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                ShowMessage("Please select a reservation.", "Missing Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return Task.CompletedTask;
             }
 
             if (Payrolls.Count == 0)
             {
-                MessageBox.Show("No payroll data found for the selected reservation.", "No Data", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
+                ShowMessage("No payroll data found for the selected reservation.", "No Data");
+                return Task.CompletedTask;
             }
 
             try
             {
-                 PayrollPdfGenerator.Generate(
-                     Payrolls.ToList(),
-                    SelectedReservation.ReceiptNumber,
-                    SelectedReservation.EventDate);
+                PayrollPdfGenerator.Generate(Payrolls.ToList(), SelectedReservation.ReceiptNumber, SelectedReservation.EventDate);
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
-                MessageBox.Show($"Failed to generate payroll report: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Failed to generate payroll report: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
+            return Task.CompletedTask;
         }
-
-        #region INotifyPropertyChanged Implementation
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string? name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         #endregion
     }
 }

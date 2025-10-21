@@ -1,204 +1,151 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+﻿/*
+ * FILE: PayslipWindowViewModel.cs
+ * PURPOSE: ViewModel for the PayslipWindow.
+ *          Handles loading workers, selecting month/year/cutoff,
+ *          fetching payrolls for a specific worker and cutoff period,
+ *          and generating individual payslip PDFs.
+ *
+ * RESPONSIBILITIES:
+ *  - Load all workers from the PayrollService
+ *  - Provide month, year, and cutoff selection
+ *  - Fetch payrolls for the selected worker and period
+ *  - Generate PDF payslips using UserPayslipPdfGenerator
+ *  - Show messages for errors or missing data
+ */
+
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
+using CATERINGMANAGEMENT.DocumentsGenerator;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using static Supabase.Postgrest.Constants;
-using System.Globalization;
-
 
 namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
 {
-    public class PayslipWindowViewModel : INotifyPropertyChanged
+    public class PayslipWindowViewModel : BaseViewModel
     {
-        private Supabase.Client? _client;
+        #region Services
+        private readonly PayrollService _payrollService = new();
+        #endregion
 
+        #region Collections
         public ObservableCollection<Worker> Workers { get; } = new();
         public ObservableCollection<string> Months { get; } = new();
         public ObservableCollection<int> Years { get; } = new();
         public ObservableCollection<string> CutoffOptions { get; } = new ObservableCollection<string> { "1", "2" };
+        #endregion
 
-
+        #region Selected Items
         private Worker? _selectedWorker;
-        public Worker? SelectedWorker
-        {
-            get => _selectedWorker;
-            set { _selectedWorker = value; OnPropertyChanged(); }
-        }
+        public Worker? SelectedWorker { get => _selectedWorker; set { _selectedWorker = value; OnPropertyChanged(); } }
 
         private string? _selectedMonth;
-        public string? SelectedMonth
-        {
-            get => _selectedMonth;
-            set { _selectedMonth = value; OnPropertyChanged(); }
-        }
+        public string? SelectedMonth { get => _selectedMonth; set { _selectedMonth = value; OnPropertyChanged(); } }
 
         private int _selectedYear;
-        public int SelectedYear
-        {
-            get => _selectedYear;
-            set { _selectedYear = value; OnPropertyChanged(); }
-        }
+        public int SelectedYear { get => _selectedYear; set { _selectedYear = value; OnPropertyChanged(); } }
 
         private string? _selectedCutoff;
-        public string? SelectedCutoff
-        {
-            get => _selectedCutoff;
-            set { _selectedCutoff = value; OnPropertyChanged(); }
-        }
+        public string? SelectedCutoff { get => _selectedCutoff; set { _selectedCutoff = value; OnPropertyChanged(); } }
+        #endregion
 
+        #region UI State
         private bool _isBusy;
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set { _isBusy = value; OnPropertyChanged(); }
-        }
+        public bool IsBusy { get => _isBusy; set { _isBusy = value; OnPropertyChanged(); } }
+        #endregion
 
+        #region Commands
         public ICommand GeneratePayslipCommand { get; }
+        #endregion
 
+        #region Constructor
         public PayslipWindowViewModel()
         {
             GeneratePayslipCommand = new RelayCommand(async () => await GeneratePayslipAsync(), () => !IsBusy);
-
-            InitializeAsync();
             LoadMonthAndYear();
+            _ = InitializeAsync();
         }
+        #endregion
 
-        private async void InitializeAsync()
+        #region Initialization
+        private async Task InitializeAsync()
         {
             IsBusy = true;
             try
             {
-                _client = await SupabaseService.GetClientAsync();
-                await LoadWorkersAsync();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to initialize: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private async Task LoadWorkersAsync()
-        {
-            if (_client == null) return;
-
-            try
-            {
-                var response = await _client.From<Worker>().Get();
-
+                var workers = await _payrollService.GetAllWorkersAsync();
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Workers.Clear();
-                    foreach (var worker in response.Models)
+                    foreach (var worker in workers)
                         Workers.Add(worker);
                 });
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load workers: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Failed to load workers: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally { IsBusy = false; }
         }
+        #endregion
 
+        #region Helpers
         private void LoadMonthAndYear()
         {
             Months.Clear();
             foreach (var monthName in Enumerable.Range(1, 12)
                 .Select(i => new DateTime(1, i, 1).ToString("MMMM", CultureInfo.InvariantCulture)))
-            {
                 Months.Add(monthName);
-            }
 
             var currentYear = DateTime.Now.Year;
             Years.Clear();
-            foreach (var y in Enumerable.Range(currentYear - 5, 11)) // 11 years total
-                Years.Add(y);
+            foreach (var y in Enumerable.Range(currentYear - 5, 11)) Years.Add(y);
 
             SelectedYear = currentYear;
             SelectedMonth = DateTime.Now.ToString("MMMM", CultureInfo.InvariantCulture);
         }
+        #endregion
 
+        #region Payslip Generation
         private async Task GeneratePayslipAsync()
         {
             if (IsBusy) return;
-
             if (SelectedWorker == null || SelectedMonth == null || SelectedCutoff == null)
             {
-                MessageBox.Show("Please complete all selections.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowMessage("Please complete all selections.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             IsBusy = true;
             try
             {
-                _client ??= await SupabaseService.GetClientAsync();
-
                 int month = DateTime.ParseExact(SelectedMonth, "MMMM", CultureInfo.InvariantCulture).Month;
                 int year = SelectedYear;
 
-                DateTime startDate, endDate;
+                // Determine the start and end dates based on cutoff
+                DateTime startDate = SelectedCutoff == "1" ? new DateTime(year, month, 1) : new DateTime(year, month, 16);
+                DateTime endDate = SelectedCutoff == "1" ? new DateTime(year, month, 15) : new DateTime(year, month, DateTime.DaysInMonth(year, month));
 
-                if (SelectedCutoff == "1")
+                var payrolls = await _payrollService.GetPayrollsByWorkerAsync(SelectedWorker.Id, startDate, endDate);
+
+                if (!payrolls.Any())
                 {
-                    startDate = new DateTime(year, month, 1);
-                    endDate = new DateTime(year, month, 15);
-                }
-                else if (SelectedCutoff == "2")
-                {
-                    startDate = new DateTime(year, month, 16);
-                    endDate = new DateTime(year, month, DateTime.DaysInMonth(year, month));
-                }
-                else
-                {
-                    MessageBox.Show("Invalid cutoff selected.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowMessage($"No payroll records found for {SelectedWorker.Name} in the selected cutoff.", "No Data");
                     return;
                 }
 
-                var response = await _client
-                    .From<Payroll>()
-                    .Select("*, reservations(*)")
-                    .Filter("worker_id", Operator.Equals, SelectedWorker.Id)
-                    .Filter("paid_status", Operator.Equals, "Paid")
-                    .Get();
-
-                var payrolls = response.Models;
-
-                var filtered = payrolls
-                    .Where(p => p.Reservation != null &&
-                                p.Reservation.EventDate >= startDate &&
-                                p.Reservation.EventDate <= endDate)
-                    .ToList();
-
-                if (!filtered.Any())
-                {
-                    MessageBox.Show($"No payroll records found for {SelectedWorker.Name} in the selected cutoff.", "No Data", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-                UserPayslipPdfGenerator.Generate(filtered, SelectedWorker.Name!, startDate, endDate);
-
-     
+                UserPayslipPdfGenerator.Generate(payrolls, SelectedWorker.Name!, startDate, endDate);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error generating payslip: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Error generating payslip: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                IsBusy = false;
-            }
+            finally { IsBusy = false; }
         }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
+        #endregion
     }
 }

@@ -1,7 +1,6 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Shared;
-using Microsoft.Extensions.Caching.Memory;
 using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.Services.Data
@@ -12,17 +11,12 @@ namespace CATERINGMANAGEMENT.Services.Data
     /// </summary>
     public class SchedulingService : BaseCachedService
     {
-        private Supabase.Client? _client;
+
         private const int PageSize = 10;
 
-        private async Task<Supabase.Client> GetClientAsync()
-        {
-            _client ??= await SupabaseService.GetClientAsync();
-            return _client;
-        }
+        private async Task<Supabase.Client> GetClientAsync() => await SupabaseService.GetClientAsync();
 
         // Cache keys
-        private string CacheKey_Grouped(int page) => $"GroupedSchedules_Page_{page}";
         private const string CacheKey_Completed = "CompletedReservations";
 
         public async Task<(List<GroupedScheduleView> Schedules, int TotalCount)> GetPagedGroupedSchedulesAsync(int pageNumber)

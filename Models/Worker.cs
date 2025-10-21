@@ -24,7 +24,7 @@ namespace CATERINGMANAGEMENT.Models
         public string? Contact { get; set; }
 
         [Column("salary")]
-        public decimal? Salary { get; set; }
+        public long? Salary { get; set; }
 
         [Column("hire_date")]
         public DateTime? HireDate { get; set; }

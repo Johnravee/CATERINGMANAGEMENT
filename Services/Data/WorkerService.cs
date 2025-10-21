@@ -17,16 +17,17 @@ namespace CATERINGMANAGEMENT.Services.Data
 {
     public class WorkerService : BaseCachedService
     {
+        private const int PageSize = 20;
         private async Task<Supabase.Client> GetClientAsync() => await SupabaseService.GetClientAsync();
 
         // Paginated list – frequent changes, do NOT cache
-        public async Task<(List<Worker> Workers, int TotalCount)> GetWorkersPageAsync(int pageNumber, int pageSize)
+        public async Task<(List<Worker> Workers, int TotalCount)> GetWorkersPageAsync(int pageNumber)
         {
             try
             {
                 var client = await GetClientAsync();
-                int from = (pageNumber - 1) * pageSize;
-                int to = from + pageSize - 1;
+                int from = (pageNumber - 1) * PageSize;
+                int to = from + PageSize - 1;
 
                 var response = await client.From<Worker>()
                     .Order(x => x.CreatedAt, Ordering.Descending)
@@ -46,15 +47,11 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        // Search – optionally cached if same query is used frequently
-        public async Task<List<Worker>> SearchWorkersAsync(string query)
+        // Search 
+        public async Task<List<Worker>?> SearchWorkersAsync(string query)
         {
-            string cacheKey = $"Worker_Search_{query}";
-            if (TryGetCache(cacheKey, out List<Worker>? cached) && cached != null)
-            {
-                AppLogger.Info($"Loaded search '{query}' from cache");
-                return cached;
-            }
+            if (string.IsNullOrWhiteSpace(query))
+                return null;
 
             try
             {
@@ -63,9 +60,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                     .Filter(x => x.Name, Operator.ILike, $"%{query}%")
                     .Get();
 
-                var result = response.Models ?? new List<Worker>();
-                SetCache(cacheKey, result); // cache the result
-                return result;
+                return response.Models ?? new List<Worker>();
             }
             catch (Exception ex)
             {
@@ -73,6 +68,9 @@ namespace CATERINGMANAGEMENT.Services.Data
                 return new List<Worker>();
             }
         }
+
+
+
 
         // Insert – frequent change, no cache
         public async Task<Worker?> InsertWorkerAsync(Worker worker)
@@ -163,10 +161,12 @@ namespace CATERINGMANAGEMENT.Services.Data
                     workers,
                     "Workers",
                     "Id",
-                    "Name",
-                    "Role",
-                    "HireDate",
-                    "CreatedAt"
+                    "BaseUrl",
+                    "RequestClientOptions",
+                    "TableName",
+                    "PrimaryKey",
+                    "CreatedAt",
+                    "HireDate"
                 );
 
                 AppLogger.Success("Exported workers to PDF");
@@ -192,10 +192,12 @@ namespace CATERINGMANAGEMENT.Services.Data
                     workers,
                     "Workers",
                     "Id",
-                    "Name",
-                    "Role",
-                    "HireDate",
-                    "CreatedAt"
+                    "BaseUrl",
+                    "RequestClientOptions",
+                    "TableName",
+                    "PrimaryKey",
+                    "CreatedAt",
+                    "HireDate"
                 );
 
                 AppLogger.Success("Exported workers to CSV");
