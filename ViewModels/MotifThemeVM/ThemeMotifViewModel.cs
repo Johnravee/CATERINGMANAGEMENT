@@ -1,25 +1,43 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+﻿/*
+ * FILE: ThemeMotifViewModel.cs
+ * PURPOSE: ViewModel for managing Theme & Motif records.
+ *           Handles data loading, pagination, search (with debouncing),
+ *           CRUD actions, and exporting (PDF/CSV) using ThemeMotifService and AppLogger.
+ */
+
+using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
 {
-    public class ThemeMotifViewModel : INotifyPropertyChanged
+    public class ThemeMotifViewModel : BaseViewModel
     {
+        #region Fields
+
         private ObservableCollection<ThemeMotif> _allItems = new();
         private ObservableCollection<ThemeMotif> _filteredItems = new();
-
         private const int PageSize = 10;
+
+        private int _totalCount;
+        private bool _isLoading;
+        private string _searchText = string.Empty;
+        private int _currentPage = 1;
+        private int _totalPages = 1;
+
+        private CancellationTokenSource? _debounceTokenSource;
+
+        #endregion
+
+        #region Properties
 
         public ObservableCollection<ThemeMotif> Items
         {
@@ -27,21 +45,18 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             set { _filteredItems = value; OnPropertyChanged(); }
         }
 
-        private int _totalCount;
         public int TotalCount
         {
             get => _totalCount;
             set { _totalCount = value; OnPropertyChanged(); }
         }
 
-        private bool _isLoading;
         public bool IsLoading
         {
             get => _isLoading;
             set { _isLoading = value; OnPropertyChanged(); }
         }
 
-        private string _searchText = string.Empty;
         public string SearchText
         {
             get => _searchText;
@@ -49,23 +64,25 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             {
                 _searchText = value;
                 OnPropertyChanged();
-                ApplySearchFilter();
+                DebounceSearch();
             }
         }
 
-        private int _currentPage = 1;
         public int CurrentPage
         {
             get => _currentPage;
             set { _currentPage = value; OnPropertyChanged(); }
         }
 
-        private int _totalPages = 1;
         public int TotalPages
         {
             get => _totalPages;
             set { _totalPages = value; OnPropertyChanged(); }
         }
+
+        #endregion
+
+        #region Commands
 
         public ICommand AddThemeMotifCommand { get; set; }
         public ICommand EditThemeMotifCommand { get; set; }
@@ -75,19 +92,26 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
         public ICommand ExportPdfCommand { get; set; }
         public ICommand ExportCsvCommand { get; set; }
 
+        #endregion
+
+        #region Constructor
+
         public ThemeMotifViewModel()
         {
+            AddThemeMotifCommand = new RelayCommand(async () => await InsertThemeMotif());
             EditThemeMotifCommand = new RelayCommand<ThemeMotif>(async (m) => await EditThemeMotif(m));
             DeleteThemeMotifCommand = new RelayCommand<ThemeMotif>(async (m) => await DeleteThemeMotif(m));
             NextPageCommand = new RelayCommand(async () => await NextPage());
             PrevPageCommand = new RelayCommand(async () => await PrevPage());
-            AddThemeMotifCommand = new RelayCommand(async () => await InsertThemeMotif());
-
-            ExportPdfCommand = new RelayCommand(ExportToPdf);
-            ExportCsvCommand = new RelayCommand(ExportToCsv);
+            ExportPdfCommand = new RelayCommand(async () => await ExportToPdf());
+            ExportCsvCommand = new RelayCommand(async () => await ExportToCsv());
 
             _ = LoadItems();
         }
+
+        #endregion
+
+        #region Data Loading
 
         public async Task LoadItems()
         {
@@ -100,7 +124,8 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading Theme & Motifs:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error loading Theme & Motifs");
+                ShowMessage($"Error loading Theme & Motifs:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -113,44 +138,38 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             IsLoading = true;
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
                 int from = (page - 1) * PageSize;
                 int to = from + PageSize - 1;
 
-                var response = await client
-                    .From<ThemeMotif>()
-                    .Select("*, packages(*)")
-                    .Range(from, to)
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
+                var motifs = await ThemeMotifService.GetPaginatedAsync(from, to);
+                var totalCount = await ThemeMotifService.GetTotalCountAsync();
 
                 _allItems.Clear();
-                if (response.Models != null)
-                {
-                    foreach (var item in response.Models)
-                        _allItems.Add(item);
-                }
+                foreach (var item in motifs)
+                    _allItems.Add(item);
 
-                var countResult = await client
-                    .From<ThemeMotif>()
-                    .Count(CountType.Exact);
-
-                TotalCount = countResult;
+                TotalCount = totalCount;
                 TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
 
                 ApplySearchFilter();
                 CurrentPage = page;
+
+                AppLogger.Success($"Loaded ThemeMotif page {page}");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading ThemeMotif page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error loading ThemeMotif page");
+                ShowMessage($"Error loading ThemeMotif page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsLoading = false;
             }
         }
+
+        #endregion
+
+        #region Pagination
 
         private async Task NextPage()
         {
@@ -164,7 +183,29 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
                 await LoadPage(CurrentPage - 1);
         }
 
-        private async void ApplySearchFilter()
+        #endregion
+
+        #region Search with Debounce
+
+        private void DebounceSearch(int delay = 500)
+        {
+            _debounceTokenSource?.Cancel();
+            _debounceTokenSource = new CancellationTokenSource();
+            var token = _debounceTokenSource.Token;
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(delay, token);
+                    if (!token.IsCancellationRequested)
+                        await ApplySearchFilter();
+                }
+                catch (TaskCanceledException) { }
+            });
+        }
+
+        private async Task ApplySearchFilter()
         {
             var query = _searchText?.Trim().ToLower();
 
@@ -177,23 +218,14 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
                 try
                 {
                     IsLoading = true;
-
-                    var client = await SupabaseService.GetClientAsync();
-                    var response = await client
-                        .From<ThemeMotif>()
-                        .Select("*")
-                        .Filter(x => x.Name, Operator.ILike, $"%{query}%")
-                        .Order(x => x.CreatedAt, Ordering.Descending)
-                        .Get();
-
-                    if (response.Models != null)
-                        Items = new ObservableCollection<ThemeMotif>(response.Models);
-                    else
-                        Items = new ObservableCollection<ThemeMotif>();
+                    var results = await ThemeMotifService.SearchAsync(query);
+                    Items = new ObservableCollection<ThemeMotif>(results ?? []);
+                    AppLogger.Info($"Filtered ThemeMotifs for query: '{query}'");
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error filtering Theme & Motifs:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    AppLogger.Error(ex, "Error filtering ThemeMotifs");
+                    ShowMessage($"Error filtering Theme & Motifs:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 finally
                 {
@@ -202,11 +234,14 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             }
         }
 
+        #endregion
+
+        #region CRUD Operations
+
         private async Task InsertThemeMotif()
         {
             var addWindow = new AddThemeMotif();
             bool? result = addWindow.ShowDialog();
-
             if (result == true)
                 await LoadItems();
         }
@@ -217,7 +252,6 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
 
             var editWindow = new EditThemeMotif(item);
             bool? result = editWindow.ShowDialog();
-
             if (result == true)
                 await LoadItems();
         }
@@ -226,49 +260,48 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
         {
             if (item == null) return;
 
-            var confirm = MessageBox.Show($"Are you sure you want to delete '{item.Name}'?",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var confirm = MessageBox.Show(
+                $"Are you sure you want to delete '{item.Name}'?",
+                "Confirm Delete",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning
+            );
 
             if (confirm != MessageBoxResult.Yes) return;
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                await client.From<ThemeMotif>().Where(x => x.Id == item.Id).Delete();
-
+                await ThemeMotifService.DeleteAsync(item.Id, item.Name);
                 _allItems.Remove(item);
-                ApplySearchFilter();
-
-                MessageBox.Show("Deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                _ = ApplySearchFilter();
+                await LoadPage(1);
+                AppLogger.Success($"Deleted ThemeMotif: {item.Name}");
+                ShowMessage("Deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error deleting ThemeMotif:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error deleting ThemeMotif");
+                ShowMessage($"Error deleting ThemeMotif:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        #endregion
+
+        #region Export Functions
 
         private async Task ExportToPdf()
         {
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
-                var response = await client
-                    .From<ThemeMotif>()
-                    .Select("*, package_id(*)")
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
-
-                var motifs = response.Models;
-
-                if (motifs == null || motifs.Count == 0)
+                var data = await ThemeMotifService.GetPaginatedAsync(0, int.MaxValue);
+                if (data == null || data.Count == 0)
                 {
-                    MessageBox.Show("No Theme & Motif found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowMessage("No Theme & Motif found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 DataGridToPdf.DataGridToPDF(
-                    motifs,
+                    data,
                     "Theme & Motif List",
                     "Id",
                     "BaseUrl",
@@ -277,10 +310,13 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
                     "PrimaryKey",
                     "CreatedAt"
                 );
+
+                AppLogger.Success("Exported ThemeMotifs to PDF");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting to PDF:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error exporting ThemeMotifs to PDF");
+                ShowMessage($"Error exporting to PDF:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -288,24 +324,15 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
         {
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
-                var response = await client
-                    .From<ThemeMotif>()
-                    .Select("*, package_id(*)")
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
-
-                var motifs = response.Models;
-
-                if (motifs == null || motifs.Count == 0)
+                var data = await ThemeMotifService.GetPaginatedAsync(0, int.MaxValue);
+                if (data == null || data.Count == 0)
                 {
-                    MessageBox.Show("No Theme & Motif found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowMessage("No Theme & Motif found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 DatagridToCsv.ExportToCsv(
-                    motifs,
+                    data,
                     "Theme & Motif List",
                     "Id",
                     "BaseUrl",
@@ -314,15 +341,16 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
                     "PrimaryKey",
                     "CreatedAt"
                 );
+
+                AppLogger.Success("Exported ThemeMotifs to CSV");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting to CSV:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error exporting ThemeMotifs to CSV");
+                ShowMessage($"Error exporting to CSV:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        #endregion
     }
 }

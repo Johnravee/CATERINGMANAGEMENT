@@ -1,11 +1,19 @@
 ﻿/*
  * FILE: AddWorkerViewModel.cs
  * PURPOSE: Handles logic for adding a new worker, validation, and refreshing parent WorkerViewModel.
+ *
+ * RESPONSIBILITIES:
+ *  - Initialize properties for a new worker
+ *  - Validate input fields
+ *  - Insert new worker via WorkerService
+ *  - Refresh parent WorkerViewModel
+ *  - Close window on completion or cancellation
  */
 
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
+using System;
 using System.Windows;
 using System.Windows.Input;
 
@@ -13,6 +21,12 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
 {
     public class AddWorkerViewModel : BaseViewModel
     {
+        #region Services
+        private readonly WorkerService _workerService;
+        private readonly WorkerViewModel _parentViewModel;
+        #endregion
+
+        #region Properties
         private string _name = string.Empty;
         public string Name { get => _name; set { _name = value; OnPropertyChanged(); } }
 
@@ -33,21 +47,25 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
 
         private string _status = "Active";
         public string Status { get => _status; set { _status = value; OnPropertyChanged(); } }
+        #endregion
 
+        #region Commands
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
+        #endregion
 
-        private readonly WorkerService _workerService;
-        private readonly WorkerViewModel _parentViewModel;
-
+        #region Constructor
         public AddWorkerViewModel(WorkerViewModel parentViewModel)
         {
-            _parentViewModel = parentViewModel;
+            _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
             _workerService = new WorkerService();
-            SaveCommand = new RelayCommand(async () => await SaveAsync());
-            CancelCommand = new RelayCommand(() => CloseWindow());
-        }
 
+            SaveCommand = new RelayCommand(async () => await SaveAsync());
+            CancelCommand = new RelayCommand(CloseWindow);
+        }
+        #endregion
+
+        #region Save Worker
         private async Task SaveAsync()
         {
             try
@@ -58,25 +76,21 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                     ShowMessage("Name is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
                 if (string.IsNullOrWhiteSpace(Role))
                 {
                     ShowMessage("Role is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
                 if (string.IsNullOrWhiteSpace(Contact))
                 {
                     ShowMessage("Contact number is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
                 if (!ValidationHelper.IsValidEmail(Email))
                 {
                     ShowMessage("A valid email address is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
                 if (!string.IsNullOrWhiteSpace(Salary) && !decimal.TryParse(Salary, out _))
                 {
                     ShowMessage("Salary must be a valid number.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -120,7 +134,9 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 ShowMessage($"Unexpected error:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
+        #region Close Window
         private void CloseWindow()
         {
             foreach (Window window in Application.Current.Windows)
@@ -132,5 +148,6 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 }
             }
         }
+        #endregion
     }
 }

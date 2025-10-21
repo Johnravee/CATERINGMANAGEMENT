@@ -1,4 +1,15 @@
-﻿// ViewModel for assigning workers to reservations, with search, selection, and batch assignment logic.
+﻿/*
+ * FILE: AssignWorkersViewModel.cs
+ * PURPOSE: ViewModel for assigning workers to reservations, with search, selection, and batch assignment logic.
+ *
+ * RESPONSIBILITIES:
+ *  - Load reservations and available workers
+ *  - Filter and search workers dynamically
+ *  - Assign and remove workers from a reservation
+ *  - Send email notifications upon assignment
+ *  - Refresh parent SchedulingViewModel after changes
+ *  - Provide commands for UI interaction
+ */
 
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
@@ -14,18 +25,20 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
     public class AssignWorkersViewModel : BaseViewModel
     {
+        #region Fields & Services
         private readonly AssignWorkerService _assignWorkerService = new();
         private readonly SchedulingViewModel _parentViewModel;
+        private readonly CollectionViewSource _filteredWorkers = new();
+        #endregion
 
-        // Data collections
+        #region Data Collections
         public ObservableCollection<Reservation> Reservations { get; } = new();
         public ObservableCollection<Worker> Workers { get; } = new();
         public ObservableCollection<Worker> AssignedWorkers { get; } = new();
-
-        private readonly CollectionViewSource _filteredWorkers = new();
         public ICollectionView FilteredWorkers => _filteredWorkers.View;
+        #endregion
 
-        // Selected reservation
+        #region Selected Reservation & Search
         private Reservation? _selectedReservation;
         public Reservation? SelectedReservation
         {
@@ -33,7 +46,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _selectedReservation = value; OnPropertyChanged(); }
         }
 
-        // Search
         private string? _searchText;
         public string? SearchText
         {
@@ -45,21 +57,25 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 FilteredWorkers.Refresh();
             }
         }
+        #endregion
 
-        // UI state
+        #region UI State
         private bool _isLoading;
         public bool IsLoading
         {
             get => _isLoading;
             set { _isLoading = value; OnPropertyChanged(); }
         }
+        #endregion
 
-        // Commands
+        #region Commands
         public ICommand AssignWorkerCommand { get; }
         public ICommand RemoveAssignedWorkerCommand { get; }
         public ICommand BatchAssignCommand { get; }
         public ICommand CancelCommand { get; }
+        #endregion
 
+        #region Constructor
         public AssignWorkersViewModel(SchedulingViewModel parentViewModel)
         {
             _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
@@ -74,7 +90,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
             _ = LoadData();
         }
+        #endregion
 
+        #region Filtering
         private void ApplyFilter(object sender, FilterEventArgs e)
         {
             if (e.Item is Worker worker)
@@ -92,7 +110,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                           || (worker.Contact?.ToLower().Contains(query) ?? false);
             }
         }
+        #endregion
 
+        #region Worker Assignment Logic
         private void ToggleAssign(Worker worker)
         {
             if (worker == null) return;
@@ -108,7 +128,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             if (worker == null) return;
             AssignedWorkers.Remove(worker);
         }
+        #endregion
 
+        #region Data Loading
         private async Task LoadData()
         {
             try
@@ -135,7 +157,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 IsLoading = false;
             }
         }
+        #endregion
 
+        #region Batch Assignment
         private async Task BatchAssignWorkers()
         {
             if (SelectedReservation == null || AssignedWorkers.Count == 0)
@@ -193,11 +217,14 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 IsLoading = false;
             }
         }
+        #endregion
 
+        #region Window Management
         private void CloseWindow()
         {
             var win = Application.Current.Windows.OfType<AssignWorker>().FirstOrDefault();
             win?.Close();
         }
+        #endregion
     }
 }

@@ -1,9 +1,15 @@
 ﻿/*
  * FILE: EditKitchenItemViewModel.cs
  * PURPOSE: Handles the logic for editing existing kitchen inventory items.
- *           Connected to the EditKitchenItem window and updates data through KitchenService.
+ *          Connected to the EditKitchenItem window and updates data through KitchenService.
+ * 
+ * RESPONSIBILITIES:
+ *  - Expose kitchen item properties for editing
+ *  - Validate user input
+ *  - Save updates via KitchenService
+ *  - Refresh parent KitchenViewModel after successful update
+ *  - Close the editing window upon completion
  */
-
 
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Helpers;
@@ -15,9 +21,13 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 {
     public class EditKitchenItemViewModel : BaseViewModel
     {
-        public Kitchen KitchenItem { get; }
+        #region Fields & Services
         private readonly KitchenViewModel _parentViewModel;
         private readonly KitchenService _kitchenService;
+        #endregion
+
+        #region Properties
+        public Kitchen KitchenItem { get; }
 
         private string _itemName;
         public string ItemName
@@ -39,9 +49,13 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             get => _unit;
             set { _unit = value; OnPropertyChanged(); }
         }
+        #endregion
 
+        #region Commands
         public ICommand SaveCommand { get; }
+        #endregion
 
+        #region Constructor
         public EditKitchenItemViewModel(Kitchen item, KitchenViewModel parentViewModel)
         {
             KitchenItem = item ?? throw new ArgumentNullException(nameof(item));
@@ -55,12 +69,14 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 
             SaveCommand = new RelayCommand(async () => await SaveAsync());
         }
+        #endregion
 
+        #region Methods: Save
         private async Task SaveAsync()
         {
             try
             {
-                // ✅ Basic validation
+                //  Basic validation
                 if (string.IsNullOrWhiteSpace(ItemName))
                 {
                     AppLogger.Info("Validation failed: Item name is empty.");
@@ -75,7 +91,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                     return;
                 }
 
-                // ✅ Apply changes to model
+                //  Apply changes to model
                 KitchenItem.ItemName = ItemName;
                 KitchenItem.Quantity = qty;
                 KitchenItem.Unit = Unit;
@@ -104,8 +120,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 ShowMessage($"Unexpected error:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
-        // ✅ Closes window after successful update
+        #region Methods: Window Management
         private void CloseWindow()
         {
             foreach (Window window in Application.Current.Windows)
@@ -118,5 +135,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 }
             }
         }
+        #endregion
     }
 }

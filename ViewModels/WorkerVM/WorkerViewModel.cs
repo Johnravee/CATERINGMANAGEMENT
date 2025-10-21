@@ -1,7 +1,13 @@
 ﻿/*
-    * FILE: WorkerViewModel.cs
-    * PURPOSE: Handles loading, pagination, search (with debounce), adding, editing, and deleting workers.
-*/
+ * FILE: WorkerViewModel.cs
+ * PURPOSE: Handles loading, pagination, search (with debounce), adding, editing, and deleting workers.
+ * 
+ * RESPONSIBILITIES:
+ *  - Load workers with pagination
+ *  - Search workers with debounce
+ *  - Add, edit, and delete workers
+ *  - Display messages to the user for errors or confirmations
+ */
 
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
@@ -15,15 +21,23 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
 {
     public class WorkerViewModel : BaseViewModel
     {
+        #region Constants
         private const int PageSize = 20;
+        #endregion
+
+        #region Services
         private readonly WorkerService _workerService = new();
+        #endregion
 
+        #region Fields
         private CancellationTokenSource? _searchDebounceToken;
+        #endregion
 
-        // Data
+        #region Collections
         public ObservableCollection<Worker> Items { get; } = new();
+        #endregion
 
-        // UI state
+        #region UI State
         private bool _isLoading;
         public bool IsLoading
         {
@@ -56,14 +70,17 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 _ = ApplySearchDebouncedAsync();
             }
         }
+        #endregion
 
-        // Commands
+        #region Commands
         public ICommand DeleteWorkerCommand { get; }
         public ICommand EditWorkerCommand { get; }
         public ICommand AddWorkerCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
+        #endregion
 
+        #region Constructor
         public WorkerViewModel()
         {
             DeleteWorkerCommand = new RelayCommand<Worker>(async w => await DeleteWorkerAsync(w));
@@ -74,7 +91,9 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
 
             _ = LoadPageAsync(1);
         }
+        #endregion
 
+        #region Load Workers
         public async Task LoadPageAsync(int pageNumber)
         {
             if (IsLoading) return;
@@ -84,7 +103,6 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             {
                 var (workers, totalCount) = await _workerService.GetWorkersPageAsync(pageNumber);
 
-             
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Items.Clear();
@@ -104,9 +122,9 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 IsLoading = false;
             }
         }
+        #endregion
 
-       
-
+        #region Search
         private async Task ApplySearchDebouncedAsync()
         {
             _searchDebounceToken?.Cancel();
@@ -138,7 +156,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Items.Clear();
-                    foreach (var w in results ?? new List<Worker>())
+                    foreach (var w in results ?? new System.Collections.Generic.List<Worker>())
                         Items.Add(w);
                 });
 
@@ -154,10 +172,9 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 IsLoading = false;
             }
         }
+        #endregion
 
-
-  
-
+        #region Worker Operations
         private async Task DeleteWorkerAsync(Worker worker)
         {
             if (worker == null) return;
@@ -170,12 +187,8 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             {
                 if (await _workerService.DeleteWorkerAsync(worker.Id))
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        Items.Remove(worker);
-                    });
+                    Application.Current.Dispatcher.Invoke(() => Items.Remove(worker));
                     await LoadPageAsync(CurrentPage);
-                   
                 }
             }
             catch (Exception ex)
@@ -217,8 +230,6 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 ShowMessage($"Failed to open add worker window:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-
-
+        #endregion
     }
 }

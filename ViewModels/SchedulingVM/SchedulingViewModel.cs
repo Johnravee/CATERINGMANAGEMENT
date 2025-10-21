@@ -1,10 +1,23 @@
-﻿// ViewModel for managing schedules and completed reservations, with pagination, search, and window commands.
+﻿/*
+ * FILE: SchedulingViewModel.cs
+ * PURPOSE: ViewModel for managing schedules and completed reservations.
+ *
+ * RESPONSIBILITIES:
+ *  - Load paged grouped schedules
+ *  - Load completed reservations
+ *  - Search schedules with debounce
+ *  - Handle pagination
+ *  - Open AssignWorker and EditSchedule windows
+ */
 
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
+using System;
 using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -12,25 +25,29 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
     public class SchedulingViewModel : BaseViewModel
     {
-        // Constants
+        #region Constants
         private const int PageSize = 10;
+        #endregion
 
-        // Services
+        #region Services
         private readonly SchedulingService _schedulingService = new();
+        #endregion
 
-        // Fields
+        #region Fields
         private CancellationTokenSource? _searchDebounceToken;
         private bool _isLoading;
         private bool _isRefreshing;
         private int _currentPage = 1;
         private int _totalPages = 1;
         private string _searchText = string.Empty;
+        #endregion
 
-        // Data
+        #region Data Collections
         public ObservableCollection<GroupedScheduleView> Schedules { get; set; } = new();
         public ObservableCollection<Reservation> CompletedReservations { get; set; } = new();
+        #endregion
 
-        // UI state
+        #region UI State
         public bool IsLoading
         {
             get => _isLoading;
@@ -43,7 +60,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _isRefreshing = value; OnPropertyChanged(); }
         }
 
-        // Pagination
         public int CurrentPage
         {
             get => _currentPage;
@@ -56,7 +72,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        // Search
         public string SearchText
         {
             get => _searchText;
@@ -67,14 +82,17 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 _ = ApplySearchDebouncedAsync();
             }
         }
+        #endregion
 
-        // Commands
+        #region Commands
         public ICommand RefreshCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
         public ICommand OpenAssignWorkerCommand { get; }
         public ICommand OpenEditScheduleCommand { get; }
+        #endregion
 
+        #region Constructor
         public SchedulingViewModel()
         {
             RefreshCommand = new RelayCommand(async () => await ReloadDataAsync());
@@ -85,8 +103,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
             _ = ReloadDataAsync();
         }
+        #endregion
 
-        // Public methods
+        #region Public Methods
         public async Task ReloadDataAsync()
         {
             if (IsRefreshing) return;
@@ -158,8 +177,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 ShowMessage($"Error loading completed reservations:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
-        // Private methods
+        #region Private Methods
         private void OpenAssignWorkerWindow()
         {
             try
@@ -240,5 +260,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 IsLoading = false;
             }
         }
+        #endregion
     }
 }

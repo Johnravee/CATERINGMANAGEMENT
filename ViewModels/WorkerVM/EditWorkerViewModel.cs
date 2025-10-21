@@ -1,11 +1,19 @@
 ﻿/*
-    * FILE: AddWorkerViewModel.cs
-    * PURPOSE: Handles logic for adding a new worker, validation, and refreshing parent WorkerViewModel.
-*/
+ * FILE: EditWorkerViewModel.cs
+ * PURPOSE: Handles logic for editing an existing worker, validation, and refreshing parent WorkerViewModel.
+ *
+ * RESPONSIBILITIES:
+ *  - Initialize properties from existing worker
+ *  - Validate input fields
+ *  - Save changes via WorkerService
+ *  - Refresh parent WorkerViewModel
+ *  - Close window on completion or cancellation
+ */
 
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
+using System;
 using System.Windows;
 using System.Windows.Input;
 
@@ -13,68 +21,46 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
 {
     public class EditWorkerViewModel : BaseViewModel
     {
+        #region Services
         private readonly WorkerService _workerService = new();
         private readonly WorkerViewModel _parentVM;
+        #endregion
 
+        #region Properties
         public Worker Worker { get; }
 
-        // Properties for binding
         private string _name;
-        public string Name
-        {
-            get => _name;
-            set { _name = value; OnPropertyChanged(); }
-        }
+        public string Name { get => _name; set { _name = value; OnPropertyChanged(); } }
 
         private string _role;
-        public string Role
-        {
-            get => _role;
-            set { _role = value; OnPropertyChanged(); }
-        }
+        public string Role { get => _role; set { _role = value; OnPropertyChanged(); } }
 
         private string _contact;
-        public string Contact
-        {
-            get => _contact;
-            set { _contact = value; OnPropertyChanged(); }
-        }
+        public string Contact { get => _contact; set { _contact = value; OnPropertyChanged(); } }
 
         private string _email;
-        public string Email
-        {
-            get => _email;
-            set { _email = value; OnPropertyChanged(); }
-        }
+        public string Email { get => _email; set { _email = value; OnPropertyChanged(); } }
 
         private string _salary;
-        public string Salary
-        {
-            get => _salary;
-            set { _salary = value; OnPropertyChanged(); }
-        }
+        public string Salary { get => _salary; set { _salary = value; OnPropertyChanged(); } }
 
         private DateTime? _hireDate;
-        public DateTime? HireDate
-        {
-            get => _hireDate;
-            set { _hireDate = value; OnPropertyChanged(); }
-        }
+        public DateTime? HireDate { get => _hireDate; set { _hireDate = value; OnPropertyChanged(); } }
 
         private string _status;
-        public string Status
-        {
-            get => _status;
-            set { _status = value; OnPropertyChanged(); }
-        }
+        public string Status { get => _status; set { _status = value; OnPropertyChanged(); } }
+        #endregion
 
-        // Commands
+        #region Commands
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
+        #endregion
 
-        // Event for closing window
+        #region Events
         public event Action<bool>? CloseRequested;
+        #endregion
 
+        #region Constructor
         public EditWorkerViewModel(Worker existingWorker, WorkerViewModel parentVM)
         {
             Worker = existingWorker ?? throw new ArgumentNullException(nameof(existingWorker));
@@ -92,7 +78,9 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             SaveCommand = new RelayCommand(async () => await SaveAsync());
             CancelCommand = new RelayCommand(CloseWindow);
         }
+        #endregion
 
+        #region Save Worker
         private async Task SaveAsync()
         {
             try
@@ -100,26 +88,23 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 // Validation
                 if (string.IsNullOrWhiteSpace(Name))
                 {
-                    ShowMessage("Name is required.", "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    ShowMessage("Name is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
                 if (string.IsNullOrWhiteSpace(Role))
                 {
-                    ShowMessage("Role is required.", "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    ShowMessage("Role is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
                 if (string.IsNullOrWhiteSpace(Contact))
                 {
-                    ShowMessage("Contact is required.", "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    ShowMessage("Contact is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
                 string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
                 if (string.IsNullOrWhiteSpace(Email) || !System.Text.RegularExpressions.Regex.IsMatch(Email, emailPattern))
                 {
-                    ShowMessage("A valid email address is required.", "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    ShowMessage("A valid email address is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -130,7 +115,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                         salaryValue = parsedSalary;
                     else
                     {
-                        ShowMessage("Salary must be a valid number.", "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                        ShowMessage("Salary must be a valid number.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
                 }
@@ -158,16 +143,18 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 }
                 else
                 {
-                    ShowMessage("Failed to update worker.", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    ShowMessage("Failed to update worker.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                ShowMessage($"Error updating worker:\n{ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                ShowMessage($"Error updating worker:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 AppLogger.Error(ex);
             }
         }
+        #endregion
 
+        #region Close Window
         private void CloseWindow()
         {
             foreach (Window window in Application.Current.Windows)
@@ -179,5 +166,6 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 }
             }
         }
+        #endregion
     }
 }

@@ -3,6 +3,13 @@
  * PURPOSE: Acts as the main ViewModel for the Kitchen Inventory page.
  *          Handles data loading, pagination, searching, CRUD actions,
  *          and exporting of kitchen items to PDF or CSV.
+ * 
+ * RESPONSIBILITIES:
+ *  - Load kitchen items with pagination
+ *  - Search kitchen items with debounce
+ *  - Track summary counts (total, low stock, normal)
+ *  - Handle add, edit, delete operations
+ *  - Export items to PDF or CSV
  */
 
 using CATERINGMANAGEMENT.DocumentsGenerator;
@@ -10,10 +17,7 @@ using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
-using System;
 using System.Collections.ObjectModel;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -21,9 +25,13 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 {
     public class KitchenViewModel : BaseViewModel
     {
+        #region Fields & Services
         private readonly KitchenService _kitchenService = new();
         private CancellationTokenSource? _searchDebounceToken;
+        private const int PageSize = 20;
+        #endregion
 
+        #region Properties
         public ObservableCollection<Kitchen> Items { get; set; } = new();
 
         private bool _isLoading;
@@ -45,7 +53,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             }
         }
 
-        private const int PageSize = 20;
         private int _currentPage = 1;
         public int CurrentPage
         {
@@ -60,7 +67,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        // ✅ Summary counts (with notifications)
         private int _totalCount;
         public int TotalCount
         {
@@ -81,7 +87,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             get => _normalStockCount;
             set { _normalStockCount = value; OnPropertyChanged(); }
         }
+        #endregion
 
+        #region Commands
         public ICommand DeleteKitchenItemCommand { get; }
         public ICommand EditKitchenItemCommand { get; }
         public ICommand AddKitchenItemCommand { get; }
@@ -89,7 +97,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
         public ICommand PrevPageCommand { get; }
         public ICommand ExportPdfCommand { get; }
         public ICommand ExportCsvCommand { get; }
+        #endregion
 
+        #region Constructor
         public KitchenViewModel()
         {
             DeleteKitchenItemCommand = new RelayCommand<Kitchen>(async k => await DeleteKitchenItem(k));
@@ -102,10 +112,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 
             _ = LoadPage(1);
         }
+        #endregion
 
-        /// <summary>
-        /// Loads a specific page of kitchen data and summary in parallel.
-        /// </summary>
+        #region Methods: Load & Search
         public async Task LoadPage(int pageNumber)
         {
             if (IsLoading) return;
@@ -115,7 +124,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             {
                 var listTask = _kitchenService.GetKitchenPageAsync(pageNumber, PageSize);
                 var summaryTask = _kitchenService.GetKitchenSummaryAsync();
-
                 await Task.WhenAll(listTask, summaryTask);
 
                 var list = listTask.Result ?? new List<Kitchen>();
@@ -145,9 +153,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             finally { IsLoading = false; }
         }
 
-        /// <summary>
-        /// Debounced search (waits 400ms after typing stops).
-        /// </summary>
         private async Task ApplySearchFilterDebounced()
         {
             _searchDebounceToken?.Cancel();
@@ -189,7 +194,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             }
             finally { IsLoading = false; }
         }
+        #endregion
 
+        #region Methods: CRUD
         private async Task DeleteKitchenItem(Kitchen item)
         {
             if (item == null) return;
@@ -227,7 +234,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
         {
             new KitchenItemAdd(this).ShowDialog();
         }
+        #endregion
 
+        #region Methods: Export
         private async Task ExportAsPdf()
         {
             IsLoading = true;
@@ -277,5 +286,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             }
             finally { IsLoading = false; }
         }
+        #endregion
     }
 }

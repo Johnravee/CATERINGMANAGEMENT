@@ -1,7 +1,14 @@
 ﻿/*
  * FILE: EditEquipmentViewModel.cs
- * PURPOSE: Handles the logic for editing existing equipment records.
- *           Connected to the EditEquipments window and updates data through EquipmentService.
+ * PURPOSE: Handles editing of existing equipment records.
+ *          Connected to the EditEquipments window and updates data via EquipmentService.
+ * 
+ * RESPONSIBILITIES:
+ *  - Expose editable fields for Equipment
+ *  - Validate user input before saving
+ *  - Update equipment via EquipmentService
+ *  - Refresh parent EquipmentViewModel if needed
+ *  - Close window after successful save
  */
 
 using CATERINGMANAGEMENT.Models;
@@ -14,40 +21,31 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 {
     public class EditEquipmentViewModel : BaseViewModel
     {
+        #region Fields & Services
         public Equipment EquipmentItem { get; }
         private readonly EquipmentViewModel _parentViewModel;
         private readonly EquipmentService _equipmentService;
+        #endregion
 
+        #region Properties
         private string _itemName;
-        public string ItemName
-        {
-            get => _itemName;
-            set { _itemName = value; OnPropertyChanged(); }
-        }
+        public string ItemName { get => _itemName; set { _itemName = value; OnPropertyChanged(); } }
 
         private string _quantity;
-        public string Quantity
-        {
-            get => _quantity;
-            set { _quantity = value; OnPropertyChanged(); }
-        }
+        public string Quantity { get => _quantity; set { _quantity = value; OnPropertyChanged(); } }
 
         private string _condition;
-        public string Condition
-        {
-            get => _condition;
-            set { _condition = value; OnPropertyChanged(); }
-        }
+        public string Condition { get => _condition; set { _condition = value; OnPropertyChanged(); } }
 
         private string _notes;
-        public string Notes
-        {
-            get => _notes;
-            set { _notes = value; OnPropertyChanged(); }
-        }
+        public string Notes { get => _notes; set { _notes = value; OnPropertyChanged(); } }
+        #endregion
 
+        #region Commands
         public ICommand SaveCommand { get; }
+        #endregion
 
+        #region Constructor
         public EditEquipmentViewModel(Equipment item, EquipmentViewModel parentViewModel)
         {
             EquipmentItem = item ?? throw new ArgumentNullException(nameof(item));
@@ -62,7 +60,9 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
             SaveCommand = new RelayCommand(async () => await SaveAsync());
         }
+        #endregion
 
+        #region Methods: Save & Close
         private async Task SaveAsync()
         {
             try
@@ -91,7 +91,6 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
                 if (updated != null)
                 {
-                   
                     ShowMessage("✅ Equipment updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     CloseWindow();
                 }
@@ -118,5 +117,6 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                 }
             }
         }
+        #endregion
     }
 }

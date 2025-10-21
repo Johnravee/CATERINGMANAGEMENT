@@ -1,4 +1,18 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+﻿/*
+ * FILE: EquipmentViewModel.cs
+ * PURPOSE: Acts as the main ViewModel for the Equipment module.
+ *          Handles equipment loading, pagination, searching, CRUD operations,
+ *          and exporting data to PDF/CSV.
+ * 
+ * RESPONSIBILITIES:
+ *  - Expose properties for equipment list, summary counts, and pagination
+ *  - Debounced search filtering
+ *  - Insert, update, delete operations via EquipmentService
+ *  - Export equipment data to PDF or CSV
+ *  - Open related windows (Add/Edit)
+ */
+
+using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
@@ -12,42 +26,19 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 {
     public class EquipmentViewModel : BaseViewModel
     {
+        #region Fields & Services
         private readonly EquipmentService _equipmentService = new();
         private CancellationTokenSource? _searchDebounceToken;
+        #endregion
 
+        #region Properties
         public ObservableCollection<Equipment> Items { get; set; } = new();
 
         private string _searchText = string.Empty;
         public string SearchText
         {
             get => _searchText;
-            set
-            {
-                _searchText = value;
-                OnPropertyChanged();
-                _ = ApplySearchFilterDebounced(); // ✅ Debounced search
-            }
-        }
-
-        private int _totalCount;
-        public int TotalCount
-        {
-            get => _totalCount;
-            set { _totalCount = value; OnPropertyChanged(); }
-        }
-
-        private int _damagedCount;
-        public int DamagedCount
-        {
-            get => _damagedCount;
-            set { _damagedCount = value; OnPropertyChanged(); }
-        }
-
-        private int _goodConditionCount;
-        public int GoodConditionCount
-        {
-            get => _goodConditionCount;
-            set { _goodConditionCount = value; OnPropertyChanged(); }
+            set { _searchText = value; OnPropertyChanged(); _ = ApplySearchFilterDebounced(); }
         }
 
         private bool _isLoading;
@@ -57,21 +48,23 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             set { _isLoading = value; OnPropertyChanged(); }
         }
 
-        private const int PageSize = 20;
         private int _currentPage = 1;
-        public int CurrentPage
-        {
-            get => _currentPage;
-            set { _currentPage = value; OnPropertyChanged(); }
-        }
+        public int CurrentPage { get => _currentPage; set { _currentPage = value; OnPropertyChanged(); } }
 
         private int _totalPages = 1;
-        public int TotalPages
-        {
-            get => _totalPages;
-            set { _totalPages = value; OnPropertyChanged(); }
-        }
+        public int TotalPages { get => _totalPages; set { _totalPages = value; OnPropertyChanged(); } }
 
+        private int _totalCount;
+        public int TotalCount { get => _totalCount; set { _totalCount = value; OnPropertyChanged(); } }
+
+        private int _damagedCount;
+        public int DamagedCount { get => _damagedCount; set { _damagedCount = value; OnPropertyChanged(); } }
+
+        private int _goodConditionCount;
+        public int GoodConditionCount { get => _goodConditionCount; set { _goodConditionCount = value; OnPropertyChanged(); } }
+        #endregion
+
+        #region Commands
         public ICommand DeleteEquipmentCommand { get; }
         public ICommand EditEquipmentCommand { get; }
         public ICommand AddEquipmentCommand { get; }
@@ -79,7 +72,9 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
         public ICommand PrevPageCommand { get; }
         public ICommand ExportPdfCommand { get; }
         public ICommand ExportCsvCommand { get; }
+        #endregion
 
+        #region Constructor
         public EquipmentViewModel()
         {
             DeleteEquipmentCommand = new RelayCommand<Equipment>(async e => await DeleteEquipment(e));
@@ -92,10 +87,9 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
             _ = LoadPage(1);
         }
+        #endregion
 
-        /// <summary>
-        /// Loads equipment data and summary concurrently to reduce load time.
-        /// </summary>
+        #region Methods: Load & Search
         public async Task LoadPage(int pageNumber)
         {
             if (IsLoading) return;
@@ -103,7 +97,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
             try
             {
-                var listTask = _equipmentService.GetEquipmentsAsync(pageNumber, PageSize);
+                var listTask = _equipmentService.GetEquipmentsAsync(pageNumber, 20);
                 var summaryTask = _equipmentService.GetEquipmentSummaryAsync();
 
                 await Task.WhenAll(listTask, summaryTask);
@@ -111,7 +105,6 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                 var equipments = listTask.Result;
                 var summary = summaryTask.Result;
 
-                // ✅ Direct collection replacement avoids UI lag from Clear()/Add()
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Items = new ObservableCollection<Equipment>(equipments);
@@ -125,7 +118,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                     TotalCount = summary.TotalCount;
                     DamagedCount = summary.DamagedCount;
                     GoodConditionCount = summary.GoodCount;
-                    TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
+                    TotalPages = (int)Math.Ceiling((double)TotalCount / 20);
                 }
             }
             catch (Exception ex)
@@ -133,15 +126,9 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                 MessageBox.Show($"❌ Error loading equipment:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 AppLogger.Error(ex.Message);
             }
-            finally
-            {
-                IsLoading = false;
-            }
+            finally { IsLoading = false; }
         }
 
-        /// <summary>
-        /// Debounced version of search filter (waits 400ms after typing stops).
-        /// </summary>
         private async Task ApplySearchFilterDebounced()
         {
             _searchDebounceToken?.Cancel();
@@ -186,12 +173,11 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                 AppLogger.Error($"Search error: {ex.Message}");
                 MessageBox.Show($"Error filtering data:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                IsLoading = false;
-            }
+            finally { IsLoading = false; }
         }
+        #endregion
 
+        #region Methods: CRUD
         private async Task DeleteEquipment(Equipment item)
         {
             if (item == null) return;
@@ -213,16 +199,14 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                 MessageBox.Show($"Error deleting:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 AppLogger.Error(ex.Message);
             }
-            finally
-            {
-                IsLoading = false;
-            }
+            finally { IsLoading = false; }
         }
 
         private Task EditEquipment(Equipment item)
         {
             if (item == null)
                 return Task.CompletedTask;
+
             new EditEquipments(item, this).ShowDialog();
             return Task.CompletedTask;
         }
@@ -231,11 +215,9 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
         {
             new EquipmentItemAdd(this).ShowDialog();
         }
+        #endregion
 
-       
-
-      
-
+        #region Methods: Export
         private async Task ExportAsPdf()
         {
             try
@@ -281,5 +263,6 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             }
             finally { IsLoading = false; }
         }
+        #endregion
     }
 }

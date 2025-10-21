@@ -1,34 +1,47 @@
-﻿// ViewModel for managing and removing assigned workers from a reservation, with logging and UI commands.
+﻿/*
+ * FILE: EditScheduleViewModel.cs
+ * PURPOSE: ViewModel for managing and removing assigned workers from a reservation.
+ * 
+ * RESPONSIBILITIES:
+ *  - Parse assigned workers from GroupedSchedule
+ *  - Remove workers from a reservation
+ *  - Update parent SchedulingViewModel after changes
+ *  - Provide commands for UI interaction
+ */
 
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using System;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Threading.Tasks;
 
 namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
     public class EditScheduleViewModel : BaseViewModel
     {
-        // Services
+        #region Services
         private readonly SchedulingService _schedulingService = new();
         private readonly SchedulingViewModel _parentViewModel;
+        #endregion
 
-        // Data
+        #region Data
         public GroupedScheduleView GroupedSchedule { get; }
         public ObservableCollection<Worker> AssignedWorkers { get; } = new();
+        #endregion
 
-        // Commands
+        #region Commands
         public ICommand RemoveWorkerCommand { get; }
         public ICommand CloseCommand { get; }
+        #endregion
 
+        #region Constructor
         public EditScheduleViewModel(GroupedScheduleView groupedSchedule, SchedulingViewModel parentViewModel)
         {
             GroupedSchedule = groupedSchedule ?? throw new ArgumentNullException(nameof(groupedSchedule));
-            _parentViewModel = parentViewModel;
+            _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
 
             try
             {
@@ -43,8 +56,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             RemoveWorkerCommand = new RelayCommand<Worker>(async w => await RemoveWorkerAsync(w));
             CloseCommand = new RelayCommand(CloseWindow);
         }
+        #endregion
 
-        // Public methods
+        #region Private Methods
         private void ParseAssignedWorkers()
         {
             if (string.IsNullOrEmpty(GroupedSchedule.AssignedWorkers) ||
@@ -116,5 +130,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 }
             }
         }
+        #endregion
     }
 }

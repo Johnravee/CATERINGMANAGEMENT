@@ -1,14 +1,19 @@
 ﻿/*
  * FILE: AddKitchenItemViewModel.cs
  * PURPOSE: Handles the logic for adding new kitchen inventory items in the Kitchen module.
- *           Connected to the AddKitchenItem window and interacts with KitchenService for database operations.
+ *          Connected to the AddKitchenItem window and interacts with KitchenService for database operations.
+ * 
+ * RESPONSIBILITIES:
+ *  - Expose properties for new kitchen item entry
+ *  - Validate user input
+ *  - Insert new item via KitchenService
+ *  - Refresh parent KitchenViewModel after successful insertion
+ *  - Close the add item window upon completion
  */
 
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services.Data;
-using System;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -16,6 +21,12 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 {
     public class AddKitchenItemViewModel : BaseViewModel
     {
+        #region Fields & Services
+        private readonly KitchenService _kitchenService;
+        private readonly KitchenViewModel _parentViewModel;
+        #endregion
+
+        #region Properties
         private string _itemName = string.Empty;
         public string ItemName
         {
@@ -36,19 +47,23 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             get => _unit;
             set { _unit = value; OnPropertyChanged(); }
         }
+        #endregion
 
+        #region Commands
         public ICommand SaveCommand { get; }
+        #endregion
 
-        private readonly KitchenService _kitchenService;
-        private readonly KitchenViewModel _parentViewModel;
-
+        #region Constructor
         public AddKitchenItemViewModel(KitchenViewModel parentViewModel)
         {
             _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
             _kitchenService = new KitchenService();
+
             SaveCommand = new RelayCommand(async () => await SaveAsync());
         }
+        #endregion
 
+        #region Methods: Save
         private async Task SaveAsync()
         {
             try
@@ -107,8 +122,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 ShowMessage($"Unexpected error:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
-        // ✅ Closes the add window after successful save
+        #region Methods: Window Management
         private void CloseWindow()
         {
             foreach (Window window in Application.Current.Windows)
@@ -121,5 +137,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 }
             }
         }
+        #endregion
     }
 }
