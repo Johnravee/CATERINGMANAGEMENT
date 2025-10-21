@@ -1,21 +1,24 @@
-﻿using CATERINGMANAGEMENT.Helpers;
+﻿/*
+ * FILE: EditThemeMotifViewModel.cs
+ * PURPOSE: Handles editing of Theme & Motif entity with data binding,
+ *           validation, and Supabase update via ThemeMotifService.
+ */
+
+using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
 {
-    public class EditThemeMotifViewModel : INotifyPropertyChanged
+    public class EditThemeMotifViewModel : BaseViewModel
     {
         private string _name = string.Empty;
         private Package _selectedPackage;
+        private readonly ThemeMotif _existingItem;
 
         public string Name
         {
@@ -38,11 +41,9 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
 
         public event Action<bool>? RequestClose;
 
-        private readonly ThemeMotif _existingItem;
-
         public EditThemeMotifViewModel(ThemeMotif existingItem)
         {
-            _existingItem = existingItem;
+            _existingItem = existingItem ?? throw new ArgumentNullException(nameof(existingItem));
 
             Name = existingItem.Name ?? string.Empty;
 
@@ -55,32 +56,27 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             SaveCommand = new RelayCommand(async () => await ExecuteSave());
             CancelCommand = new RelayCommand(ExecuteCancel);
 
-            _ = LoadPackages(); // fire and forget
+            _ = LoadPackages();
         }
 
         private async Task LoadPackages()
         {
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                var response = await client
-                    .From<Package>()
-                    .Select("*")
-                    .Order(p => p.CreatedAt, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
+                AppLogger.Info("Loading packages for EditThemeMotifViewModel...");
+                var packages = await ThemeMotifService.GetPackagesAsync();
 
                 Packages.Clear();
-                foreach (var pkg in response.Models)
-                {
+                foreach (var pkg in packages)
                     Packages.Add(pkg);
-                }
 
-                // Pre-select the correct package based on PackageId
                 SelectedPackage = Packages.FirstOrDefault(p => p.Id == _existingItem.PackageId);
+                AppLogger.Success($"Loaded {Packages.Count} packages.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load packages:\n{ex.Message}", "Load Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Failed to load packages for Theme & Motif editing.");
+                ShowMessage("Failed to load packages. Please try again.", "Load Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -88,56 +84,45 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
         {
             if (string.IsNullOrWhiteSpace(Name))
             {
-                MessageBox.Show("Name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowMessage("Name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (SelectedPackage == null)
             {
-                MessageBox.Show("Please select a package.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowMessage("Please select a package.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
+                AppLogger.Info($"Updating ThemeMotif: ID={_existingItem.Id}, Name={Name}");
 
                 var updateData = new NewThemeMotif
                 {
-                    Id = ResultThemeMotif.Id,
+                    Id = _existingItem.Id,
                     Name = Name,
                     PackageId = SelectedPackage.Id,
-                    CreatedAt = ResultThemeMotif.CreatedAt
-                };
+                    CreatedAt = _existingItem.CreatedAt
+                };   
 
-                var response = await client
-                    .From<NewThemeMotif>()
-                    .Where(x => x.Id == updateData.Id)
-                    .Update(updateData);
+                await ThemeMotifService.UpdateAsync(updateData);
 
-                if (response.Models != null && response.Models.Count > 0)
-                {
-                    MessageBox.Show("Theme & Motif updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    RequestClose?.Invoke(true);
-                }
-                else
-                {
-                    MessageBox.Show("No Theme & Motif was updated.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
+                AppLogger.Success($"ThemeMotif '{Name}' updated successfully.");
+                ShowMessage("Theme & Motif updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                RequestClose?.Invoke(true);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error updating Theme & Motif:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, $"Error updating ThemeMotif: {Name}");
+                ShowMessage("Error updating Theme & Motif. Please try again.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void ExecuteCancel()
         {
+            AppLogger.Info("EditThemeMotifViewModel: Cancel pressed.");
             RequestClose?.Invoke(false);
         }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

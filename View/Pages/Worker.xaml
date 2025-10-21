@@ -132,6 +132,7 @@
                              Padding="4,2"
                              VerticalContentAlignment="Center"
                              materialDesign:HintAssist.Hint="Search..."/>
+
                 </DockPanel>
             </Border>
         </StackPanel>

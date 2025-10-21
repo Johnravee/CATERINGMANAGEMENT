@@ -1,9 +1,13 @@
 ﻿/*
  * FILE: SchedulingViewModel.cs
- * PURPOSE: Main ViewModel for the Scheduling page.
- *          Handles loading schedules, completed reservations,
- *          pagination, searching (with debounce), and integration
- *          with AssignWorker and EditSchedule windows.
+ * PURPOSE: ViewModel for managing schedules and completed reservations.
+ *
+ * RESPONSIBILITIES:
+ *  - Load paged grouped schedules
+ *  - Load completed reservations
+ *  - Search schedules with debounce
+ *  - Handle pagination
+ *  - Open AssignWorker and EditSchedule windows
  */
 
 using CATERINGMANAGEMENT.Helpers;
@@ -11,9 +15,7 @@ using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -23,46 +25,53 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
     public class SchedulingViewModel : BaseViewModel
     {
-        private readonly SchedulingService _schedulingService = new();
-        private CancellationTokenSource? _searchDebounceToken;
+        #region Constants
+        private const int PageSize = 10;
+        #endregion
 
-        // ✅ Data collections
+        #region Services
+        private readonly SchedulingService _schedulingService = new();
+        #endregion
+
+        #region Fields
+        private CancellationTokenSource? _searchDebounceToken;
+        private bool _isLoading;
+        private bool _isRefreshing;
+        private int _currentPage = 1;
+        private int _totalPages = 1;
+        private string _searchText = string.Empty;
+        #endregion
+
+        #region Data Collections
         public ObservableCollection<GroupedScheduleView> Schedules { get; set; } = new();
         public ObservableCollection<Reservation> CompletedReservations { get; set; } = new();
+        #endregion
 
-        // ✅ UI state
-        private bool _isLoading;
+        #region UI State
         public bool IsLoading
         {
             get => _isLoading;
             set { _isLoading = value; OnPropertyChanged(); }
         }
 
-        private bool _isRefreshing;
         public bool IsRefreshing
         {
             get => _isRefreshing;
             set { _isRefreshing = value; OnPropertyChanged(); }
         }
 
-        // ✅ Pagination
-        private const int PageSize = 10;
-        private int _currentPage = 1;
         public int CurrentPage
         {
             get => _currentPage;
             set { _currentPage = value; OnPropertyChanged(); }
         }
 
-        private int _totalPages = 1;
         public int TotalPages
         {
             get => _totalPages;
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        // ✅ Search
-        private string _searchText = string.Empty;
         public string SearchText
         {
             get => _searchText;
@@ -73,14 +82,17 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 _ = ApplySearchDebouncedAsync();
             }
         }
+        #endregion
 
-        // ✅ Commands
+        #region Commands
         public ICommand RefreshCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
         public ICommand OpenAssignWorkerCommand { get; }
         public ICommand OpenEditScheduleCommand { get; }
+        #endregion
 
+        #region Constructor
         public SchedulingViewModel()
         {
             RefreshCommand = new RelayCommand(async () => await ReloadDataAsync());
@@ -91,10 +103,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
             _ = ReloadDataAsync();
         }
+        #endregion
 
-        /// <summary>
-        /// Reload both schedules and completed reservations.
-        /// </summary>
+        #region Public Methods
         public async Task ReloadDataAsync()
         {
             if (IsRefreshing) return;
@@ -106,7 +117,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"❌ Error reloading data: {ex.Message}");
+                AppLogger.Error(ex, "Error reloading data");
             }
             finally
             {
@@ -114,9 +125,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             }
         }
 
-        /// <summary>
-        /// Load paged schedules.
-        /// </summary>
         public async Task LoadSchedulesAsync(int pageNumber)
         {
             if (IsLoading) return;
@@ -135,19 +143,19 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
                 CurrentPage = Math.Max(1, Math.Min(pageNumber, TotalPages == 0 ? 1 : TotalPages));
 
-                AppLogger.Info($"[FETCH] Loaded {Schedules.Count} schedules (Page {CurrentPage}/{TotalPages}).");
+                AppLogger.Info($"Loaded {Schedules.Count} schedules (Page {CurrentPage}/{TotalPages})");
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"❌ Error loading schedules: {ex.Message}");
+                AppLogger.Error(ex, "Error loading schedules");
                 ShowMessage($"Error loading schedules:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally { IsLoading = false; }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
-        /// <summary>
-        /// Load completed reservations (ready for scheduling).
-        /// </summary>
         public async Task LoadCompletedReservationsAsync()
         {
             try
@@ -161,18 +169,17 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                         CompletedReservations.Add(r);
                 });
 
-                AppLogger.Info($"[FETCH] Loaded {CompletedReservations.Count} completed reservations.");
+                AppLogger.Info($"Loaded {CompletedReservations.Count} completed reservations");
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"❌ Error loading completed reservations: {ex.Message}");
+                AppLogger.Error(ex, "Error loading completed reservations");
                 ShowMessage($"Error loading completed reservations:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        #endregion
 
-        /// <summary>
-        /// Opens AssignWorker window.
-        /// </summary>
+        #region Private Methods
         private void OpenAssignWorkerWindow()
         {
             try
@@ -182,7 +189,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"❌ Failed to open AssignWorker window: {ex.Message}");
+                AppLogger.Error(ex, "Failed to open AssignWorker window");
                 ShowMessage($"Failed to open AssignWorker window:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -198,14 +205,11 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"❌ Failed to open EditSchedule window: {ex.Message}");
+                AppLogger.Error(ex, "Failed to open EditSchedule window");
                 ShowMessage($"Failed to open EditSchedule window:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        /// <summary>
-        /// Debounced search: wait 400ms after typing stops before applying filter.
-        /// </summary>
         private async Task ApplySearchDebouncedAsync()
         {
             _searchDebounceToken?.Cancel();
@@ -220,9 +224,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             catch (TaskCanceledException) { }
         }
 
-        /// <summary>
-        /// Apply search filter to schedules.
-        /// </summary>
         private async Task ApplySearchAsync()
         {
             if (IsLoading) return;
@@ -238,7 +239,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                         Schedules = new ObservableCollection<GroupedScheduleView>(schedules ?? new List<GroupedScheduleView>());
                         OnPropertyChanged(nameof(Schedules));
                     });
-
                     TotalPages = (int)Math.Ceiling((double)totalCount / PageSize);
                     return;
                 }
@@ -249,15 +249,17 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                     Schedules = new ObservableCollection<GroupedScheduleView>(results ?? new List<GroupedScheduleView>());
                     OnPropertyChanged(nameof(Schedules));
                 });
-
             }
             catch (Exception ex)
             {
-                AppLogger.Error($"❌ Search failed: {ex.Message}");
+                AppLogger.Error(ex, "Search failed");
                 ShowMessage($"Search failed:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally { IsLoading = false; }
+            finally
+            {
+                IsLoading = false;
+            }
         }
-
+        #endregion
     }
 }

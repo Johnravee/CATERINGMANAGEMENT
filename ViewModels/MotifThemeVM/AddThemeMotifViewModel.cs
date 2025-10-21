@@ -1,21 +1,38 @@
-﻿using CATERINGMANAGEMENT.Helpers;
+﻿/*
+ * FILE: AddThemeMotifViewModel.cs
+ * PURPOSE: Handles the creation of new Theme & Motif records within the system.
+ * RESPONSIBILITIES:
+ *   • Load and display available packages from Supabase for selection.
+ *   • Validate user input for Theme & Motif creation.
+ *   • Insert new Theme & Motif data into Supabase.
+ *   • Provide feedback via MessageBoxes and internal logging.
+ *   • Manage Add window closing behavior on success or cancel.
+ */
+
+using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
 {
-    internal class AddThemeMotifViewModel : INotifyPropertyChanged
+    internal class AddThemeMotifViewModel : BaseViewModel
     {
+        #region === Private Fields ===
+
         private string _name = string.Empty;
         private long? _selectedPackageId;
+        private ObservableCollection<Package> _packages = new();
+
+        #endregion
+
+        #region === Public Properties ===
 
         public string Name
         {
@@ -29,28 +46,41 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             set { _selectedPackageId = value; OnPropertyChanged(); }
         }
 
-        private ObservableCollection<Package> _packages = new();
         public ObservableCollection<Package> Packages
         {
             get => _packages;
             set { _packages = value; OnPropertyChanged(); }
         }
 
+        #endregion
+
+        #region === Commands ===
+
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
+
+        #endregion
+
+        #region === Constructor ===
 
         public AddThemeMotifViewModel()
         {
             SaveCommand = new RelayCommand(async () => await SaveAsync());
             CancelCommand = new RelayCommand(() => CloseWindow());
 
-            _ = LoadPackages();
+            _ = LoadPackages(); // fire and forget
         }
+
+        #endregion
+
+        #region === Load Packages ===
 
         private async Task LoadPackages()
         {
             try
             {
+                AppLogger.Info("Loading available packages for Theme & Motif creation...");
+
                 var client = await SupabaseService.GetClientAsync();
                 var response = await client
                     .From<Package>()
@@ -59,26 +89,40 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
                     .Get();
 
                 Packages = new ObservableCollection<Package>(response.Models);
+
+                AppLogger.Info($"Successfully loaded {Packages.Count} packages.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading packages:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error($"Error loading packages: {ex.Message}");
+                ShowMessage($"Error loading packages:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        #endregion
+
+        #region === Save Logic ===
+
         private async Task SaveAsync()
         {
+            AppLogger.Info("Attempting to save new Theme & Motif entry...");
+
+            // Validation
             if (string.IsNullOrWhiteSpace(Name))
             {
-                MessageBox.Show("Name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            if (SelectedPackageId == null || SelectedPackageId <= 0)
-            {
-                MessageBox.Show("Please select a package.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AppLogger.Info("Validation failed: Name is empty.");
+                ShowMessage("Name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
+            if (SelectedPackageId == null || SelectedPackageId <= 0)
+            {
+                AppLogger.Info("Validation failed: No package selected.");
+                ShowMessage("Please select a package.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Save process
             try
             {
                 var client = await SupabaseService.GetClientAsync();
@@ -86,39 +130,52 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
                 var motif = new NewThemeMotif
                 {
                     Name = Name,
-                    PackageId = SelectedPackageId,
-                   
+                    PackageId = SelectedPackageId
                 };
-               
 
                 var response = await client
                     .From<NewThemeMotif>()
                     .Insert(motif);
 
-                MessageBox.Show("Theme & Motif added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                AppLogger.Info($"Theme & Motif '{Name}' added successfully (Package ID: {SelectedPackageId}).");
+                ShowMessage("Theme & Motif added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 CloseWindow(true);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving Theme & Motif:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error($"Error saving Theme & Motif: {ex.Message}");
+                ShowMessage($"Error saving Theme & Motif:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        #endregion
+
+        #region === Window Handling ===
+
         private void CloseWindow(bool success = false)
         {
+            AppLogger.Info("Closing Add Theme & Motif window...");
+
             var win = Application.Current.Windows.OfType<View.Windows.AddThemeMotif>()
                 .FirstOrDefault(w => w.DataContext == this);
 
             if (win != null)
             {
                 if (success)
+                {
+                    AppLogger.Info("Operation successful. Setting DialogResult = true.");
                     win.DialogResult = true;
+                }
+
                 win.Close();
+                AppLogger.Info("Add Theme & Motif window closed.");
+            }
+            else
+            {
+                AppLogger.Info("No matching window found to close.");
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        #endregion
     }
 }

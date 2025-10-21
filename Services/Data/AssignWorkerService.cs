@@ -1,25 +1,25 @@
-﻿using CATERINGMANAGEMENT.Models;
+﻿
+
+using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Mailer;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services.Shared;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+
 
 namespace CATERINGMANAGEMENT.Services.Data
 {
+    /// <summary>
+    /// Handles assigning workers to reservations, retrieving completed reservations and all workers,
+    /// sending notification emails, with caching support via BaseCachedService.
+    /// </summary>
     public class AssignWorkerService : BaseCachedService
     {
-        private Supabase.Client? _client;
+
 
         private const string ReservationCacheKey = "CompletedReservations";
         private const string WorkerCacheKey = "AllWorkers";
 
-        private async Task<Supabase.Client> GetClientAsync()
-        {
-            _client ??= await SupabaseService.GetClientAsync();
-            return _client;
-        }
+        private async Task<Supabase.Client> GetClientAsync() => await SupabaseService.GetClientAsync();
 
         public async Task<List<Reservation>> GetCompletedReservationsAsync()
         {

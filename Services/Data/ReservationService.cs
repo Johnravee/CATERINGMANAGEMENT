@@ -17,20 +17,7 @@ namespace CATERINGMANAGEMENT.Services.Data
     /// </summary>
     public class ReservationService : BaseCachedService
     {
-        private Supabase.Client? _client;
-
-        
-
-        /// <summary>
-        /// Lazy loads and returns a Supabase client instance for database operations.
-        /// </summary>
-        /// <returns>Supabase client</returns>
-        private async Task<Supabase.Client> GetClientAsync()
-        {
-            if (_client == null)
-                _client = await SupabaseService.GetClientAsync();
-            return _client;
-        }
+        private async Task<Supabase.Client> GetClientAsync() => await SupabaseService.GetClientAsync();
 
         /// <summary>
         /// Retrieves a paginated list of reservations, including related entities,

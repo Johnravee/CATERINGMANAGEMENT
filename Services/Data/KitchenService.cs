@@ -11,26 +11,7 @@ namespace CATERINGMANAGEMENT.Services.Data
     /// </summary>
     public class KitchenService : BaseCachedService
     {
-        private Supabase.Client? _client;
-
-        /// <summary>
-        /// Default constructor that initializes base caching.
-        /// </summary>
-        public KitchenService() : base()
-        {
-        }
-
-        /// <summary>
-        /// Lazily retrieves the Supabase client.
-        /// </summary>
-        /// <returns>Supabase client instance</returns>
-        private async Task<Supabase.Client> GetClientAsync()
-        {
-            if (_client == null)
-                _client = await SupabaseService.GetClientAsync();
-
-            return _client;
-        }
+        private async Task<Supabase.Client> GetClientAsync() => await SupabaseService.GetClientAsync();
 
         /// <summary>
         /// Gets a paginated list of kitchen items, using cache when available.

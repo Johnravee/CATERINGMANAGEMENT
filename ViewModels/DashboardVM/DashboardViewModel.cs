@@ -1,19 +1,30 @@
-﻿using CATERINGMANAGEMENT.Helpers;
+﻿/*
+ * FILE: DashboardViewModel.cs
+ * PURPOSE: ViewModel for the Dashboard/Main window.
+ *          Responsibilities:
+ *          - Expose the current user and role information.
+ *          - Handle user sign-out with session clearing.
+ *          - Provide commands for UI interactions.
+ *          - Log important events and errors.
+ */
+
+using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.View;
 using CATERINGMANAGEMENT.View.Windows;
 using Supabase.Gotrue;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.DashboardVM
 {
-    class DashboardViewModel : INotifyPropertyChanged
+    class DashboardViewModel : BaseViewModel
     {
+        #region Fields
         private User? _currentUser;
         private string? _role;
+        #endregion
 
+        #region Properties
         public User? CurrentUser
         {
             get => _currentUser;
@@ -25,13 +36,19 @@ namespace CATERINGMANAGEMENT.ViewModels.DashboardVM
             get => _role;
             set { _role = value; OnPropertyChanged(); }
         }
+        #endregion
+
+        #region Commands
         public ICommand SignOutCommand { get; }
+        #endregion
+
+        #region Constructor
         public DashboardViewModel()
         {
-            // Get the current user from SessionService
+            // Initialize current user from session
             CurrentUser = SessionService.CurrentUser;
 
-            // Extract the role from UserMetadata dictionary
+            // Extract role from user metadata
             if (CurrentUser?.UserMetadata != null &&
                 CurrentUser.UserMetadata.TryGetValue("role", out var roleObj))
             {
@@ -44,7 +61,9 @@ namespace CATERINGMANAGEMENT.ViewModels.DashboardVM
 
             SignOutCommand = new RelayCommand(SignOut);
         }
+        #endregion
 
+        #region Methods
         private async void SignOut()
         {
             try
@@ -52,35 +71,29 @@ namespace CATERINGMANAGEMENT.ViewModels.DashboardVM
                 var client = await SupabaseService.GetClientAsync();
                 await client.Auth.SignOut();
 
-                // Clear the current user session
+                // Clear session
                 SessionService.ClearSession();
+                AppLogger.Info("User signed out successfully.");
 
-                // Redirect to login view
+                // Open login view
                 var loginView = new LoginView();
                 loginView.Show();
 
-                // Close the current dashboard window
+                // Close current dashboard window
                 foreach (var window in System.Windows.Application.Current.Windows)
                 {
-                    if (window is Dashboard)
+                    if (window is Dashboard dashboard)
                     {
-                        ((System.Windows.Window)window).Close();
+                        dashboard.Close();
                         break;
                     }
                 }
             }
             catch (Exception ex)
             {
-                // Handle logout failure (log, show dialog, etc.)
-                Console.WriteLine($"Sign out failed: {ex.Message}");
+                AppLogger.Error(ex, "Sign out failed.");
             }
         }
-
-
-
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        #endregion
     }
 }

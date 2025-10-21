@@ -1,18 +1,25 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+﻿/*
+ * FILE: ReservationDetailsViewModel.cs
+ * PURPOSE: Handles reservation details, including menu orders, updates, and contract PDF generation/emailing.
+ *
+ * RESPONSIBILITIES:
+ *  - Load reservation menu orders
+ *  - Update reservation data
+ *  - Generate contract PDF and send via email
+ *  - Expose UI commands for updating and generating contracts
+ *  - Manage loading state for UI
+ */
+
+using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Mailer;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
 using Microsoft.Win32;
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -20,6 +27,13 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 {
     public class ReservationDetailsViewModel : INotifyPropertyChanged
     {
+        #region Fields & Services
+        private readonly EmailService _emailService;
+        private readonly ContractMailer _contractMailer;
+        private readonly ReservationService _reservationService = new();
+        #endregion
+
+        #region Properties & Data
         private bool _isLoading;
         public bool IsLoading
         {
@@ -36,24 +50,16 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public ReservationMenuOrder? SelectedMenuOrder
         {
             get => _selectedMenuOrder;
-            set
-            {
-                _selectedMenuOrder = value;
-                OnPropertyChanged();
-            }
+            set { _selectedMenuOrder = value; OnPropertyChanged(); }
         }
+        #endregion
 
+        #region Commands
         public ICommand GenerateContractCommand { get; }
         public ICommand UpdateReservationCommand { get; }
+        #endregion
 
-        private readonly EmailService _emailService;
-        private readonly ContractMailer _contractMailer;
-        private readonly ReservationService _reservationService = new();
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = "") =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
+        #region Constructor
         public ReservationDetailsViewModel(Reservation reservation)
         {
             Reservation = reservation ?? throw new ArgumentNullException(nameof(reservation));
@@ -66,7 +72,15 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
             Task.Run(LoadReservationMenuOrdersAsync);
         }
+        #endregion
 
+        #region PropertyChanged
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string name = "") =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        #endregion
+
+        #region Data Loading
         private async Task LoadReservationMenuOrdersAsync()
         {
             try
@@ -80,9 +94,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 {
                     ReservationMenuOrders.Clear();
                     foreach (var order in orders)
-                    {
                         ReservationMenuOrders.Add(order);
-                    }
                 });
 
                 AppLogger.Success($"Loaded {orders.Count} menu orders for reservation ID {Reservation.Id}");
@@ -96,7 +108,9 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 IsLoading = false;
             }
         }
+        #endregion
 
+        #region Reservation Updates
         private async Task UpdateReservationAsync()
         {
             try
@@ -127,7 +141,9 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 IsLoading = false;
             }
         }
+        #endregion
 
+        #region Contract Generation & Email
         private async Task GenerateContractAsync()
         {
             var saveDialog = new SaveFileDialog
@@ -161,7 +177,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 });
 
                 AppLogger.Success($"Contract generated and emailed for reservation ID {Reservation.Id}");
-
             }
             catch (Exception ex)
             {
@@ -172,5 +187,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 IsLoading = false;
             }
         }
+        #endregion
     }
 }

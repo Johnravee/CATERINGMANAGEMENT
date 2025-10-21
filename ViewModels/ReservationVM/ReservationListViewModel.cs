@@ -1,8 +1,14 @@
 ﻿/*
  * FILE: ReservationListViewModel.cs
- * PURPOSE: Acts as the main ViewModel for managing reservations.
- *          Handles loading, pagination, status counts, search (with debounce),
- *          deletion, and realtime updates through Supabase Realtime.
+ * PURPOSE: Main ViewModel for managing reservations, including loading, pagination, search, deletion, and realtime updates.
+ *
+ * RESPONSIBILITIES:
+ *  - Load reservations with pagination
+ *  - Filter reservations by search text (debounced)
+ *  - Track reservation status counts (Pending, Confirmed, Cancelled)
+ *  - Handle deletion of reservations
+ *  - Subscribe to Supabase realtime updates
+ *  - Open reservation details window
  */
 
 using CATERINGMANAGEMENT.Helpers;
@@ -10,11 +16,7 @@ using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
-using System;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
@@ -23,19 +25,25 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 {
     public class ReservationListViewModel : BaseViewModel
     {
+        #region Fields & Services
         private readonly ReservationService _reservationService = new();
         private CancellationTokenSource? _searchDebounceToken;
+        #endregion
 
-        public ObservableCollection<Reservation> AllReservations { get => _allReservations; set { _allReservations = value; OnPropertyChanged(); } }
+        #region Properties & Data
         private ObservableCollection<Reservation> _allReservations = new();
+        public ObservableCollection<Reservation> AllReservations
+        {
+            get => _allReservations;
+            set { _allReservations = value; OnPropertyChanged(); }
+        }
 
-        public ObservableCollection<Reservation> FilteredReservations { get => _filteredReservations; set { _filteredReservations = value; OnPropertyChanged(); } }
         private ObservableCollection<Reservation> _filteredReservations = new();
-
-        public ICommand ViewReservationCommand { get; }
-        public ICommand DeleteReservationCommand { get; }
-        public ICommand NextPageCommand { get; }
-        public ICommand PrevPageCommand { get; }
+        public ObservableCollection<Reservation> FilteredReservations
+        {
+            get => _filteredReservations;
+            set { _filteredReservations = value; OnPropertyChanged(); }
+        }
 
         private bool _isLoading;
         public bool IsLoading
@@ -56,13 +64,14 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public int CancelledCount { get => _cancelledCount; set { _cancelledCount = value; OnPropertyChanged(); } }
         private int _cancelledCount;
 
-        public Reservation? SelectedReservation { get => _selectedReservation; set { _selectedReservation = value; OnPropertyChanged(); } }
         private Reservation? _selectedReservation;
+        public Reservation? SelectedReservation
+        {
+            get => _selectedReservation;
+            set { _selectedReservation = value; OnPropertyChanged(); }
+        }
 
         private string _searchText = string.Empty;
-        /// <summary>
-        /// Text used for filtering reservations (debounced).
-        /// </summary>
         public string SearchText
         {
             get => _searchText;
@@ -82,7 +91,16 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
         public int TotalPages { get => _totalPages; set { _totalPages = value; OnPropertyChanged(); } }
         private int _totalPages = 1;
+        #endregion
 
+        #region Commands
+        public ICommand ViewReservationCommand { get; }
+        public ICommand DeleteReservationCommand { get; }
+        public ICommand NextPageCommand { get; }
+        public ICommand PrevPageCommand { get; }
+        #endregion
+
+        #region Constructor
         public ReservationListViewModel()
         {
             ViewReservationCommand = new RelayCommand<Reservation>(async (res) => await ViewReservation(res));
@@ -92,10 +110,9 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
             _ = Task.Run(SubscribeToRealtime);
         }
+        #endregion
 
-        /// <summary>
-        /// Loads reservations and their status counts with pagination.
-        /// </summary>
+        #region Reservation Loading & Pagination
         public async Task LoadReservations(int pageNumber = 1)
         {
             IsLoading = true;
@@ -143,11 +160,9 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             }
             finally { IsLoading = false; }
         }
+        #endregion
 
-        /// <summary>
-        /// Debounce delay before applying search.
-        /// Prevents multiple triggers while user is typing.
-        /// </summary>
+        #region Search Filtering
         private async Task ApplySearchDebounced()
         {
             _searchDebounceToken?.Cancel();
@@ -162,9 +177,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             catch (TaskCanceledException) { /* ignore */ }
         }
 
-        /// <summary>
-        /// Filters reservations by search text.
-        /// </summary>
         private void ApplySearch()
         {
             if (string.IsNullOrWhiteSpace(SearchText))
@@ -185,10 +197,9 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             FilteredReservations = new ObservableCollection<Reservation>(filtered);
             AppLogger.Info($"Filtered {filtered.Count} reservations by '{query}'");
         }
+        #endregion
 
-        /// <summary>
-        /// Handles realtime updates from Supabase.
-        /// </summary>
+        #region Realtime Updates
         private async Task SubscribeToRealtime()
         {
             try
@@ -227,10 +238,9 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 AppLogger.Error(ex, "Error subscribing to realtime reservation updates");
             }
         }
+        #endregion
 
-        /// <summary>
-        /// Deletes a reservation and updates the local list.
-        /// </summary>
+        #region Reservation Actions
         private async Task DeleteReservation(Reservation reservation)
         {
             if (reservation == null) return;
@@ -259,9 +269,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             }
         }
 
-        /// <summary>
-        /// Opens reservation details window.
-        /// </summary>
         private async Task ViewReservation(Reservation reservation)
         {
             if (reservation == null) return;
@@ -287,5 +294,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 AppLogger.Error(ex, "Error opening reservation details");
             }
         }
+        #endregion
     }
 }
