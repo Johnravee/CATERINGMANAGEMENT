@@ -139,7 +139,7 @@
 
         <!-- Search + Import -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ImportCommand}" Width="100" Margin="0,0,10,0">
+            <Button Visibility="Collapsed" Style="{StaticResource ModernFlatButton}" Command="{Binding ImportCommand}" Width="100" Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileImport" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="Import"/>

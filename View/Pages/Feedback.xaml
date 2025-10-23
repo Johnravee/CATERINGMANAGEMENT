@@ -121,7 +121,7 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <TextBlock Text="Total Feedback" FontWeight="Bold" Foreground="#333" FontSize="14"/>
-                        <TextBlock Text="{Binding TotalFeedbackCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
+                        <TextBlock Text="{Binding TotalCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
                     </StackPanel>
                     <materialDesign:PackIcon Kind="MessageTextOutline" Foreground="#673AB7" Width="36" Height="36" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Grid>

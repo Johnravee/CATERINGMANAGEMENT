@@ -59,10 +59,12 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public ICommand UpdateReservationCommand { get; }
         #endregion
 
+
         #region Constructor
         public ReservationDetailsViewModel(Reservation reservation)
         {
             Reservation = reservation ?? throw new ArgumentNullException(nameof(reservation));
+
 
             _emailService = new EmailService();
             _contractMailer = new ContractMailer(_emailService);

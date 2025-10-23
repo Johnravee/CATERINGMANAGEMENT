@@ -1,18 +1,4 @@
-﻿/*
- * FILE: KitchenViewModel.cs
- * PURPOSE: Acts as the main ViewModel for the Kitchen Inventory page.
- *          Handles data loading, pagination, searching, CRUD actions,
- *          and exporting of kitchen items to PDF or CSV.
- * 
- * RESPONSIBILITIES:
- *  - Load kitchen items with pagination
- *  - Search kitchen items with debounce
- *  - Track summary counts (total, low stock, normal)
- *  - Handle add, edit, delete operations
- *  - Export items to PDF or CSV
- */
-
-using CATERINGMANAGEMENT.DocumentsGenerator;
+﻿using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
@@ -169,16 +155,18 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 
         private async Task ApplySearchFilter()
         {
-            if (IsLoading) return;
-            IsLoading = true;
+         
 
             try
             {
                 if (string.IsNullOrWhiteSpace(SearchText))
                 {
-                    await LoadPage(CurrentPage);
+                    await LoadPage(1);
                     return;
                 }
+
+                if (IsLoading) return;
+                IsLoading = true;
 
                 var result = await _kitchenService.SearchKitchenItemsAsync(SearchText);
                 Application.Current.Dispatcher.Invoke(() =>
@@ -193,6 +181,24 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 AppLogger.Error(ex.Message);
             }
             finally { IsLoading = false; }
+        }
+        #endregion
+
+        #region Methods: Count Updater
+        public async Task UpdateKitchenCounts()
+        {
+            try
+            {
+                var (total, low, normal) = await _kitchenService.GetKitchenCountsAsync();
+                TotalCount = total;
+                LowStockCount = low;
+                NormalStockCount = normal;
+                TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Error updating kitchen counts: {ex.Message}");
+            }
         }
         #endregion
 
@@ -214,6 +220,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 {
                     Items.Remove(item);
                     await LoadPage(CurrentPage);
+                    await UpdateKitchenCounts(); // Call counter update
                 }
             }
             catch (Exception ex)

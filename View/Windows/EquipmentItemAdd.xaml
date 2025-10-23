@@ -49,11 +49,9 @@
                 <ComboBox SelectedValue="{Binding Condition}" SelectedValuePath="Content"
                           FontSize="14" Padding="6"
                           Background="#F3F4F6" BorderBrush="#D1D5DB">
-                    <ComboBoxItem Content="New"/>
                     <ComboBoxItem Content="Good"/>
-                    <ComboBoxItem Content="Fair"/>
                     <ComboBoxItem Content="Needs Repair"/>
-                    <ComboBoxItem Content="Bad"/>
+                    <ComboBoxItem Content="Damaged"/>
                 </ComboBox>
 
             </StackPanel>

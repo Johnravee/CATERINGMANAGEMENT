@@ -8,6 +8,7 @@ namespace CATERINGMANAGEMENT.Models
     public class MenuOption : BaseModel
     {
         [PrimaryKey("id", false)]
+        [Column("id", ignoreOnInsert: true)]
         public long Id { get; set; }
 
         [Column("name")]

@@ -7,8 +7,8 @@ namespace CATERINGMANAGEMENT.Models
     [Table("packages")]
     public class Package : BaseModel
     {
-        [PrimaryKey("id", false)] 
-        [Column("id")]
+        [PrimaryKey("id", false)]
+        [Column("id", ignoreOnInsert: true)]
         public long Id { get; set; }
 
         [Column("name")]

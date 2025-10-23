@@ -211,6 +211,7 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
                 await client.From<Feedback>().Where(x => x.Id == item.Id).Delete();
 
                 _allItems.Remove(item);
+                await LoadPage(CurrentPage);
                 ApplySearchFilter();
 
                 MessageBox.Show("Deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);

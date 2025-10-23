@@ -113,10 +113,10 @@
 
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ImportCommand}" Width="100" Margin="0,0,10,0">
+            <Button Visibility="Collapsed" Style="{StaticResource ModernFlatButton}" Command="{Binding ImportCommand}" Width="100" Margin="0,0,10,0">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileImport" Width="16" Height="16" Margin="0,0,4,0"/>
-                    <TextBlock Text="Import"/>
+                    <TextBlock  Text="Import"/>
                 </StackPanel>
             </Button>
 
@@ -235,15 +235,16 @@
                        FontWeight="Medium"
                        Foreground="#333"
                        Margin="0,0,20,0"
-                       VerticalAlignment="Center"/>
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportCsvCommand}" >
+                       VerticalAlignment="Center"
+                       Visibility="Collapsed"/>
+            <Button Visibility="Collapsed" Style="{StaticResource ModernFlatButton}" Command="{Binding ExportCsvCommand}" >
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileCsv" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="CSV"/>
                 </StackPanel>
             </Button>
 
-            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportPdfCommand}" >
+            <Button Style="{StaticResource ModernFlatButton}" Command="{Binding ExportPdfCommand}" Visibility="Collapsed" >
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="FileDocument" Width="16" Height="16" Margin="0,0,4,0"/>
                     <TextBlock Text="PDF"/>

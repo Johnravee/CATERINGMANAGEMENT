@@ -9,7 +9,7 @@ namespace CATERINGMANAGEMENT.Models
     public class ThemeMotif : BaseModel
     {
         [PrimaryKey("id", false)]
-        [Column("id")]
+        [Column("id", ignoreOnInsert: true)]
         public long Id { get; set; }
 
         [Column("name")]

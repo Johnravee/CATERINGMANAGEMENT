@@ -3,13 +3,6 @@
  * PURPOSE: Acts as the main ViewModel for the Equipment module.
  *          Handles equipment loading, pagination, searching, CRUD operations,
  *          and exporting data to PDF/CSV.
- * 
- * RESPONSIBILITIES:
- *  - Expose properties for equipment list, summary counts, and pagination
- *  - Debounced search filtering
- *  - Insert, update, delete operations via EquipmentService
- *  - Export equipment data to PDF or CSV
- *  - Open related windows (Add/Edit)
  */
 
 using CATERINGMANAGEMENT.DocumentsGenerator;
@@ -97,13 +90,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
             try
             {
-                var listTask = _equipmentService.GetEquipmentsAsync(pageNumber, 20);
-                var summaryTask = _equipmentService.GetEquipmentSummaryAsync();
-
-                await Task.WhenAll(listTask, summaryTask);
-
-                var equipments = listTask.Result;
-                var summary = summaryTask.Result;
+                var equipments = await _equipmentService.GetEquipmentsAsync(pageNumber, 20);
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -113,6 +100,21 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
                 CurrentPage = pageNumber;
 
+                await LoadEquipmentSummaryAsync(); // ✅ load summary separately
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"❌ Error loading equipment:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex.Message);
+            }
+            finally { IsLoading = false; }
+        }
+
+        public async Task LoadEquipmentSummaryAsync()
+        {
+            try
+            {
+                var summary = await _equipmentService.GetEquipmentSummaryAsync();
                 if (summary != null)
                 {
                     TotalCount = summary.TotalCount;
@@ -123,10 +125,9 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"❌ Error loading equipment:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                AppLogger.Error(ex.Message);
+                AppLogger.Error($"Error loading equipment summary: {ex.Message}");
+                MessageBox.Show($"❌ Error loading equipment summary:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally { IsLoading = false; }
         }
 
         private async Task ApplySearchFilterDebounced()
@@ -191,7 +192,8 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                 if (await _equipmentService.DeleteEquipmentAsync(item.Id ?? 0))
                 {
                     Items.Remove(item);
-                    await LoadPage(CurrentPage);
+                    await LoadPage(1);
+                    await LoadEquipmentSummaryAsync(); // ✅ refresh counts
                 }
             }
             catch (Exception ex)
@@ -202,18 +204,27 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             finally { IsLoading = false; }
         }
 
-        private Task EditEquipment(Equipment item)
+        private async Task EditEquipment(Equipment item)
         {
-            if (item == null)
-                return Task.CompletedTask;
+            if (item == null) return;
 
-            new EditEquipments(item, this).ShowDialog();
-            return Task.CompletedTask;
+            var window = new EditEquipments(item, this);
+            window.ShowDialog();
+
+            await LoadPage(CurrentPage); // Optionally refresh
+            await LoadEquipmentSummaryAsync();
         }
 
-        private void AddNewEquipment()
+        private async void AddNewEquipment()
         {
-            new EquipmentItemAdd(this).ShowDialog();
+            var window = new EquipmentItemAdd(this);
+            bool? result = window.ShowDialog();
+
+            if (result == true)
+            {
+                await LoadPage(1);
+                await LoadEquipmentSummaryAsync(); // ✅ refresh counts
+            }
         }
         #endregion
 

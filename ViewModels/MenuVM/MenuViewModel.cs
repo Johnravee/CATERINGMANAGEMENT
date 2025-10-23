@@ -49,7 +49,7 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             {
                 _searchText = value;
                 OnPropertyChanged();
-                ApplySearchFilter();
+                _ = ApplySearchFilterAsync();
             }
         }
 
@@ -83,8 +83,8 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             NextPageCommand = new RelayCommand(async () => await NextPage());
             PrevPageCommand = new RelayCommand(async () => await PrevPage());
 
-            ExportPdfCommand = new RelayCommand(ExportToPdf);
-            ExportCsvCommand = new RelayCommand(ExportToCsv);
+            ExportPdfCommand = new RelayCommand(async () => await ExportToPdf());
+            ExportCsvCommand = new RelayCommand(async () => await ExportToCsv());
 
             _ = LoadItems();
         }
@@ -96,7 +96,7 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             {
                 _allItems.Clear();
                 Items.Clear();
-                await LoadPage(1);
+                await LoadPageAsync(1);
             }
             catch (Exception ex)
             {
@@ -108,7 +108,7 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             }
         }
 
-        private async Task LoadPage(int page)
+        private async Task LoadPageAsync(int page)
         {
             IsLoading = true;
             try
@@ -126,19 +126,14 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
 
                 _allItems.Clear();
                 if (response.Models != null)
-                {
                     foreach (var item in response.Models)
                         _allItems.Add(item);
-                }
 
-                var countResult = await client
-                    .From<MenuOption>()
-                    .Count(CountType.Exact);
-
-                TotalCount = countResult;
+                // Update total count from database
+                TotalCount = await client.From<MenuOption>().Count(CountType.Exact);
                 TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
 
-                ApplySearchFilter();
+                await ApplySearchFilterAsync();
                 CurrentPage = page;
             }
             catch (Exception ex)
@@ -154,70 +149,75 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
         private async Task NextPage()
         {
             if (CurrentPage < TotalPages)
-                await LoadPage(CurrentPage + 1);
+                await LoadPageAsync(CurrentPage + 1);
         }
 
         private async Task PrevPage()
         {
             if (CurrentPage > 1)
-                await LoadPage(CurrentPage - 1);
+                await LoadPageAsync(CurrentPage - 1);
         }
 
-        private async void ApplySearchFilter()
+        private async Task ApplySearchFilterAsync()
         {
-            var query = _searchText?.Trim().ToLower();
+            IsLoading = true;
+            try
+            {
+                var query = _searchText?.Trim().ToLower();
+                var client = await SupabaseService.GetClientAsync();
 
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                Items = new ObservableCollection<MenuOption>(_allItems);
-            }
-            else
-            {
-                try
+                if (string.IsNullOrWhiteSpace(query))
                 {
-                    IsLoading = true;
-                    var client = await SupabaseService.GetClientAsync();
-
+                    Items = new ObservableCollection<MenuOption>(_allItems);
+                }
+                else
+                {
                     var response = await client
                         .From<MenuOption>()
                         .Filter(x => x.Name, Operator.ILike, $"%{query}%")
                         .Order(x => x.CreatedAt, Ordering.Descending)
                         .Get();
 
-                    if (response.Models != null)
-                        Items = new ObservableCollection<MenuOption>(response.Models);
-                    else
-                        Items = new ObservableCollection<MenuOption>();
+                    Items = response.Models != null
+                        ? new ObservableCollection<MenuOption>(response.Models)
+                        : new ObservableCollection<MenuOption>();
+
+
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error filtering menu options:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                finally
-                {
-                    IsLoading = false;
-                }
+
+                TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error filtering menu options:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
         private async Task InsertMenuItem()
         {
-            var addWindow = new AddMenu(); // kailangan mo gawin yung AddMenu.xaml
+            var addWindow = new AddMenu();
             bool? result = addWindow.ShowDialog();
 
             if (result == true)
-                await LoadItems();
+            {
+                // Reload current page after adding
+                await LoadPageAsync(CurrentPage);
+            }
         }
 
         private async Task EditMenu(MenuOption item)
         {
             if (item == null) return;
 
-            var editWindow = new EditMenu(item); 
+            var editWindow = new EditMenu(item);
             bool? result = editWindow.ShowDialog();
 
             if (result == true)
-                await LoadItems();
+                await LoadPageAsync(CurrentPage);
         }
 
         private async Task DeleteMenu(MenuOption item)
@@ -235,7 +235,7 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
                 await client.From<MenuOption>().Where(x => x.Id == item.Id).Delete();
 
                 _allItems.Remove(item);
-                ApplySearchFilter();
+                await LoadPageAsync(1);
 
                 MessageBox.Show("Deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -250,14 +250,12 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-
                 var response = await client
                     .From<MenuOption>()
                     .Order(x => x.CreatedAt, Ordering.Descending)
                     .Get();
 
                 var menus = response.Models;
-
                 if (menus == null || menus.Count == 0)
                 {
                     MessageBox.Show("No menus found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -286,14 +284,12 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-
                 var response = await client
                     .From<MenuOption>()
                     .Order(x => x.CreatedAt, Ordering.Descending)
                     .Get();
 
                 var menus = response.Models;
-
                 if (menus == null || menus.Count == 0)
                 {
                     MessageBox.Show("No menus found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -322,4 +318,3 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
-

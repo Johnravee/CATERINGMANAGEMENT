@@ -205,6 +205,7 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
         private async Task InsertPackageItem()
         {
             var addWindow = new AddPackage();
+            addWindow.DataContext = new AddPackageViewModel(); // Ensure a new instance is created
             bool? result = addWindow.ShowDialog();
 
             if (result == true)
@@ -247,13 +248,11 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             }
         }
 
-
         private async Task ExportToPdf()
         {
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-
 
                 var response = await client
                     .From<Package>()
@@ -291,7 +290,6 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             {
                 var client = await SupabaseService.GetClientAsync();
 
-
                 var response = await client
                     .From<Package>()
                     .Order(x => x.CreatedAt, Ordering.Descending)
@@ -318,7 +316,7 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting to PDF:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error exporting to CSV:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -333,4 +331,3 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
-

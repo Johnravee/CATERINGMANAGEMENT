@@ -6,7 +6,7 @@ using static Supabase.Postgrest.Constants;
 namespace CATERINGMANAGEMENT.Services.Data
 {
     /// <summary>
-    /// Handles CRUD operations for equipment, retrieval of summaries, and caching via BaseCachedService.
+    /// Handles CRUD operations for equipment (cache disabled temporarily).
     /// </summary>
     public class EquipmentService : BaseCachedService
     {
@@ -14,10 +14,6 @@ namespace CATERINGMANAGEMENT.Services.Data
 
         public async Task<List<Equipment>> GetEquipmentsAsync(int pageNumber, int pageSize)
         {
-            string cacheKey = $"Equipments_Page_{pageNumber}_Size_{pageSize}";
-            if (TryGetCache(cacheKey, out List<Equipment>? cachedList) && cachedList != null)
-                return cachedList;
-
             try
             {
                 var client = await GetClientAsync();
@@ -30,9 +26,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                     .Range(from, to)
                     .Get();
 
-                var list = response.Models ?? new List<Equipment>();
-                SetCache(cacheKey, list);
-                return list;
+                return response.Models ?? new List<Equipment>();
             }
             catch
             {
@@ -42,15 +36,10 @@ namespace CATERINGMANAGEMENT.Services.Data
 
         public async Task<EquipmentSummary?> GetEquipmentSummaryAsync()
         {
-            const string cacheKey = "Equipment_Summary";
-            if (TryGetCache(cacheKey, out EquipmentSummary? cachedSummary) && cachedSummary != null)
-                return cachedSummary;
-
             try
             {
                 var client = await GetClientAsync();
                 var summary = (await client.From<EquipmentSummary>().Get()).Models?.FirstOrDefault();
-                if (summary != null) SetCache(cacheKey, summary);
                 return summary;
             }
             catch
@@ -66,7 +55,6 @@ namespace CATERINGMANAGEMENT.Services.Data
             {
                 var client = await GetClientAsync();
                 var inserted = (await client.From<Equipment>().Insert(newEquipment)).Models?.FirstOrDefault();
-                if (inserted != null) ClearCache();
                 return inserted;
             }
             catch
@@ -82,7 +70,6 @@ namespace CATERINGMANAGEMENT.Services.Data
             {
                 var client = await GetClientAsync();
                 var updated = (await client.From<Equipment>().Where(e => e.Id == equipment.Id).Update(equipment)).Models?.FirstOrDefault();
-                if (updated != null) ClearCache();
                 return updated;
             }
             catch
@@ -97,7 +84,6 @@ namespace CATERINGMANAGEMENT.Services.Data
             {
                 var client = await GetClientAsync();
                 await client.From<Equipment>().Where(e => e.Id == id).Delete();
-                ClearCache();
                 return true;
             }
             catch
@@ -106,9 +92,10 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        private void ClearCache()
-        {
-            InvalidateCache("Equipment_Summary");
-        }
+        // Cache-clearing temporarily disabled
+        // private void ClearCache()
+        // {
+        //     InvalidateCache("Equipment_Summary");
+        // }
     }
 }

@@ -58,6 +58,11 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
                     .Insert(package);
 
                 MessageBox.Show("Package added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Reset fields after successful insertion
+                Name = string.Empty;
+                Ratings = null;
+
                 CloseWindow(true);
             }
             catch (Exception ex)

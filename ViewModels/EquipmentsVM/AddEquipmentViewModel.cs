@@ -95,7 +95,8 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                     AppLogger.Success($"Inserted equipment: {inserted.Id} - {inserted.ItemName}");
                     ShowMessage("Equipment item added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     await _parentViewModel.LoadPage(1); // Refresh parent list
-                    CloseWindow();
+                    await _parentViewModel.LoadEquipmentSummaryAsync();
+                    CloseWindow(success: true); // ✅ Set DialogResult = true
                 }
                 else
                 {
@@ -117,13 +118,13 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             e.Handled = regex.IsMatch(e.Text);
         }
 
-        private void CloseWindow()
+        private void CloseWindow(bool success = false)
         {
             foreach (Window window in Application.Current.Windows)
             {
                 if (window.DataContext == this)
                 {
-                    window.DialogResult = false;
+                    window.DialogResult = success; // ✅ Set true on success
                     window.Close();
                     break;
                 }

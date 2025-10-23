@@ -6,29 +6,14 @@ using static Supabase.Postgrest.Constants;
 namespace CATERINGMANAGEMENT.Services.Data
 {
     /// <summary>
-    /// Service responsible for handling kitchen-related data,
-    /// including CRUD operations and caching.
+    /// Service responsible for handling kitchen-related data (cache disabled).
     /// </summary>
     public class KitchenService : BaseCachedService
     {
         private async Task<Supabase.Client> GetClientAsync() => await SupabaseService.GetClientAsync();
 
-        /// <summary>
-        /// Gets a paginated list of kitchen items, using cache when available.
-        /// </summary>
-        /// <param name="pageNumber">Page number starting from 1</param>
-        /// <param name="pageSize">Number of items per page</param>
-        /// <returns>List of Kitchen items</returns>
         public async Task<List<Kitchen>> GetKitchenPageAsync(int pageNumber, int pageSize)
         {
-            string cacheKey = $"Kitchen_Page_{pageNumber}_Size_{pageSize}";
-
-            if (TryGetCache(cacheKey, out List<Kitchen>? cachedList) && cachedList != null)
-            {
-                AppLogger.Info($"Loaded kitchen page {pageNumber} from cache");
-                return cachedList;
-            }
-
             try
             {
                 int from = (pageNumber - 1) * pageSize;
@@ -41,12 +26,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                     .Range(from, to)
                     .Get();
 
-                var list = response.Models ?? new List<Kitchen>();
-
-                SetCache(cacheKey, list);
-                AppLogger.Info($"Loaded {list.Count} kitchen items from Supabase (page {pageNumber})");
-
-                return list;
+                return response.Models ?? new List<Kitchen>();
             }
             catch (Exception ex)
             {
@@ -55,11 +35,6 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        /// <summary>
-        /// Searches kitchen items by name using case-insensitive LIKE. No cache.
-        /// </summary>
-        /// <param name="query">Text to search for</param>
-        /// <returns>List of matched kitchen items</returns>
         public async Task<List<Kitchen>> SearchKitchenItemsAsync(string query)
         {
             try
@@ -79,20 +54,8 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        /// <summary>
-        /// Retrieves kitchen summary (e.g., total, low stock), cached for performance.
-        /// </summary>
-        /// <returns>KitchenSummary object</returns>
         public async Task<KitchenSummary?> GetKitchenSummaryAsync()
         {
-            const string cacheKey = "Kitchen_Summary";
-
-            if (TryGetCache(cacheKey, out KitchenSummary? cachedSummary) && cachedSummary != null)
-            {
-                AppLogger.Info("Loaded kitchen summary from cache");
-                return cachedSummary;
-            }
-
             try
             {
                 var client = await GetClientAsync();
@@ -101,13 +64,6 @@ namespace CATERINGMANAGEMENT.Services.Data
                     .Get();
 
                 var summary = response.Models?.FirstOrDefault();
-
-                if (summary != null)
-                {
-                    SetCache(cacheKey, summary);
-                    AppLogger.Info($"Loaded summary: Total={summary.TotalCount}, Normal={summary.NormalCount}, Low={summary.LowCount}");
-                }
-
                 return summary;
             }
             catch (Exception ex)
@@ -117,18 +73,11 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        /// <summary>
-        /// Inserts a new kitchen item into the database.
-        /// Cache is cleared after successful insertion.
-        /// </summary>
-        /// <param name="item">Kitchen item to insert</param>
-        /// <returns>Inserted kitchen item</returns>
         public async Task<Kitchen?> InsertKitchenItemAsync(Kitchen item)
         {
             try
             {
                 var client = await GetClientAsync();
-
                 var response = await client
                     .From<Kitchen>()
                     .Insert(item);
@@ -136,10 +85,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                 var inserted = response.Models?.FirstOrDefault();
 
                 if (inserted != null)
-                {
                     AppLogger.Success($"Inserted kitchen item ID {inserted.Id}");
-                    ClearCache();
-                }
 
                 return inserted;
             }
@@ -150,12 +96,6 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        /// <summary>
-        /// Updates an existing kitchen item.
-        /// Cache is cleared after update.
-        /// </summary>
-        /// <param name="item">Updated kitchen item</param>
-        /// <returns>Updated kitchen item</returns>
         public async Task<Kitchen?> UpdateKitchenItemAsync(Kitchen item)
         {
             try
@@ -171,10 +111,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                 var updated = response.Models?.FirstOrDefault();
 
                 if (updated != null)
-                {
                     AppLogger.Success($"Updated kitchen item ID {updated.Id}");
-                    ClearCache();
-                }
 
                 return updated;
             }
@@ -185,12 +122,6 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        /// <summary>
-        /// Deletes a kitchen item by ID.
-        /// Cache is cleared after deletion.
-        /// </summary>
-        /// <param name="id">ID of kitchen item</param>
-        /// <returns>True if deleted successfully</returns>
         public async Task<bool> DeleteKitchenItemAsync(long id)
         {
             try
@@ -203,8 +134,6 @@ namespace CATERINGMANAGEMENT.Services.Data
                     .Delete();
 
                 AppLogger.Success($"Deleted kitchen item ID {id}");
-                ClearCache();
-
                 return true;
             }
             catch (Exception ex)
@@ -214,24 +143,40 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
         }
 
-        /// <summary>
-        /// Clears all related kitchen cache entries.
-        /// Called after insert, update, or delete.
-        /// </summary>
-        private void ClearCache()
+        // New method to get counts of kitchen items
+        public async Task<(int TotalCount, int LowStockCount, int NormalStockCount)> GetKitchenCountsAsync()
         {
-            InvalidateCache("Kitchen_Summary");
+            try
+            {
+                var client = await GetClientAsync();
 
-            // Invalidate all paged data manually tracked
-            // You could enhance this logic later to use prefix matching if needed
-            //foreach (var page in Enumerable.Range(1, 10)) // Adjust this range based on expected page numbers
-            //{
-            //    InvalidateCache($"Kitchen_Page_{page}_Size_10");
-            //    InvalidateCache($"Kitchen_Page_{page}_Size_20");
-            //    InvalidateCache($"Kitchen_Page_{page}_Size_50");
-            //}
+                var response = await client
+                    .From<KitchenSummary>()   // Query the summary view
+                    .Select("*")
+                    .Get();
 
-            AppLogger.Info("Kitchen cache invalidated");
+                var summary = response.Models?.FirstOrDefault();
+
+                if (summary != null)
+                {
+                    return (summary.TotalCount, summary.LowCount, summary.NormalCount);
+                }
+
+                return (0, 0, 0);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error($"Error getting kitchen counts: {ex.Message}");
+                return (0, 0, 0);
+            }
         }
+
+
+        // Cache-clearing disabled
+        // private void ClearCache()
+        // {
+        //     InvalidateCache("Kitchen_Summary");
+        //     AppLogger.Info("Kitchen cache invalidated");
+        // }
     }
 }

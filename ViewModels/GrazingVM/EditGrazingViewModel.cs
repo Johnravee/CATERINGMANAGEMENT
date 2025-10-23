@@ -46,7 +46,7 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
             };
 
             SaveCommand = new RelayCommand(ExecuteSave);
-            CancelCommand = new RelayCommand(ExecuteCancel);
+            CancelCommand = new RelayCommand(CloseWindow);
         }
 
         private async void ExecuteSave()
@@ -77,7 +77,7 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
                 if (response.Models != null && response.Models.Count > 0)
                 {
                     MessageBox.Show("Grazing item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    RequestClose?.Invoke(true);
+                    CloseWindow();
                 }
                 else
                 {
@@ -93,10 +93,19 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
 
 
 
-        private void ExecuteCancel()
+        #region Close Window
+        private void CloseWindow()
         {
-            RequestClose?.Invoke(false); 
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window.DataContext == this)
+                {
+                    window.Close();
+                    break;
+                }
+            }
         }
+        #endregion
 
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
