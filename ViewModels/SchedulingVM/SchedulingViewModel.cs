@@ -14,10 +14,7 @@ using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
-using System;
 using System.Collections.ObjectModel;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -113,6 +110,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
             try
             {
+                _schedulingService.InvalidateAllSchedulingCaches();
                 await Task.WhenAll(LoadSchedulesAsync(CurrentPage), LoadCompletedReservationsAsync());
             }
             catch (Exception ex)

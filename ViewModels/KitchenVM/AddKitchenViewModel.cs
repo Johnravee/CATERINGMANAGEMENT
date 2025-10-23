@@ -23,7 +23,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
     {
         #region Fields & Services
         private readonly KitchenService _kitchenService;
-        private readonly KitchenViewModel _parentViewModel;
         #endregion
 
         #region Properties
@@ -54,11 +53,9 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
         #endregion
 
         #region Constructor
-        public AddKitchenItemViewModel(KitchenViewModel parentViewModel)
+        public AddKitchenItemViewModel()
         {
-            _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
             _kitchenService = new KitchenService();
-
             SaveCommand = new RelayCommand(async () => await SaveAsync());
         }
         #endregion
@@ -107,7 +104,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 {
                     AppLogger.Success($"Inserted kitchen item: {inserted.Id} - {inserted.ItemName}");
                     ShowMessage("Kitchen item added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    await _parentViewModel.LoadPage(1); // refresh list
                     CloseWindow();
                 }
                 else

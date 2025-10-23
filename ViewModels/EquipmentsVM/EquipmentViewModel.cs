@@ -2,7 +2,7 @@
  * FILE: EquipmentViewModel.cs
  * PURPOSE: Acts as the main ViewModel for the Equipment module.
  *          Handles equipment loading, pagination, searching, CRUD operations,
- *          and exporting data to PDF/CSV.
+ *          exporting data to PDF/CSV, and real-time updates via Supabase.
  */
 
 using CATERINGMANAGEMENT.DocumentsGenerator;
@@ -12,8 +12,10 @@ using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
 namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 {
@@ -22,6 +24,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
         #region Fields & Services
         private readonly EquipmentService _equipmentService = new();
         private CancellationTokenSource? _searchDebounceToken;
+
         #endregion
 
         #region Properties
@@ -55,6 +58,8 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
         private int _goodConditionCount;
         public int GoodConditionCount { get => _goodConditionCount; set { _goodConditionCount = value; OnPropertyChanged(); } }
+        public int PageSize { get => _pageSize; set { _pageSize = value; OnPropertyChanged(); } }
+        private int _pageSize = 20;
         #endregion
 
         #region Commands
@@ -79,6 +84,9 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             ExportCsvCommand = new RelayCommand(async () => await ExportAsCsv());
 
             _ = LoadPage(1);
+
+            // Initialize realtime subscription
+            _ = Task.Run(SubscribeToRealtime);
         }
         #endregion
 
@@ -90,7 +98,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
             try
             {
-                var equipments = await _equipmentService.GetEquipmentsAsync(pageNumber, 20);
+                var equipments = await _equipmentService.GetEquipmentsAsync(pageNumber, PageSize);
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -100,7 +108,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
                 CurrentPage = pageNumber;
 
-                await LoadEquipmentSummaryAsync(); // ✅ load summary separately
+                await LoadEquipmentSummaryAsync();
             }
             catch (Exception ex)
             {
@@ -120,7 +128,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                     TotalCount = summary.TotalCount;
                     DamagedCount = summary.DamagedCount;
                     GoodConditionCount = summary.GoodCount;
-                    TotalPages = (int)Math.Ceiling((double)TotalCount / 20);
+                    TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
                 }
             }
             catch (Exception ex)
@@ -193,7 +201,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                 {
                     Items.Remove(item);
                     await LoadPage(1);
-                    await LoadEquipmentSummaryAsync(); // ✅ refresh counts
+                    await RefreshEquipmentCountsAsync();
                 }
             }
             catch (Exception ex)
@@ -204,27 +212,19 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             finally { IsLoading = false; }
         }
 
-        private async Task EditEquipment(Equipment item)
+        private static async Task EditEquipment(Equipment item)
         {
             if (item == null) return;
 
-            var window = new EditEquipments(item, this);
-            window.ShowDialog();
+            new EditEquipments(item).ShowDialog();
 
-            await LoadPage(CurrentPage); // Optionally refresh
-            await LoadEquipmentSummaryAsync();
+            await Task.CompletedTask; 
         }
 
-        private async void AddNewEquipment()
-        {
-            var window = new EquipmentItemAdd(this);
-            bool? result = window.ShowDialog();
 
-            if (result == true)
-            {
-                await LoadPage(1);
-                await LoadEquipmentSummaryAsync(); // ✅ refresh counts
-            }
+        private void AddNewEquipment()
+        {
+           new EquipmentItemAdd().ShowDialog();
         }
         #endregion
 
@@ -275,5 +275,116 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             finally { IsLoading = false; }
         }
         #endregion
+
+        #region Methods: Realtime Updates
+        private async Task SubscribeToRealtime()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                // Subscribe to the equipments table (public schema)
+                var channel = client.Realtime.Channel("realtime", "public", "equipments");
+
+                // Generic handler for all events, just logs raw payloads
+                channel.AddPostgresChangeHandler(ListenType.All, (sender, change) =>
+                {
+                    Debug.WriteLine("Realtime event change: " + change.Event);
+                    Debug.WriteLine("Realtime event change payload: " + change.Payload);
+                });
+
+                // Insert handler
+                channel.AddPostgresChangeHandler(ListenType.Inserts, (sender, change) =>
+                {
+                    var inserted = change.Model<Equipment>();
+                    if (inserted == null)
+                    {
+                        Debug.WriteLine("[Realtime Insert] Failed to deserialize inserted record.");
+                        return;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        var existing = Items.FirstOrDefault(e => e.Id == inserted.Id);
+                        if (existing == null)
+                        {
+                            Items.Insert(0, inserted);
+                            await RefreshEquipmentCountsAsync();
+                            AppLogger.Info($"Realtime Insert: Added equipment ID {inserted.Id}");
+                        }
+                        else
+                        {
+                            var index = Items.IndexOf(existing);
+                            Items[index] = inserted;
+                            AppLogger.Info($"Realtime Insert (update existing): Updated equipment ID {inserted.Id}");
+                        }
+                    });
+                });
+
+                // Update handler
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
+                {
+                    var updated = change.Model<Equipment>();
+                    if (updated == null)
+                    {
+                        Debug.WriteLine("[Realtime Update] Failed to deserialize updated record.");
+                        return;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        var existing = Items.FirstOrDefault(e => e.Id == updated.Id);
+                        if (existing != null)
+                        {
+                            var index = Items.IndexOf(existing);
+                            Items[index] = updated;
+                            await RefreshEquipmentCountsAsync();
+                            AppLogger.Info($"Realtime Update: Updated equipment ID {updated.Id}");
+                        }
+                        else
+                        {
+                            Items.Insert(0, updated);
+                            AppLogger.Info($"Realtime Update: Inserted missing equipment ID {updated.Id}");
+                        }
+                    });
+                });
+
+                var result = await channel.Subscribe();
+                AppLogger.Success($"Subscribed to realtime equipment updates: {result}");
+                Debug.WriteLine($"Subscribed to realtime equipment updates: {result}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error subscribing to realtime equipment updates");
+            }
+        }
+
+        private async Task RefreshEquipmentCountsAsync()
+        {
+            try
+            {
+                // Invalidate the cached
+                _equipmentService.InvalidateAllEquipmentCaches();
+
+
+                var counts = await _equipmentService.GetEquipmentSummaryAsync();
+
+                if (counts != null)
+                {
+                    TotalCount = counts.TotalCount;
+                    DamagedCount = counts.DamagedCount;
+                    GoodConditionCount = counts.GoodCount;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error refreshing reservation counts");
+            }
+        }
+
+        #endregion
+
+
+
     }
 }

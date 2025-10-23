@@ -1,11 +1,14 @@
 ﻿using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
+using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
 namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 {
@@ -97,6 +100,8 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             ExportCsvCommand = new RelayCommand(async () => await ExportAsCsv());
 
             _ = LoadPage(1);
+            _ = Task.Run(SubscribeToRealtime);
+
         }
         #endregion
 
@@ -185,14 +190,18 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
         #endregion
 
         #region Methods: Count Updater
-        public async Task UpdateKitchenCounts()
+        public async Task RefreshKitchenCounts()
         {
             try
             {
-                var (total, low, normal) = await _kitchenService.GetKitchenCountsAsync();
-                TotalCount = total;
-                LowStockCount = low;
-                NormalStockCount = normal;
+
+                // Invalidate the cached
+                _kitchenService.InvalidateAllKitchenCaches();
+
+                var summary = await _kitchenService.GetKitchenSummaryAsync();
+                TotalCount = summary.TotalCount;
+                LowStockCount = summary.LowCount;
+                NormalStockCount = summary.NormalCount;
                 TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
             }
             catch (Exception ex)
@@ -219,8 +228,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
                 if (await _kitchenService.DeleteKitchenItemAsync(item.Id))
                 {
                     Items.Remove(item);
-                    await LoadPage(CurrentPage);
-                    await UpdateKitchenCounts(); // Call counter update
+                    await RefreshKitchenCounts(); 
                 }
             }
             catch (Exception ex)
@@ -234,12 +242,12 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
         private void EditKitchenItem(Kitchen item)
         {
             if (item == null) return;
-            new EditKitchenItem(item, this).ShowDialog();
+            new EditKitchenItem(item).ShowDialog();
         }
 
         private void AddNewKitchenItem()
         {
-            new KitchenItemAdd(this).ShowDialog();
+            new KitchenItemAdd().ShowDialog();
         }
         #endregion
 
@@ -294,5 +302,88 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             finally { IsLoading = false; }
         }
         #endregion
+
+        private async Task SubscribeToRealtime()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                // Subscribe to the kitchens table (assuming schema is 'public' and table name is 'kitchens')
+                var channel = client.Realtime.Channel("realtime", "public", "kitchen");
+
+                // Generic handler for all events - useful for debugging
+                channel.AddPostgresChangeHandler(ListenType.All, (sender, change) =>
+                {
+                    Debug.WriteLine($"Realtime kitchen event: {change.Event}");
+                    Debug.WriteLine($"Payload: {change.Payload}");
+                });
+
+                // Insert handler
+                channel.AddPostgresChangeHandler(ListenType.Inserts, (sender, change) =>
+                {
+                    var inserted = change.Model<Kitchen>();
+                    if (inserted == null)
+                    {
+                        Debug.WriteLine("[Realtime Insert] Failed to deserialize inserted kitchen record.");
+                        return;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        var existing = Items.FirstOrDefault(k => k.Id == inserted.Id);
+                        if (existing == null)
+                        {
+                            Items.Insert(0, inserted);
+                            await RefreshKitchenCounts();
+                            AppLogger.Info($"Realtime Insert: Added kitchen ID {inserted.Id}");
+                        }
+                        else
+                        {
+                            var index = Items.IndexOf(existing);
+                            Items[index] = inserted;
+                            AppLogger.Info($"Realtime Insert (update existing): Updated kitchen ID {inserted.Id}");
+                        }
+                    });
+                });
+
+                // Update handler
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
+                {
+                    var updated = change.Model<Kitchen>();
+                    if (updated == null)
+                    {
+                        Debug.WriteLine("[Realtime Update] Failed to deserialize updated kitchen record.");
+                        return;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        var existing = Items.FirstOrDefault(k => k.Id == updated.Id);
+                        if (existing != null)
+                        {
+                            var index = Items.IndexOf(existing);
+                            Items[index] = updated;
+                            await RefreshKitchenCounts();
+                            AppLogger.Info($"Realtime Update: Updated kitchen ID {updated.Id}");
+                        }
+                        else
+                        {
+                            Items.Insert(0, updated);
+                            AppLogger.Info($"Realtime Update: Inserted missing kitchen ID {updated.Id}");
+                        }
+                    });
+                });
+
+                var result = await channel.Subscribe();
+                AppLogger.Success($"Subscribed to realtime kitchen updates: {result}");
+                Debug.WriteLine($" Subscribed to realtime kitchen updates: {result}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error subscribing to realtime kitchen updates");
+            }
+        }
+
     }
 }

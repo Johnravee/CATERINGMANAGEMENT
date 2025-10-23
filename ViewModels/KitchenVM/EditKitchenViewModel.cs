@@ -22,7 +22,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
     public class EditKitchenItemViewModel : BaseViewModel
     {
         #region Fields & Services
-        private readonly KitchenViewModel _parentViewModel;
         private readonly KitchenService _kitchenService;
         #endregion
 
@@ -56,7 +55,7 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
         #endregion
 
         #region Constructor
-        public EditKitchenItemViewModel(Kitchen item, KitchenViewModel parentViewModel)
+        public EditKitchenItemViewModel(Kitchen item)
         {
             KitchenItem = item ?? throw new ArgumentNullException(nameof(item));
 
@@ -65,7 +64,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
             _unit = item.Unit ?? string.Empty;
 
             _kitchenService = new KitchenService();
-            _parentViewModel = parentViewModel;
 
             SaveCommand = new RelayCommand(async () => await SaveAsync());
         }
@@ -103,7 +101,6 @@ namespace CATERINGMANAGEMENT.ViewModels.KitchenVM
 
                 if (updated != null)
                 {
-                    await _parentViewModel.LoadPage(1); // refresh list after save
                     AppLogger.Success($"Kitchen item updated successfully: {updated.Id} - {updated.ItemName}");
                     ShowMessage("Kitchen item updated successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     CloseWindow();

@@ -23,7 +23,6 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
     {
         #region Fields & Services
         public Equipment EquipmentItem { get; }
-        private readonly EquipmentViewModel _parentViewModel;
         private readonly EquipmentService _equipmentService;
         #endregion
 
@@ -46,11 +45,11 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
         #endregion
 
         #region Constructor
-        public EditEquipmentViewModel(Equipment item, EquipmentViewModel parentViewModel)
+        public EditEquipmentViewModel(Equipment item)
         {
             EquipmentItem = item ?? throw new ArgumentNullException(nameof(item));
             _equipmentService = new EquipmentService();
-            _parentViewModel = parentViewModel;
+         
 
             // Initialize editable fields
             _itemName = item.ItemName ?? string.Empty;
@@ -82,7 +81,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
                 // Apply changes
                 EquipmentItem.ItemName = ItemName;
-                EquipmentItem.Quantity = qty;
+                EquipmentItem.Quantity = (long?)qty;
                 EquipmentItem.Condition = Condition;
                 EquipmentItem.Notes = Notes;
                 EquipmentItem.UpdatedAt = DateTime.UtcNow;
@@ -91,7 +90,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
 
                 if (updated != null)
                 {
-                    ShowMessage("✅ Equipment updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShowMessage("Equipment updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     CloseWindow();
                 }
                 else

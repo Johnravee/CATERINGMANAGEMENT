@@ -8,13 +8,11 @@ namespace CATERINGMANAGEMENT.View.Windows
 {
     public partial class KitchenItemAdd : Window
     {
-        public Kitchen? KitchenItem { get; set; }
-
-        public KitchenItemAdd(KitchenViewModel parentVM)
+        public KitchenItemAdd()
         {
             InitializeComponent();
             //AuthGuard.RequireAuthentication(this);
-            var viewModel = new AddKitchenItemViewModel(parentVM);
+            var viewModel = new AddKitchenItemViewModel();
             DataContext = viewModel;
         }
     }

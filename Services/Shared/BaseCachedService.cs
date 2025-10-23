@@ -43,5 +43,26 @@ namespace CATERINGMANAGEMENT.Services.Shared
 
             _cacheKeys.Clear();
         }
+
+        protected void InvalidateCacheByPrefix(string prefix)
+        {
+            // Prepare a list to hold keys that match the prefix
+            var keysToRemove = new List<string>();
+
+            // 1️⃣ Loop through all tracked cache keys
+            foreach (var key in _cacheKeys)
+            {
+                // 2️⃣ Check if the key starts with the prefix we passed
+                if (key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    keysToRemove.Add(key);
+            }
+
+            // 3️⃣ Remove all matching keys from the cache and from the tracker
+            foreach (var key in keysToRemove)
+            {
+                _cache.Remove(key);      // removes from IMemoryCache
+                _cacheKeys.Remove(key);  // removes from our key tracker
+            }
+        }
     }
 }

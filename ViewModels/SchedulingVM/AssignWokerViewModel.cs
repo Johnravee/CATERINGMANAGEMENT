@@ -88,7 +88,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             _filteredWorkers.Source = Workers;
             _filteredWorkers.Filter += ApplyFilter;
 
-            _ = LoadData();
+            _ = LoadCompletedReservation();
         }
         #endregion
 
@@ -131,7 +131,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         #endregion
 
         #region Data Loading
-        private async Task LoadData()
+        private async Task LoadCompletedReservation()
         {
             try
             {
