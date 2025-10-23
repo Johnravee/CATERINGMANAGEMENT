@@ -23,7 +23,6 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
     {
         #region Services
         private readonly WorkerService _workerService;
-        private readonly WorkerViewModel _parentViewModel;
         #endregion
 
         #region Properties
@@ -55,9 +54,8 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
         #endregion
 
         #region Constructor
-        public AddWorkerViewModel(WorkerViewModel parentViewModel)
+        public AddWorkerViewModel()
         {
-            _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
             _workerService = new WorkerService();
 
             SaveCommand = new RelayCommand(async () => await SaveAsync());
@@ -118,8 +116,6 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                     AppLogger.Success($"Inserted worker: {inserted.Id} - {inserted.Name}");
                     ShowMessage("Worker added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                    _workerService.InvalidateExportCache();
-                    await _parentViewModel.LoadPageAsync(1);
                     CloseWindow();
                 }
                 else

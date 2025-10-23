@@ -23,7 +23,6 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
     {
         #region Services
         private readonly WorkerService _workerService = new();
-        private readonly WorkerViewModel _parentVM;
         #endregion
 
         #region Properties
@@ -61,10 +60,9 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
         #endregion
 
         #region Constructor
-        public EditWorkerViewModel(Worker existingWorker, WorkerViewModel parentVM)
+        public EditWorkerViewModel(Worker existingWorker)
         {
             Worker = existingWorker ?? throw new ArgumentNullException(nameof(existingWorker));
-            _parentVM = parentVM ?? throw new ArgumentNullException(nameof(parentVM));
 
             // Initialize binding properties
             _name = Worker.Name ?? string.Empty;
@@ -133,9 +131,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 var updatedWorker = await _workerService.UpdateWorkerAsync(Worker);
 
                 if (updatedWorker != null)
-                {
-                    // Refresh parent VM
-                    await _parentVM.LoadPageAsync(_parentVM.CurrentPage);
+                {               
                     CloseWindow();
 
                     ShowMessage("Worker updated successfully!", "Success");

@@ -1,8 +1,9 @@
 ﻿/*
  * FILE: PayrollService.cs
- * PURPOSE: Handles all payroll-related data operations, including fetching workers, reservations,
- *          payroll records (by reservation or by worker with cutoff), pagination, marking as paid, 
- *          and deleting payroll records. Utilizes caching to improve performance.
+ * PURPOSE: Handles all payroll-related data operations, including fetching workers,
+ *          reservations, payroll records (by reservation or by worker with cutoff),
+ *          pagination, marking as paid, and deleting payroll records.
+ *          Utilizes caching to improve performance.
  * 
  * RESPONSIBILITIES:
  *  - Retrieve all workers and reservations with caching
@@ -11,14 +12,20 @@
  *  - Mark payroll records as paid
  *  - Delete payroll records
  *  - Invalidate relevant caches when data changes
+ * 
+ * Author: [Your Name]
+ * Created: [Creation Date]
+ * Last Modified: [Last Modified Date]
  */
 
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Shared;
+using System.Diagnostics;
 using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.Services.Data
 {
+    #region PayrollService Implementation
     public class PayrollService : BaseCachedService
     {
         #region Constants
@@ -37,14 +44,22 @@ namespace CATERINGMANAGEMENT.Services.Data
             if (TryGetCache(WorkersCacheKey, out List<Worker>? cached) && cached != null)
                 return cached;
 
-            var client = await GetClientAsync();
-            var response = await client.From<Worker>()
-                .Order(x => x.CreatedAt, Ordering.Descending)
-                .Get();
+            try
+            {
+                var client = await GetClientAsync();
+                var response = await client.From<Worker>()
+                    .Order(x => x.CreatedAt, Ordering.Descending)
+                    .Get();
 
-            var workers = response.Models ?? new List<Worker>();
-            SetCache(WorkersCacheKey, workers);
-            return workers;
+                var workers = response.Models ?? new List<Worker>();
+                SetCache(WorkersCacheKey, workers);
+                return workers;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error fetching workers: {ex.Message}");
+                return new List<Worker>();
+            }
         }
 
         public void InvalidateWorkersCache() => InvalidateCache(WorkersCacheKey);
@@ -56,14 +71,22 @@ namespace CATERINGMANAGEMENT.Services.Data
             if (TryGetCache(ReservationsCacheKey, out List<Reservation>? cached) && cached != null)
                 return cached;
 
-            var client = await GetClientAsync();
-            var response = await client.From<Reservation>()
-                .Order(x => x.EventDate, Ordering.Descending)
-                .Get();
+            try
+            {
+                var client = await GetClientAsync();
+                var response = await client.From<Reservation>()
+                    .Order(x => x.EventDate, Ordering.Descending)
+                    .Get();
 
-            var reservations = response.Models ?? new List<Reservation>();
-            SetCache(ReservationsCacheKey, reservations);
-            return reservations;
+                var reservations = response.Models ?? new List<Reservation>();
+                SetCache(ReservationsCacheKey, reservations);
+                return reservations;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error fetching reservations: {ex.Message}");
+                return new List<Reservation>();
+            }
         }
 
         public void InvalidateReservationsCache() => InvalidateCache(ReservationsCacheKey);
@@ -73,18 +96,27 @@ namespace CATERINGMANAGEMENT.Services.Data
         public async Task<List<Payroll>> GetPayrollsByReservationAsync(long reservationId)
         {
             string cacheKey = $"Payrolls_Reservation_{reservationId}";
+
             if (TryGetCache(cacheKey, out List<Payroll>? cached) && cached != null)
                 return cached;
 
-            var client = await GetClientAsync();
-            var response = await client.From<Payroll>()
-                .Select("*, workers(*)")
-                .Filter("reservation_id", Operator.Equals, reservationId)
-                .Get();
+            try
+            {
+                var client = await GetClientAsync();
+                var response = await client.From<Payroll>()
+                    .Select("*, workers(*)")
+                    .Filter("reservation_id", Operator.Equals, reservationId)
+                    .Get();
 
-            var payrolls = response.Models?.ToList() ?? new List<Payroll>();
-            SetCache(cacheKey, payrolls);
-            return payrolls;
+                var payrolls = response.Models?.ToList() ?? new List<Payroll>();
+                SetCache(cacheKey, payrolls);
+                return payrolls;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error fetching payrolls by reservation: {ex.Message}");
+                return new List<Payroll>();
+            }
         }
         #endregion
 
@@ -92,30 +124,44 @@ namespace CATERINGMANAGEMENT.Services.Data
         public async Task<List<Payroll>> GetPayrollsByWorkerAsync(long workerId, DateTime startDate, DateTime endDate)
         {
             string cacheKey = $"Payrolls_Worker_{workerId}_{startDate:yyyyMMdd}_{endDate:yyyyMMdd}";
+
             if (TryGetCache(cacheKey, out List<Payroll>? cached) && cached != null)
                 return cached;
 
-            var client = await GetClientAsync();
-            var response = await client.From<Payroll>()
-                .Select("*, reservations(*)")
-                .Filter("worker_id", Operator.Equals, workerId)
-                .Filter("paid_status", Operator.Equals, "Paid")
-                .Get();
+            try
+            {
+                var client = await GetClientAsync();
+                var response = await client.From<Payroll>()
+                    .Select("*, reservations(*)")
+                    .Filter("worker_id", Operator.Equals, workerId)
+                    .Filter("paid_status", Operator.Equals, "Paid")
+                    .Get();
 
-            var payrolls = response.Models?
-                .Where(p => p.Reservation != null &&
-                            p.Reservation.EventDate >= startDate &&
-                            p.Reservation.EventDate <= endDate)
-                .ToList() ?? new List<Payroll>();
+                var payrolls = response.Models?
+                    .Where(p => p.Reservation != null &&
+                                p.Reservation.EventDate >= startDate &&
+                                p.Reservation.EventDate <= endDate)
+                    .ToList() ?? new List<Payroll>();
 
-            SetCache(cacheKey, payrolls);
-            return payrolls;
+                SetCache(cacheKey, payrolls);
+                return payrolls;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error fetching payrolls by worker: {ex.Message}");
+                return new List<Payroll>();
+            }
         }
         #endregion
 
         #region Payroll Pagination
         public async Task<(List<Payroll> Records, int TotalCount)> GetPayrollPageAsync(int pageNumber)
         {
+            string cacheKey = $"Payrolls_Page_{pageNumber}_Size_{PageSize}";
+
+            if (TryGetCache(cacheKey, out (List<Payroll> Records, int TotalCount) cached) && cached.Records != null)
+                return cached;
+
             try
             {
                 var client = await GetClientAsync();
@@ -132,16 +178,20 @@ namespace CATERINGMANAGEMENT.Services.Data
                     .Select("id")
                     .Count(CountType.Exact);
 
-                return (response.Models?.ToList() ?? new List<Payroll>(), totalCount);
+                var result = (response.Models?.ToList() ?? new List<Payroll>(), totalCount);
+                SetCache(cacheKey, result);
+                return result;
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"❌ Error fetching payroll page: {ex.Message}");
                 return (new List<Payroll>(), 0);
             }
         }
+
         #endregion
 
-        #region MarkAsPaid
+        #region Mark As Paid
         public async Task<bool> MarkAsPaidAsync(Payroll payroll)
         {
             if (payroll == null) return false;
@@ -157,23 +207,21 @@ namespace CATERINGMANAGEMENT.Services.Data
 
                 if (response.Models != null && response.Models.Any())
                 {
-                    InvalidateCache(
-                        $"Payrolls_Reservation_{payroll.ReservationId}",
-                        $"Payrolls_Worker_{payroll.WorkerId}_*"
-                    );
+                    InvalidatePayrollCaches(payroll);
                     return true;
                 }
 
                 return false;
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"❌ Error marking payroll as paid: {ex.Message}");
                 return false;
             }
         }
         #endregion
 
-        #region DeletePayroll
+        #region Delete Payroll
         public async Task<bool> DeletePayrollAsync(Payroll payroll)
         {
             if (payroll == null) return false;
@@ -183,18 +231,32 @@ namespace CATERINGMANAGEMENT.Services.Data
                 var client = await GetClientAsync();
                 await client.From<Payroll>().Where(p => p.Id == payroll.Id).Delete();
 
-                InvalidateCache(
-                    $"Payrolls_Reservation_{payroll.ReservationId}",
-                    $"Payrolls_Worker_{payroll.WorkerId}_*"
-                );
-
+                InvalidatePayrollCaches(payroll);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.WriteLine($"❌ Error deleting payroll: {ex.Message}");
                 return false;
             }
         }
         #endregion
+
+        #region Cache Invalidation
+        public void InvalidateAllPayrollCaches()
+        {
+            InvalidateCacheByPrefix("Payrolls_Page_");
+            InvalidateCacheByPrefix("Payrolls_Reservation_");
+            InvalidateCacheByPrefix("Payrolls_Worker_");
+        }
+
+        private void InvalidatePayrollCaches(Payroll payroll)
+        {
+            InvalidateCache($"Payrolls_Reservation_{payroll.ReservationId}");
+            InvalidateCacheByPrefix($"Payrolls_Worker_{payroll.WorkerId}_");
+            InvalidateCacheByPrefix("Payrolls_Page_");
+        }
+        #endregion
     }
+    #endregion
 }

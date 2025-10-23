@@ -14,11 +14,11 @@ namespace CATERINGMANAGEMENT.View.Windows
     {
       
 
-        public EditWorker(Worker existingWorker, WorkerViewModel parentVM)
+        public EditWorker(Worker existingWorker)
         {
             InitializeComponent();
             //AuthGuard.RequireAuthentication(this);
-            var viewModel = new EditWorkerViewModel(existingWorker, parentVM);
+            var viewModel = new EditWorkerViewModel(existingWorker);
             DataContext = viewModel;
 
         }
