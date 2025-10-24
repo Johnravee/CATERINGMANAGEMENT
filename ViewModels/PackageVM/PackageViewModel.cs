@@ -1,19 +1,23 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
-using CATERINGMANAGEMENT.Helpers;
+﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
+using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using static Supabase.Postgrest.Constants;
+using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
 namespace CATERINGMANAGEMENT.ViewModels.PackageVM
 {
-    public class PackageViewModel : INotifyPropertyChanged
+    public class PackageViewModel : BaseViewModel
     {
+        private readonly PackageService _packageService = new();
+
         private ObservableCollection<Package> _allItems = new();
         private ObservableCollection<Package> _filteredItems = new();
 
@@ -47,7 +51,7 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             {
                 _searchText = value;
                 OnPropertyChanged();
-                ApplySearchFilter();
+                _ = ApplySearchFilterAsync();
             }
         }
 
@@ -66,38 +70,46 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
         }
 
         // Commands
-        public ICommand AddPackageCommand { get; set; }
-        public ICommand EditPackageCommand { get; set; }
-        public ICommand DeletePackageCommand { get; set; }
-        public ICommand NextPageCommand { get; set; }
-        public ICommand PrevPageCommand { get; set; }
-        public ICommand ImportCommand { get; set; }
-        public ICommand ExportPdfCommand { get; set; }
-        public ICommand ExportCsvCommand { get; set; }
+        public ICommand AddPackageCommand { get; }
+        public ICommand EditPackageCommand { get; }
+        public ICommand DeletePackageCommand { get; }
+        public ICommand NextPageCommand { get; }
+        public ICommand PrevPageCommand { get; }
+        public ICommand ExportPdfCommand { get; }
+        public ICommand ExportCsvCommand { get; }
 
         public PackageViewModel()
         {
-            AddPackageCommand = new RelayCommand(async () => await InsertPackageItem());
-            EditPackageCommand = new RelayCommand<Package>(async (p) => await EditPackage(p));
-            DeletePackageCommand = new RelayCommand<Package>(async (p) => await DeletePackage(p));
-            NextPageCommand = new RelayCommand(async () => await NextPage());
-            PrevPageCommand = new RelayCommand(async () => await PrevPage());
-            ImportCommand = new RelayCommand(async () => await Import());
+            AddPackageCommand = new RelayCommand(() => new AddPackage().ShowDialog());
+            EditPackageCommand = new RelayCommand<Package>(p => { if (p != null) new EditPackage(p).ShowDialog(); });
+            DeletePackageCommand = new RelayCommand<Package>(async p => await DeletePackageAsync(p));
+            NextPageCommand = new RelayCommand(async () => await LoadPageAsync(CurrentPage + 1));
+            PrevPageCommand = new RelayCommand(async () => await LoadPageAsync(CurrentPage - 1));
+            ExportPdfCommand = new RelayCommand(async () => await _packageService.ExportPackagesToPdfAsync());
+            ExportCsvCommand = new RelayCommand(async () => await _packageService.ExportPackagesToCsvAsync());
 
-            ExportPdfCommand = new RelayCommand(ExportToPdf);
-            ExportCsvCommand = new RelayCommand(ExportToCsv);
-
-            _ = LoadItems();
+            _ = LoadPageAsync(1);
+            _ = RefreshPackageCount();
+            _ = Task.Run(SubscribeToRealtime);
         }
 
-        public async Task LoadItems()
+        public async Task LoadPageAsync(int page)
         {
+            if (page < 1) page = 1;
+
             IsLoading = true;
             try
             {
+                var (items, totalCount) = await _packageService.GetPackagePageAsync(page);
+
                 _allItems.Clear();
-                Items.Clear();
-                await LoadPage(1);
+                foreach (var item in items) _allItems.Add(item);
+
+                TotalCount = totalCount;
+                TotalPages = Math.Max(1, (int)Math.Ceiling((double)totalCount / PageSize));
+                CurrentPage = page;
+
+                await ApplySearchFilterAsync();
             }
             catch (Exception ex)
             {
@@ -109,43 +121,20 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             }
         }
 
-        private async Task LoadPage(int page)
+        private async Task ApplySearchFilterAsync()
         {
             IsLoading = true;
-
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
-                int from = (page - 1) * PageSize;
-                int to = from + PageSize - 1;
-
-                var response = await client
-                    .From<Package>()
-                    .Range(from, to)
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
-
-                _allItems.Clear();
-                if (response.Models != null)
+                if (string.IsNullOrWhiteSpace(_searchText))
                 {
-                    foreach (var item in response.Models)
-                        _allItems.Add(item);
+                    Items = new ObservableCollection<Package>(_allItems);
                 }
-
-                var countResult = await client
-                    .From<Package>()
-                    .Count(CountType.Exact);
-
-                TotalCount = countResult;
-                TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
-
-                ApplySearchFilter();
-                CurrentPage = page;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading package page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                else
+                {
+                    var searchResults = await _packageService.SearchPackagesAsync(_searchText.Trim());
+                    Items = new ObservableCollection<Package>(searchResults);
+                }
             }
             finally
             {
@@ -153,77 +142,7 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             }
         }
 
-        private async Task NextPage()
-        {
-            if (CurrentPage < TotalPages)
-                await LoadPage(CurrentPage + 1);
-        }
-
-        private async Task PrevPage()
-        {
-            if (CurrentPage > 1)
-                await LoadPage(CurrentPage - 1);
-        }
-
-        private async void ApplySearchFilter()
-        {
-            var query = _searchText?.Trim().ToLower();
-
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                Items = new ObservableCollection<Package>(_allItems);
-            }
-            else
-            {
-                try
-                {
-                    IsLoading = true;
-
-                    var client = await SupabaseService.GetClientAsync();
-                    var response = await client
-                        .From<Package>()
-                        .Filter(x => x.Name, Operator.ILike, $"%{query}%")
-                        .Order(x => x.CreatedAt, Ordering.Descending)
-                        .Get();
-
-                    if (response.Models != null)
-                        Items = new ObservableCollection<Package>(response.Models);
-                    else
-                        Items = new ObservableCollection<Package>();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error filtering packages:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                finally
-                {
-                    IsLoading = false;
-                }
-            }
-        }
-
-        private async Task InsertPackageItem()
-        {
-            var addWindow = new AddPackage();
-            addWindow.DataContext = new AddPackageViewModel(); // Ensure a new instance is created
-            bool? result = addWindow.ShowDialog();
-
-            if (result == true)
-                await LoadItems();
-        }
-
-        private async Task EditPackage(Package item)
-        {
-            if (item == null) return;
-
-            var editWindow = new EditPackage(item);
-            bool? result = editWindow.ShowDialog();
-
-            if (result == true)
-                await LoadItems();
-        }
-
-        private async Task DeletePackage(Package item)
+        private async Task DeletePackageAsync(Package item)
         {
             if (item == null) return;
 
@@ -234,100 +153,111 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                await client.From<Package>().Where(x => x.Id == item.Id).Delete();
-
-                _allItems.Remove(item);
-                ApplySearchFilter();
-
-                MessageBox.Show("Deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                bool deleted = await _packageService.DeletePackageAsync(item.Id);
+                if (deleted)
+                {
+                    _allItems.Remove(item);
+                    await RefreshPackageCount();
+                    await ApplySearchFilterAsync();
+                    MessageBox.Show("Deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Failed to delete package.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error deleting package item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error deleting package:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private async Task ExportToPdf()
+        public async Task RefreshPackageCount()
+        {
+            try
+            {
+                _packageService.InvalidateAllCaches();
+
+                var count = await _packageService.GetPackageCountAsync();
+                TotalCount = count;
+                Debug.WriteLine($"Package count refreshed: {count}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error fetching package count:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        #region Realtime Updates
+        private async Task SubscribeToRealtime()
         {
             try
             {
                 var client = await SupabaseService.GetClientAsync();
 
-                var response = await client
-                    .From<Package>()
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
+                var channel = client.Realtime.Channel("realtime", "public", "packages");
 
-                var package = response.Models;
-
-                if (package == null || package.Count == 0)
+                // Generic handler
+                channel.AddPostgresChangeHandler(ListenType.All, (sender, change) =>
                 {
-                    MessageBox.Show("No package found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                    Debug.WriteLine("Realtime event: " + change.Event);
+                    Debug.WriteLine("Payload: " + change.Payload);
+                });
 
-                DataGridToPdf.DataGridToPDF(
-                    package,
-                    "Packages",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "CreatedAt"
-                );
+                // Insert
+                channel.AddPostgresChangeHandler(ListenType.Inserts, (sender, change) =>
+                {
+                    var inserted = change.Model<Package>();
+                    if (inserted == null) return;
+
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        var existing = _allItems.FirstOrDefault(p => p.Id == inserted.Id);
+                        if (existing == null)
+                        {
+                            _allItems.Insert(0, inserted);
+                            await RefreshPackageCount();
+                        }
+                        else
+                        {
+                            var index = _allItems.IndexOf(existing);
+                            _allItems[index] = inserted;
+                            await RefreshPackageCount();
+                        }
+                        await ApplySearchFilterAsync();
+                    });
+                });
+
+                // Update
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
+                {
+                    var updated = change.Model<Package>();
+                    if (updated == null) return;
+
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        var existing = _allItems.FirstOrDefault(p => p.Id == updated.Id);
+                        if (existing != null)
+                        {
+                            var index = _allItems.IndexOf(existing);
+                            _allItems[index] = updated;
+                        }
+                        else
+                        {
+                            _allItems.Insert(0, updated);
+                        }
+                        await ApplySearchFilterAsync();
+                    });
+                });
+
+                var result = await channel.Subscribe();
+                Debug.WriteLine($"✅ Subscribed to realtime package updates: {result}");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting to PDF:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error subscribing to realtime package updates: {ex.Message}");
             }
         }
-
-        private async Task ExportToCsv()
-        {
-            try
-            {
-                var client = await SupabaseService.GetClientAsync();
-
-                var response = await client
-                    .From<Package>()
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
-
-                var package = response.Models;
-
-                if (package == null || package.Count == 0)
-                {
-                    MessageBox.Show("No package found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                DatagridToCsv.ExportToCsv(
-                    package,
-                    "Packages",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "CreatedAt"
-                );
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error exporting to CSV:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private async Task Import()
-        {
-            MessageBox.Show("Import feature not implemented yet.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-            await Task.CompletedTask;
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        #endregion
     }
 }

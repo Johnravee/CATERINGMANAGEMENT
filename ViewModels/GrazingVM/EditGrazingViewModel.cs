@@ -1,17 +1,17 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
+using CATERINGMANAGEMENT.View.Windows;
 using System;
-using System.ComponentModel;
-using System.Diagnostics.Tracing;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
 {
-    public class EditGrazingViewModel : INotifyPropertyChanged
+    public class EditGrazingViewModel : BaseViewModel
     {
+        private readonly GrazingService _grazingService = new();
+
         private string _name = string.Empty;
         private string _category = string.Empty;
 
@@ -32,8 +32,6 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
 
         public GrazingTable ResultGrazing { get; private set; }
 
-        public event Action<bool>? RequestClose;
-
         public EditGrazingViewModel(GrazingTable existingItem)
         {
             // Populate initial values
@@ -45,11 +43,11 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
                 CreatedAt = existingItem.CreatedAt
             };
 
-            SaveCommand = new RelayCommand(ExecuteSave);
+            SaveCommand = new RelayCommand(async () => await ExecuteSaveAsync());
             CancelCommand = new RelayCommand(CloseWindow);
         }
 
-        private async void ExecuteSave()
+        private async System.Threading.Tasks.Task ExecuteSaveAsync()
         {
             if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Category))
             {
@@ -59,56 +57,46 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
                 var updateData = new GrazingTable
                 {
                     Id = ResultGrazing.Id,
-                    Name = Name,
-                    Category = Category,
+                    Name = Name.Trim(),
+                    Category = Category.Trim(),
                     CreatedAt = ResultGrazing.CreatedAt
                 };
 
-                var response = await client
-                    .From<GrazingTable>()
-                    .Where(x => x.Id == updateData.Id)
-                    .Update(updateData);
+                var updated = await _grazingService.UpdateGrazingAsync(updateData);
 
-                if (response.Models != null && response.Models.Count > 0)
+                if (updated != null)
                 {
+                    AppLogger.Success($"Grazing item '{Name}' updated successfully.");
                     MessageBox.Show("Grazing item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     CloseWindow();
                 }
                 else
                 {
+                    AppLogger.Error($"No grazing item was updated for ID {ResultGrazing.Id}.");
                     MessageBox.Show("No item was updated.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
+                AppLogger.Error(ex, "Error updating grazing item");
                 MessageBox.Show($"Error updating grazing item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-
-
-
-        #region Close Window
         private void CloseWindow()
         {
             foreach (Window window in Application.Current.Windows)
             {
                 if (window.DataContext == this)
                 {
+                    window.DialogResult = true;
                     window.Close();
                     break;
                 }
             }
         }
-        #endregion
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

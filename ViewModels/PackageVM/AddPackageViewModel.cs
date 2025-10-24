@@ -1,6 +1,6 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -8,8 +8,10 @@ using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.PackageVM
 {
-    internal class AddPackageViewModel : INotifyPropertyChanged
+    internal class AddPackageViewModel : BaseViewModel
     {
+        private readonly PackageService _packageService = new();
+
         private string _name = string.Empty;
         private decimal? _ratings;
 
@@ -19,17 +21,15 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             set { _name = value; OnPropertyChanged(); }
         }
 
-        public decimal? Ratings
-        {
-            get => _ratings;
-            set { _ratings = value; OnPropertyChanged(); }
-        }
+        
 
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
         public AddPackageViewModel()
         {
+            _packageService = new PackageService();
+
             SaveCommand = new RelayCommand(async () => await SaveAsync());
             CancelCommand = new RelayCommand(() => CloseWindow());
         }
@@ -44,26 +44,28 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
                 var package = new Package
                 {
                     Name = Name,
-                    Ratings = Ratings,
                     CreatedAt = DateTime.UtcNow
                 };
 
-                var response = await client
-                    .From<Package>()
-                    .Insert(package);
+                var result = await _packageService.InsertPackageAsync(package);
 
-                MessageBox.Show("Package added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (result != null)
+                {
+                    MessageBox.Show("Package added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                // Reset fields after successful insertion
-                Name = string.Empty;
-                Ratings = null;
+                    // Reset fields
+                    Name = string.Empty;
 
-                CloseWindow(true);
+
+                    CloseWindow();
+                }
+                else
+                {
+                    MessageBox.Show("Failed to add package.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
@@ -71,21 +73,19 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             }
         }
 
-        private void CloseWindow(bool success = false)
+        private void CloseWindow()
         {
-            var win = Application.Current.Windows.OfType<View.Windows.AddPackage>()
-                .FirstOrDefault(w => w.DataContext == this);
-
-            if (win != null)
+            foreach (Window window in Application.Current.Windows)
             {
-                if (success)
-                    win.DialogResult = true;
-                win.Close();
+                if (window.DataContext == this)
+                {
+                    window.DialogResult = true;
+                    window.Close();
+                    break;
+                }
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
     }
 }

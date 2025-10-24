@@ -9,10 +9,11 @@ using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.MenuVM
 {
-    public class EditMenuViewModel : INotifyPropertyChanged
+    public class EditMenuViewModel : BaseViewModel
     {
         private string _name = string.Empty;
         private string _category = string.Empty;
+        private string _status = "Available";  // default value
 
         public string Name
         {
@@ -26,17 +27,25 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             set { _category = value; OnPropertyChanged(); }
         }
 
+        public string Status
+        {
+            get => _status;
+            set { _status = value; OnPropertyChanged(); }
+        }
+
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
         public MenuOption ResultMenu { get; private set; }
 
-        public event Action<bool>? RequestClose;
+
 
         public EditMenuViewModel(MenuOption existingItem)
         {
-            Name = existingItem.Name;
-            Category = existingItem.Category;
+            Name = existingItem.Name ?? string.Empty;
+            Category = existingItem.Category ?? string.Empty;
+            Status = existingItem.Status ?? "Available"; 
+
             ResultMenu = new MenuOption
             {
                 Id = existingItem.Id,
@@ -44,12 +53,12 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             };
 
             SaveCommand = new RelayCommand(ExecuteSave);
-            CancelCommand = new RelayCommand(ExecuteCancel);
+            CancelCommand = new RelayCommand(CloseWindow);
         }
 
         private async void ExecuteSave()
         {
-            if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Category))
+            if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Category) || string.IsNullOrWhiteSpace(Status))
             {
                 MessageBox.Show("All fields are required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
@@ -64,6 +73,7 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
                     Id = ResultMenu.Id,
                     Name = Name,
                     Category = Category,
+                    Status = Status,
                     CreatedAt = ResultMenu.CreatedAt
                 };
 
@@ -75,7 +85,7 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
                 if (response.Models != null && response.Models.Count > 0)
                 {
                     MessageBox.Show("Menu item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    RequestClose?.Invoke(true);
+                    CloseWindow();
                 }
                 else
                 {
@@ -87,14 +97,22 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
                 MessageBox.Show($"Error updating menu item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        private void ExecuteCancel()
+        private void CloseWindow()
         {
-            RequestClose?.Invoke(false);
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window.DataContext == this)
+                {
+                    window.DialogResult = true;
+                    window.Close();
+                    break;
+                }
+            }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+
+
+
     }
 }

@@ -14,9 +14,7 @@ namespace CATERINGMANAGEMENT.Models
         [Column("name")]
         public string Name { get; set; } = string.Empty;
 
-        [Column("ratings")]
-        public decimal? Ratings { get; set; }
-
+       
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
     }

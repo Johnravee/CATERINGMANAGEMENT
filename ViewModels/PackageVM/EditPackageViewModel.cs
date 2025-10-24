@@ -1,30 +1,24 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using CATERINGMANAGEMENT.Services.Data;
 using System.Windows;
 using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.PackageVM
 {
-    public class EditPackageViewModel : INotifyPropertyChanged
+    public class EditPackageViewModel : BaseViewModel
     {
-        private string _name = string.Empty;
-        private decimal? _ratings;
+        private readonly PackageService _packageService;
 
+        private string _name = string.Empty;
+       
         public string Name
         {
             get => _name;
             set { _name = value; OnPropertyChanged(); }
         }
 
-        public decimal? Ratings
-        {
-            get => _ratings;
-            set { _ratings = value; OnPropertyChanged(); }
-        }
-
+      
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
@@ -34,20 +28,21 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
 
         public EditPackageViewModel(Package existingItem)
         {
+            _packageService = new PackageService();
+
             // Populate initial values
             Name = existingItem.Name;
-            Ratings = existingItem.Ratings;
             ResultPackage = new Package
             {
                 Id = existingItem.Id,
                 CreatedAt = existingItem.CreatedAt
             };
 
-            SaveCommand = new RelayCommand(ExecuteSave);
-            CancelCommand = new RelayCommand(ExecuteCancel);
+            SaveCommand = new RelayCommand(async () => await ExecuteSaveAsync());
+            CancelCommand = new RelayCommand(CloseWindow);
         }
 
-        private async void ExecuteSave()
+        private async Task ExecuteSaveAsync()
         {
             if (string.IsNullOrWhiteSpace(Name))
             {
@@ -57,25 +52,19 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
                 var updateData = new Package
                 {
                     Id = ResultPackage.Id,
                     Name = Name,
-                    Ratings = Ratings,
                     CreatedAt = ResultPackage.CreatedAt
                 };
 
-                var response = await client
-                    .From<Package>()
-                    .Where(x => x.Id == updateData.Id)
-                    .Update(updateData);
+                var result = await _packageService.UpdatePackageAsync(updateData);
 
-                if (response.Models != null && response.Models.Count > 0)
+                if (result != null)
                 {
                     MessageBox.Show("Package updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    RequestClose?.Invoke(true);
+                    CloseWindow();
                 }
                 else
                 {
@@ -88,13 +77,18 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
             }
         }
 
-        private void ExecuteCancel()
+        private void CloseWindow()
         {
-            RequestClose?.Invoke(false);
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window.DataContext == this)
+                {
+                    window.DialogResult = true;
+                    window.Close();
+                    break;
+                }
+            }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

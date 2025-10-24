@@ -239,7 +239,7 @@ namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
                 });
 
                 // Insert handler
-                channel.AddPostgresChangeHandler(ListenType.Inserts, async (sender, change) =>
+                channel.AddPostgresChangeHandler(ListenType.Inserts, (sender, change) =>
                 {
                     var inserted = change.Model<Payroll>();
                     if (inserted == null)
@@ -258,7 +258,7 @@ namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
                 });
 
                 // Update handler
-                channel.AddPostgresChangeHandler(ListenType.Updates, async (sender, change) =>
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
                 {
                     var updated = change.Model<Payroll>();
                     if (updated == null)

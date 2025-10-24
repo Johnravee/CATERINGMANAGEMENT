@@ -6,14 +6,13 @@ namespace CATERINGMANAGEMENT.View.Windows
 {
     public partial class EditGrazing : Window
     {
-        public GrazingTable? UpdatedGrazing { get; private set; }
 
         public EditGrazing(GrazingTable item)
         {
             InitializeComponent();
 
-            var vm = new EditGrazingViewModel(item);
-            DataContext = vm;
+            var viewModel = new EditGrazingViewModel(item);
+            DataContext = viewModel;
         }
     }
 }

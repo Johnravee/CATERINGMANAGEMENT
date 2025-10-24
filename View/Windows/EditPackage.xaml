@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Height="350"
+        Height="280"
         Width="420"
         Background="#F9FAFB"
         FontFamily="Segoe UI">
@@ -41,16 +41,7 @@
                          BorderBrush="#D1D5DB"/>
             </StackPanel>
 
-            <!-- Ratings Field -->
-            <StackPanel Grid.Row="2" Margin="0,0,0,15">
-                <TextBlock Text="Ratings" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox Text="{Binding Ratings, UpdateSourceTrigger=PropertyChanged}"
-                         Padding="8"
-                         FontSize="14"
-                         Background="#F3F4F6"
-                         BorderThickness="1"
-                         BorderBrush="#D1D5DB"/>
-            </StackPanel>
+            
 
             <!-- Buttons -->
             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">

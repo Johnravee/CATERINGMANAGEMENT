@@ -9,6 +9,8 @@ using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -19,6 +21,7 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
         private string _name = string.Empty;
         private Package _selectedPackage;
         private readonly ThemeMotif _existingItem;
+        private readonly ThemeMotifService _themeMotifService = new();
 
         public string Name
         {
@@ -44,6 +47,7 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
         public EditThemeMotifViewModel(ThemeMotif existingItem)
         {
             _existingItem = existingItem ?? throw new ArgumentNullException(nameof(existingItem));
+            _selectedPackage = new Package();
 
             Name = existingItem.Name ?? string.Empty;
 
@@ -64,7 +68,8 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             try
             {
                 AppLogger.Info("Loading packages for EditThemeMotifViewModel...");
-                var packages = await ThemeMotifService.GetPackagesAsync();
+                var _packageService = new PackageService();
+                var packages = await _packageService.GetAllPackagesAsync(); // ✅ FIXED
 
                 Packages.Clear();
                 foreach (var pkg in packages)
@@ -98,19 +103,26 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             {
                 AppLogger.Info($"Updating ThemeMotif: ID={_existingItem.Id}, Name={Name}");
 
-                var updateData = new NewThemeMotif
+                var updatedMotif = new NewThemeMotif
                 {
                     Id = _existingItem.Id,
-                    Name = Name,
+                    Name = Name.Trim(),
                     PackageId = SelectedPackage.Id,
                     CreatedAt = _existingItem.CreatedAt
-                };   
+                };
 
-                await ThemeMotifService.UpdateAsync(updateData);
+                var result = await _themeMotifService.UpdateThemeMotifAsync(updatedMotif);
 
-                AppLogger.Success($"ThemeMotif '{Name}' updated successfully.");
-                ShowMessage("Theme & Motif updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                RequestClose?.Invoke(true);
+                if (result != null)
+                {
+                    AppLogger.Success($"ThemeMotif '{Name}' updated successfully.");
+                    ShowMessage("Theme & Motif updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    RequestClose?.Invoke(true);
+                }
+                else
+                {
+                    ShowMessage("Failed to update Theme & Motif.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {

@@ -1,18 +1,12 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
-using CATERINGMANAGEMENT.View.Windows;
-using System;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.MenuVM
 {
-    internal class AddMenuViewModel : INotifyPropertyChanged
+    internal class AddMenuViewModel : BaseViewModel
     {
         private string _name = string.Empty;
         private string _category = string.Empty;
@@ -35,7 +29,7 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
         public AddMenuViewModel()
         {
             SaveCommand = new RelayCommand(async () => await SaveAsync());
-            CancelCommand = new RelayCommand(() => CloseWindow());
+            CancelCommand = new RelayCommand(CloseWindow);
         }
 
         private async Task SaveAsync()
@@ -54,13 +48,14 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
                 {
                     Name = Name,
                     Category = Category,
+                    Status = "Available", 
                     CreatedAt = DateTime.UtcNow
                 };
 
                 await client.From<MenuOption>().Insert(menu);
 
                 MessageBox.Show("Menu option added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                CloseWindow(true);
+                CloseWindow();
             }
             catch (Exception ex)
             {
@@ -68,20 +63,18 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             }
         }
 
-        private void CloseWindow(bool success = false)
+        private void CloseWindow()
         {
-            var win = Application.Current.Windows.OfType<AddMenu>().FirstOrDefault(w => w.DataContext == this);
-
-            if (win != null)
+            foreach (Window window in Application.Current.Windows)
             {
-                if (success)
-                    win.DialogResult = true;
-                win.Close();
+                if (window.DataContext == this)
+                {
+                    window.DialogResult = true;
+                    window.Close();
+                    break;
+                }
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

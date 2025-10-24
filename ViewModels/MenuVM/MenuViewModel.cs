@@ -1,30 +1,24 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
-using CATERINGMANAGEMENT.Helpers;
+﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
-using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using static Supabase.Postgrest.Constants;
+using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
 namespace CATERINGMANAGEMENT.ViewModels.MenuVM
 {
-    public class MenuViewModel : INotifyPropertyChanged
+    public class MenuViewModel : BaseViewModel
     {
-        private ObservableCollection<MenuOption> _allItems = new();
-        private ObservableCollection<MenuOption> _filteredItems = new();
+        private readonly MenuService _menuService = new();
 
-        private const int PageSize = 10;
-
+        private ObservableCollection<MenuOption> _items = new();
         public ObservableCollection<MenuOption> Items
         {
-            get => _filteredItems;
-            set { _filteredItems = value; OnPropertyChanged(); }
+            get => _items;
+            set { _items = value; OnPropertyChanged(); }
         }
 
         private int _totalCount;
@@ -67,95 +61,48 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        public ICommand AddMenuCommand { get; set; }
-        public ICommand EditMenuCommand { get; set; }
-        public ICommand DeleteMenuCommand { get; set; }
-        public ICommand NextPageCommand { get; set; }
-        public ICommand PrevPageCommand { get; set; }
-        public ICommand ExportPdfCommand { get; set; }
-        public ICommand ExportCsvCommand { get; set; }
+        public ICommand AddMenuCommand { get; }
+        public ICommand EditMenuCommand { get; }
+        public ICommand DeleteMenuCommand { get; }
+        public ICommand NextPageCommand { get; }
+        public ICommand PrevPageCommand { get; }
+
+        public ICommand ExportPdfCommand { get; }
+        public ICommand ExportCsvCommand { get; }
 
         public MenuViewModel()
         {
-            AddMenuCommand = new RelayCommand(async () => await InsertMenuItem());
-            EditMenuCommand = new RelayCommand<MenuOption>(async (m) => await EditMenu(m));
-            DeleteMenuCommand = new RelayCommand<MenuOption>(async (m) => await DeleteMenu(m));
-            NextPageCommand = new RelayCommand(async () => await NextPage());
-            PrevPageCommand = new RelayCommand(async () => await PrevPage());
+            AddMenuCommand = new RelayCommand(InsertMenuItem);
+            EditMenuCommand = new RelayCommand<MenuOption>(EditMenu);
+            DeleteMenuCommand = new RelayCommand<MenuOption>(async (m) => await DeleteMenuAsync(m));
+            NextPageCommand = new RelayCommand(async () => await NextPageAsync());
+            PrevPageCommand = new RelayCommand(async () => await PrevPageAsync());
 
-            ExportPdfCommand = new RelayCommand(async () => await ExportToPdf());
-            ExportCsvCommand = new RelayCommand(async () => await ExportToCsv());
+            ExportPdfCommand = new RelayCommand(async () => await _menuService.ExportMenusToPdfAsync());
+            ExportCsvCommand = new RelayCommand(async () => await _menuService.ExportMenusToCsvAsync());
 
-            _ = LoadItems();
+            _ = LoadItemsAsync();
+            _ = SubscribeToRealtimeAsync();
         }
 
-        public async Task LoadItems()
+        public async Task LoadItemsAsync()
         {
             IsLoading = true;
             try
             {
-                _allItems.Clear();
-                Items.Clear();
-                await LoadPageAsync(1);
+                var (items, totalCount) = await _menuService.GetMenuPageAsync(CurrentPage);
+                Items = new ObservableCollection<MenuOption>(items);
+                TotalCount = totalCount;
+                TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / 10));
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading menu options:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error loading menu items");
             }
             finally
             {
                 IsLoading = false;
             }
-        }
-
-        private async Task LoadPageAsync(int page)
-        {
-            IsLoading = true;
-            try
-            {
-                var client = await SupabaseService.GetClientAsync();
-
-                int from = (page - 1) * PageSize;
-                int to = from + PageSize - 1;
-
-                var response = await client
-                    .From<MenuOption>()
-                    .Range(from, to)
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
-
-                _allItems.Clear();
-                if (response.Models != null)
-                    foreach (var item in response.Models)
-                        _allItems.Add(item);
-
-                // Update total count from database
-                TotalCount = await client.From<MenuOption>().Count(CountType.Exact);
-                TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
-
-                await ApplySearchFilterAsync();
-                CurrentPage = page;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading menu page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task NextPage()
-        {
-            if (CurrentPage < TotalPages)
-                await LoadPageAsync(CurrentPage + 1);
-        }
-
-        private async Task PrevPage()
-        {
-            if (CurrentPage > 1)
-                await LoadPageAsync(CurrentPage - 1);
         }
 
         private async Task ApplySearchFilterAsync()
@@ -163,33 +110,21 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             IsLoading = true;
             try
             {
-                var query = _searchText?.Trim().ToLower();
-                var client = await SupabaseService.GetClientAsync();
-
-                if (string.IsNullOrWhiteSpace(query))
+                if (string.IsNullOrWhiteSpace(SearchText))
                 {
-                    Items = new ObservableCollection<MenuOption>(_allItems);
+                    await LoadItemsAsync();
                 }
                 else
                 {
-                    var response = await client
-                        .From<MenuOption>()
-                        .Filter(x => x.Name, Operator.ILike, $"%{query}%")
-                        .Order(x => x.CreatedAt, Ordering.Descending)
-                        .Get();
-
-                    Items = response.Models != null
-                        ? new ObservableCollection<MenuOption>(response.Models)
-                        : new ObservableCollection<MenuOption>();
-
-
+                    var searchResults = await MenuService.SearchMenusAsync(SearchText.Trim());
+                    Items = new ObservableCollection<MenuOption>(searchResults);
+                    TotalPages = 1; 
+                    CurrentPage = 1;
                 }
-
-                TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error filtering menu options:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error applying search filter");
             }
             finally
             {
@@ -197,124 +132,145 @@ namespace CATERINGMANAGEMENT.ViewModels.MenuVM
             }
         }
 
-        private async Task InsertMenuItem()
+        private async Task NextPageAsync()
         {
-            var addWindow = new AddMenu();
-            bool? result = addWindow.ShowDialog();
-
-            if (result == true)
+            if (CurrentPage < TotalPages)
             {
-                // Reload current page after adding
-                await LoadPageAsync(CurrentPage);
+                CurrentPage++;
+                await LoadItemsAsync();
             }
         }
 
-        private async Task EditMenu(MenuOption item)
+        private async Task PrevPageAsync()
         {
-            if (item == null) return;
-
-            var editWindow = new EditMenu(item);
-            bool? result = editWindow.ShowDialog();
-
-            if (result == true)
-                await LoadPageAsync(CurrentPage);
+            if (CurrentPage > 1)
+            {
+                CurrentPage--;
+                await LoadItemsAsync();
+            }
         }
 
-        private async Task DeleteMenu(MenuOption item)
+        private static void InsertMenuItem()
         {
-            if (item == null) return;
+            new AddMenu().ShowDialog();
+        }
 
-            var confirm = MessageBox.Show($"Are you sure you want to delete '{item.Name}'?",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        private static void EditMenu(MenuOption menu)
+        {
+            if (menu == null) return;
+            new EditMenu(menu).ShowDialog();
+        }
 
+        private async Task DeleteMenuAsync(MenuOption menu)
+        {
+            if (menu == null) return;
+
+            var confirm = MessageBox.Show($"Are you sure you want to delete '{menu.Name}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes) return;
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                await client.From<MenuOption>().Where(x => x.Id == item.Id).Delete();
-
-                _allItems.Remove(item);
-                await LoadPageAsync(1);
-
-                MessageBox.Show("Deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                bool success = await _menuService.DeleteMenuAsync(menu.Id);
+                if (success)
+                {
+                    Items.Remove(menu);
+                    TotalCount--;
+                    TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / 10));
+                    AppLogger.Success($"Deleted menu '{menu.Name}' successfully.");
+                    ShowMessage("Deleted successfully", "Success");
+                }
+             
             }
             catch (Exception ex)
-            {
-                MessageBox.Show($"Error deleting menu item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            { 
+                
+                if (ex.Message.Contains("23503") || ex.Message.Contains("foreign key constraint"))
+                {
+                    ShowMessage(
+                        "Cannot delete this menu option because it is still referenced in existing reservations.",
+                        "Delete Blocked"
+                    );
+                }
+                else
+                {
+                    ShowMessage("An unexpected error occurred while deleting the menu.", "Error");
+                }
             }
+
         }
 
-        private async Task ExportToPdf()
+        // Real-time subscription for inserts, updates, deletes
+        private async Task SubscribeToRealtimeAsync()
         {
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-                var response = await client
-                    .From<MenuOption>()
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
 
-                var menus = response.Models;
-                if (menus == null || menus.Count == 0)
+                var channel = client.Realtime.Channel("realtime", "public", "menu_options");
+
+                channel.AddPostgresChangeHandler(ListenType.Inserts, (sender, change) =>
                 {
-                    MessageBox.Show("No menus found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                    var inserted = change.Model<MenuOption>();
+                    if (inserted == null) return;
 
-                DataGridToPdf.DataGridToPDF(
-                    menus,
-                    "Menu Options",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "CreatedAt"
-                );
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        if (!Items.Any(m => m.Id == inserted.Id))
+                        {
+                            Items.Insert(0, inserted);
+                             await RefreshMenuCount();
+                            AppLogger.Info($"Realtime Insert: Added MenuOption ID {inserted.Id}");
+                        }
+                    });
+                });
+
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
+                {
+                    var updated = change.Model<MenuOption>();
+                    if (updated == null) return;
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var existing = Items.FirstOrDefault(m => m.Id == updated.Id);
+                        if (existing != null)
+                        {
+                            var index = Items.IndexOf(existing);
+                            Items[index] = updated;
+                            AppLogger.Info($"Realtime Update: Updated MenuOption ID {updated.Id}");
+                        }
+                        else
+                        {
+                            Items.Insert(0, updated);
+                            TotalCount++;
+                            TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / 10));
+                            AppLogger.Info($"Realtime Update: Inserted missing MenuOption ID {updated.Id}");
+                        }
+                    });
+                });
+
+               
+
+                var subscribeResult = await channel.Subscribe();
+                AppLogger.Success($"Subscribed to realtime menu updates: {subscribeResult}");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting to PDF:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error subscribing to realtime menu updates");
             }
         }
 
-        private async Task ExportToCsv()
+        private async Task RefreshMenuCount()
         {
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                var response = await client
-                    .From<MenuOption>()
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
-
-                var menus = response.Models;
-                if (menus == null || menus.Count == 0)
-                {
-                    MessageBox.Show("No menus found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                DatagridToCsv.ExportToCsv(
-                    menus,
-                    "Menu Options",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "CreatedAt"
-                );
+                int totalCount = await _menuService.GetTotalMenuOptionsCountAsync();
+                TotalCount = totalCount;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting to CSV:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error refreshing menu count");
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
