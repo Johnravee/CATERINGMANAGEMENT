@@ -24,7 +24,6 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
 
         public Package ResultPackage { get; private set; }
 
-        public event Action<bool>? RequestClose;
 
         public EditPackageViewModel(Package existingItem)
         {

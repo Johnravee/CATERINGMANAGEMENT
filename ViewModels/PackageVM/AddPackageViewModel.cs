@@ -13,8 +13,7 @@ namespace CATERINGMANAGEMENT.ViewModels.PackageVM
         private readonly PackageService _packageService = new();
 
         private string _name = string.Empty;
-        private decimal? _ratings;
-
+       
         public string Name
         {
             get => _name;

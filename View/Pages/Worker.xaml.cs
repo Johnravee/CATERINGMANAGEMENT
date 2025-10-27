@@ -1,4 +1,5 @@
 ﻿using CATERINGMANAGEMENT.ViewModels.WorkerVM;
+using CATERINGMANAGEMENT.Helpers;
 using System.Windows.Controls;
 
 namespace CATERINGMANAGEMENT.View.Pages
@@ -8,7 +9,8 @@ namespace CATERINGMANAGEMENT.View.Pages
         public Workers()
         {
             InitializeComponent();
-            //AuthGuard.RequireAuthentication(this);
+            if (!AuthGuard.RequireAuthentication(this))
+                return;
            var viewModel = new WorkerViewModel();
             DataContext = viewModel;
            

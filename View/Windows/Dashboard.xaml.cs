@@ -15,7 +15,8 @@ namespace CATERINGMANAGEMENT.View.Windows
         public Dashboard()
         {
             InitializeComponent();
-            //AuthGuard.RequireAuthentication(this);
+            if (!AuthGuard.RequireAuthentication(this))
+                return;
             MainFrame.Navigate(new Overview());
             _viewModel = new DashboardViewModel();
             DataContext = _viewModel;

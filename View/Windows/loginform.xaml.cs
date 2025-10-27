@@ -2,6 +2,7 @@
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.View.Windows;
 using CATERINGMANAGEMENT.ViewModels.AuthVM;
+using CATERINGMANAGEMENT.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace CATERINGMANAGEMENT.View
         public LoginView()
         {
             InitializeComponent();
-            //AuthGuard.PreventAccessIfAuthenticated(this);
+            AuthGuard.PreventAccessIfAuthenticated(this);
             _viewModel = new LoginViewModel(this);
             DataContext = _viewModel;
 

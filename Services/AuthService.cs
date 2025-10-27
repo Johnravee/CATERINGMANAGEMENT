@@ -38,5 +38,28 @@ namespace CATERINGMANAGEMENT.Services
                 return null;
             }
         }
+
+        public static async Task<bool> RequestPasswordResetAsync(string email)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                    return false;
+
+                var client = await SupabaseService.GetClientAsync();
+                if (client == null) return false;
+
+                // Supabase .NET SDK Gotrue: ResetPasswordForEmail sends the email
+                await client.Auth.ResetPasswordForEmail(email.Trim());
+
+                // If no exception, consider it successful (Supabase does not disclose whether email exists)
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Password reset request failed: " + ex.Message);
+                return false;
+            }
+        }
     }
 }

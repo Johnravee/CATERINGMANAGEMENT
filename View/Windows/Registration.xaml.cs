@@ -1,4 +1,5 @@
 ﻿using CATERINGMANAGEMENT.ViewModels.AuthVM;
+using CATERINGMANAGEMENT.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +25,7 @@ namespace CATERINGMANAGEMENT.View.Windows
         public Registration()
         {
             InitializeComponent();
-            //AuthGuard.PreventAccessIfAuthenticated(this);
+            AuthGuard.PreventAccessIfAuthenticated(this);
             _viewModel = new RegistrationViewModel();
             DataContext = _viewModel;
             
@@ -44,7 +45,7 @@ namespace CATERINGMANAGEMENT.View.Windows
             this.WindowState = WindowState.Minimized;
         }
 
-        private void ExitAppBtnHandler(object sender, MouseButtonEventArgs e)
+        private void ExitAppBtnHandler(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
