@@ -6,6 +6,7 @@ using CATERINGMANAGEMENT.View.Windows;
 using Supabase.Realtime.PostgresChanges;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -212,42 +213,40 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
                 var client = await SupabaseService.GetClientAsync();
                 var channel = client.Realtime.Channel("realtime", "public", "thememotif");
 
-                // Handle INSERT
+                // ✅ Handle INSERT
                 channel.AddPostgresChangeHandler(ListenType.Inserts, async (sender, change) =>
                 {
                     var inserted = change.Model<ThemeMotif>();
                     if (inserted == null) return;
 
-                    // Fetch data asynchronously
                     var fullInserted = await _themeMotifService.GetThemeMotifByIdAsync(inserted.Id);
                     if (fullInserted == null) return;
 
-                    // Update UI on dispatcher
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         if (!Items.Any(m => m.Id == fullInserted.Id))
                         {
                             Items.Insert(0, fullInserted);
-                            // Fire-and-forget RefreshThemeMotifCount on dispatcher
-                            _ = RefreshThemeMotifCount();
-
-                            TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / 10));
-                            AppLogger.Info($"Realtime Insert: Added ThemeMotif ID {fullInserted.Id} with Package '{fullInserted.Package?.Name}'");
+                            AppLogger.Info($"Realtime Insert: Added ThemeMotif ID {fullInserted.Id}");
                         }
                     });
 
+                    await RefreshThemeMotifCount();
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / 10));
+                    });
+                });
 
-                    // Handle UPDATE
-                    channel.AddPostgresChangeHandler(ListenType.Updates, async (sender, change) =>
+                // ✅ Handle UPDATE
+                channel.AddPostgresChangeHandler(ListenType.Updates, async (sender, change) =>
                 {
                     var updated = change.Model<ThemeMotif>();
                     if (updated == null) return;
 
-                    // 1. Fetch the full updated object asynchronously
                     var fullUpdated = await _themeMotifService.GetThemeMotifByIdAsync(updated.Id);
                     if (fullUpdated == null) return;
 
-                    // 2. Update the UI on the dispatcher thread
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         var existing = Items.FirstOrDefault(m => m.Id == fullUpdated.Id);
@@ -255,24 +254,18 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
                         {
                             var index = Items.IndexOf(existing);
                             Items[index] = fullUpdated;
-                            AppLogger.Info($"Realtime Update: Updated ThemeMotif ID {fullUpdated.Id} with Package '{fullUpdated.Package?.Name}'");
+                            AppLogger.Info($"Realtime Update: Updated ThemeMotif ID {fullUpdated.Id}");
                         }
                         else
                         {
                             Items.Insert(0, fullUpdated);
-                            // Fire-and-forget RefreshThemeMotifCount
-                            _ = RefreshThemeMotifCount();
-                            TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / 10));
-                            AppLogger.Info($"Realtime Update: Inserted missing ThemeMotif ID {fullUpdated.Id} with Package '{fullUpdated.Package?.Name}'");
                         }
                     });
-
                 });
 
-                    var subscribeResult = await channel.Subscribe();
-                    AppLogger.Success($"Subscribed to realtime ThemeMotif updates: {subscribeResult}");
-                }
-                );
+                // ✅ Subscribe after all handlers are attached
+                var subscribeResult = await channel.Subscribe();
+                AppLogger.Success($"Subscribed to realtime ThemeMotif updates: {subscribeResult}");
             }
             catch (Exception ex)
             {
@@ -281,12 +274,14 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
         }
 
 
+
         private async Task RefreshThemeMotifCount()
         {
             try
             {
                 int totalCount = await _themeMotifService.GetTotalThemeMotifCountAsync();
                 TotalCount = totalCount;
+                Debug.WriteLine($"Refreshed ThemeMotif count: {TotalCount}");
             }
             catch (Exception ex)
             {

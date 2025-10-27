@@ -76,6 +76,7 @@ namespace CATERINGMANAGEMENT.Services.Data
         {
             try
             {
+             
                 var client = await GetClientAsync();
 
                 var parameters = new
@@ -93,25 +94,26 @@ namespace CATERINGMANAGEMENT.Services.Data
 
                 if (success)
                 {
-                    AppLogger.Success($"Worker {worker.Name} assigned to reservation {reservation.Id}.");
-                    InvalidateCache(ReservationCacheKey, WorkerCacheKey); // Invalidate related caches
+                    AppLogger.Success($"Worker '{worker.Name}' assigned to reservation {reservation.Id}.");
+                    InvalidateCache(ReservationCacheKey, WorkerCacheKey);
                 }
                 else
                 {
                     string error = rpcResponse.ResponseMessage != null
                         ? await rpcResponse.ResponseMessage.Content.ReadAsStringAsync()
                         : "No response received.";
-                    AppLogger.Error($"Failed to assign worker {worker.Name}: {error}", showToUser: false);
+                    AppLogger.Error($"❌ Failed to assign worker {worker.Name}: {error}", showToUser: false);
                 }
 
                 return success;
             }
             catch (Exception ex)
             {
-                AppLogger.Error(ex, $"Exception assigning worker {worker.Name} to reservation {reservation.Id}");
+                AppLogger.Error(ex, $"❌ Exception assigning worker {worker?.Name} to reservation {reservation?.Id}");
                 return false;
             }
         }
+
 
         public async Task<bool> SendEmailAsync(Worker worker, Reservation reservation)
         {
