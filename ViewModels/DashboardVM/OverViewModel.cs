@@ -94,6 +94,21 @@ namespace CATERINGMANAGEMENT.ViewModels.DashboardVM
 
         private List<Reservation> _allReservations = new();
         private Dictionary<string, int> _eventTypeDistribution = new();
+
+        // Distinct colors for pie slices and bars
+        private static readonly SKColor[] PieSliceColors = new[]
+        {
+            SKColor.Parse("#5B6AC9"), // indigo
+            SKColor.Parse("#FF6B6B"), // coral red
+            SKColor.Parse("#4ECDC4"), // teal
+            SKColor.Parse("#C7F464"), // lime
+            SKColor.Parse("#FFA07A"), // light salmon
+            SKColor.Parse("#FFD93D"), // yellow
+            SKColor.Parse("#6A0572"), // purple
+            SKColor.Parse("#2E8B57"), // sea green
+            SKColor.Parse("#FF8C00"), // dark orange
+            SKColor.Parse("#20B2AA")  // light sea green
+        };
         #endregion
 
         #region Constructor
@@ -178,15 +193,21 @@ namespace CATERINGMANAGEMENT.ViewModels.DashboardVM
                 _allReservations = await _service.GetAllReservationsWithPackageAsync();
                 _eventTypeDistribution = _service.GetEventTypeDistribution(_allReservations);
 
-                EventTypeSeries = _eventTypeDistribution.Select(kv => new PieSeries<double>
-                {
-                    Name = kv.Key,
-                    Values = new double[] { kv.Value },
-                    Fill = new SolidColorPaint(SKColor.Parse("#5B6AC9")),
-                    DataLabelsPaint = new SolidColorPaint(SKColors.White),
-                    DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Middle,
-                    DataLabelsFormatter = point => kv.Key
-                }).ToArray();
+                var ordered = _eventTypeDistribution
+                    .OrderByDescending(kv => kv.Value)
+                    .ToList();
+
+                EventTypeSeries = ordered
+                    .Select((kv, index) => new PieSeries<double>
+                    {
+                        Name = kv.Key,
+                        Values = new double[] { kv.Value },
+                        Fill = new SolidColorPaint(PieSliceColors[index % PieSliceColors.Length]),
+                        Stroke = new SolidColorPaint(SKColors.White) { StrokeThickness = 2 },
+                        DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Middle,
+                        DataLabelsFormatter = point => kv.Key
+                    })
+                    .ToArray();
 
                 OnPropertyChanged(nameof(EventTypeSeries));
                 AppLogger.Info("Event type distribution loaded.");
@@ -217,18 +238,26 @@ namespace CATERINGMANAGEMENT.ViewModels.DashboardVM
             var labels = _filteredSummaries.Select(r => CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(r.ReservationMonth)).ToArray();
             var values = _filteredSummaries.Select(r => (double)r.TotalReservations).ToArray();
 
-            ReservationSeries = new ISeries[]
+            // Create one series per bar to allow distinct colors per bar.
+            var coloredSeries = new List<ISeries>();
+            for (int i = 0; i < values.Length; i++)
             {
-                new ColumnSeries<double>
+                var seriesValues = new double?[values.Length];
+                seriesValues[i] = values[i];
+
+                coloredSeries.Add(new ColumnSeries<double?>
                 {
-                    Values = values,
-                    Fill = new SolidColorPaint(SKColor.Parse("#5B6AC9")),
-                    Name = $"Reservations {SelectedYear}",
+                    Values = seriesValues,
+                    Fill = new SolidColorPaint(PieSliceColors[i % PieSliceColors.Length]),
+                    Stroke = new SolidColorPaint(SKColors.White) { StrokeThickness = 1 },
+                    Name = string.Empty,
                     DataLabelsPaint = new SolidColorPaint(SKColors.Black),
                     DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue}",
                     DataLabelsPosition = LiveChartsCore.Measure.DataLabelsPosition.Top
-                }
-            };
+                });
+            }
+
+            ReservationSeries = coloredSeries.ToArray();
 
             XAxes = new Axis[] { new Axis { Labels = labels, LabelsRotation = 45, TextSize = 13, Name = "Month" } };
             YAxes = new Axis[] { new Axis { Name = "Reservations", TextSize = 13 } };

@@ -132,7 +132,8 @@
                                        FontSize="12"
                                        HorizontalAlignment="Right"
                                        Margin="0 0 0 10"
-                                       Cursor="Hand" />
+                                       Cursor="Hand"
+                                       MouseLeftButtonUp="ForgotPassword_Click" />
 
                             <!-- Keep me signed in -->
                             <CheckBox Content="Keep me signed in"
