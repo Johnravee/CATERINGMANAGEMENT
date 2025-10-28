@@ -6,6 +6,7 @@ using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.ViewModels;
 using Supabase.Gotrue;
+using System.Linq;
 
 namespace CATERINGMANAGEMENT.ViewModels.AuthVM
 {
@@ -18,10 +19,22 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
         private string _confirmPassword = string.Empty;
         private bool _isBusy;
 
+        // Password criteria flags (for UI binding similar to registration)
+        private bool _hasUpper;
+        private bool _hasLower;
+        private bool _hasDigit;
+        private bool _hasSpecial;
+        private bool _hasMinLength;
+
         public string NewPassword
         {
             get => _newPassword;
-            set { _newPassword = value; OnPropertyChanged(); }
+            set
+            {
+                _newPassword = value;
+                OnPropertyChanged();
+                EvaluatePasswordCriteria();
+            }
         }
 
         public string ConfirmPassword
@@ -35,6 +48,13 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
             get => _isBusy;
             set { _isBusy = value; OnPropertyChanged(); }
         }
+
+        // Expose criteria for visual hints (checkboxes/indicators) like registration
+        public bool HasUpper { get => _hasUpper; private set { _hasUpper = value; OnPropertyChanged(); } }
+        public bool HasLower { get => _hasLower; private set { _hasLower = value; OnPropertyChanged(); } }
+        public bool HasDigit { get => _hasDigit; private set { _hasDigit = value; OnPropertyChanged(); } }
+        public bool HasSpecial { get => _hasSpecial; private set { _hasSpecial = value; OnPropertyChanged(); } }
+        public bool HasMinLength { get => _hasMinLength; private set { _hasMinLength = value; OnPropertyChanged(); } }
 
         public ICommand ConfirmCommand { get; }
         public ICommand CancelCommand { get; }
@@ -57,6 +77,16 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
             _refreshToken = refreshToken;
         }
 
+        private void EvaluatePasswordCriteria()
+        {
+            var p = _newPassword ?? string.Empty;
+            HasMinLength = p.Length >= 8;
+            HasUpper = p.Any(char.IsUpper);
+            HasLower = p.Any(char.IsLower);
+            HasDigit = p.Any(char.IsDigit);
+            HasSpecial = p.Any(c => !char.IsLetterOrDigit(c));
+        }
+
         private async Task ConfirmAsync()
         {
             if (IsBusy) return;
@@ -71,9 +101,16 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(NewPassword) || NewPassword.Length < 8)
+                if (string.IsNullOrWhiteSpace(NewPassword))
                 {
-                    ShowMessage("Password must be at least 8 characters.", "Validation");
+                    ShowMessage("Password is required.", "Validation");
+                    return;
+                }
+
+                // Match the registration validation behavior, with criteria hints
+                if (!HasMinLength)
+                {
+                    ShowMessage("Password must be at least 8 characters long.", "Validation");
                     return;
                 }
                 if (NewPassword != ConfirmPassword)
@@ -81,6 +118,13 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                     ShowMessage("Passwords do not match.", "Validation");
                     return;
                 }
+
+                // Optional: enforce complexity similar to displayed criteria (uncomment to make strict)
+                // if (!(HasUpper && HasLower && HasDigit && HasSpecial))
+                // {
+                //     ShowMessage("Password must include uppercase, lowercase, number, and special character.", "Validation");
+                //     return;
+                // }
 
                 var client = await SupabaseService.GetClientAsync();
                 if (client == null)

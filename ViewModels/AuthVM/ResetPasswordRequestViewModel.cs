@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.ViewModels;
@@ -12,6 +13,9 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
     {
         private string _email = string.Empty;
         private bool _isBusy;
+        private bool _isInCooldown;
+        private int _cooldownSeconds;
+        private DispatcherTimer? _cooldownTimer;
 
         public string Email
         {
@@ -22,8 +26,48 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
         public bool IsBusy
         {
             get => _isBusy;
-            set { _isBusy = value; OnPropertyChanged(); }
+            set
+            {
+                if (_isBusy == value) return;
+                _isBusy = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanSend));
+                OnPropertyChanged(nameof(SendButtonText));
+                // Ensure WPF re-queries command can-execute state
+                CommandManager.InvalidateRequerySuggested();
+            }
         }
+
+        public bool IsInCooldown
+        {
+            get => _isInCooldown;
+            private set
+            {
+                if (_isInCooldown == value) return;
+                _isInCooldown = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanSend));
+                OnPropertyChanged(nameof(SendButtonText));
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        public int CooldownSeconds
+        {
+            get => _cooldownSeconds;
+            private set
+            {
+                if (_cooldownSeconds == value) return;
+                _cooldownSeconds = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SendButtonText));
+            }
+        }
+
+        public bool CanSend => !IsBusy && !IsInCooldown;
+
+        public string SendButtonText
+            => IsBusy ? "Sending..." : IsInCooldown ? $"Resend in {CooldownSeconds}s" : "Send Link";
 
         public ICommand SendCommand { get; }
         public ICommand CancelCommand { get; }
@@ -34,7 +78,7 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
 
         public ResetPasswordRequestViewModel()
         {
-            SendCommand = new RelayCommand(async () => await SendAsync(), () => !IsBusy);
+            SendCommand = new RelayCommand(async () => await SendAsync(), () => CanSend);
             CancelCommand = new RelayCommand(() => RequestClose?.Invoke(), () => !IsBusy);
             MinimizeCommand = new RelayCommand<Window>(w => { if (w != null) w.WindowState = WindowState.Minimized; });
             ExitCommand = new RelayCommand<Window>(w => { Application.Current.Shutdown(); });
@@ -42,10 +86,10 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
 
         private async Task SendAsync()
         {
-            if (IsBusy) return;
+            if (!CanSend) return;
             try
             {
-                IsBusy = true;
+                IsBusy = true; // keep loader on even during MessageBox
 
                 var email = Email?.Trim() ?? string.Empty;
                 if (string.IsNullOrWhiteSpace(email))
@@ -58,10 +102,8 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                 if (ok)
                 {
                     AppLogger.Success("Password reset link requested.");
-                    ShowMessage("If that email exists, we sent a reset link.", "Reset Password");
-
-                    // Close the window after a successful request
-                    RequestClose?.Invoke();
+                    ShowMessage("Check your email for the reset link. If you don’t see it, check your Spam/Junk folder.", "Reset Password");
+                    StartCooldown(30); // prevent duplicate requests for 30s
                 }
                 else
                 {
@@ -76,6 +118,31 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
             {
                 IsBusy = false;
             }
+        }
+
+        private void StartCooldown(int seconds)
+        {
+            IsInCooldown = true;
+            CooldownSeconds = seconds;
+
+            _cooldownTimer?.Stop();
+            _cooldownTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _cooldownTimer.Tick += (s, e) =>
+            {
+                if (CooldownSeconds > 0)
+                {
+                    CooldownSeconds--;
+                }
+                if (CooldownSeconds <= 0)
+                {
+                    _cooldownTimer?.Stop();
+                    IsInCooldown = false;
+                }
+            };
+            _cooldownTimer.Start();
         }
     }
 }

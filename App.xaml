@@ -13,6 +13,11 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.ProgressBar.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Shadows.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Global window icon style -->
+            <Style TargetType="Window">
+                <Setter Property="Icon" Value="pack://application:,,,/Assets/images/catermateicon.ico" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

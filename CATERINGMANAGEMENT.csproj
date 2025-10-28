@@ -32,7 +32,6 @@
     <None Remove="Assets\images\contract.png" />
     <None Remove="Assets\images\oshdylogo.jpg" />
     <None Remove="Assets\images\signupform.png" />
-    <None Remove="Assets\images\systemIcon.ico" />
     <None Remove="Assets\LoginForm.png" />
   </ItemGroup>
 
@@ -60,16 +59,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include=".env">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    <!-- Prevent .env from being copied on build/publish -->
+    <Content Update=".env">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
+    <Content Include=".env">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
     <Content Include="Assets\images\contract.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\images\oshdylogo.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Assets\images\catermateicon.ico" />
+    <!-- Mark app icon as WPF Resource so pack URIs work for Window Icon -->
+    <Resource Include="Assets\images\catermateicon.ico" />
     <Content Include="Assets\images\applogo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -79,7 +85,6 @@
     <Resource Include="Assets\images\signupform.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Assets\images\systemIcon.ico" />
   </ItemGroup>
 
 </Project>

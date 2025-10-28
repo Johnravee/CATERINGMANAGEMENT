@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.View;
+using CATERINGMANAGEMENT.View.Windows;
 
 
 namespace CATERINGMANAGEMENT
@@ -16,7 +17,16 @@ namespace CATERINGMANAGEMENT
         {
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
             var envPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".env");
-            Env.Load(envPath);
+            // Only load .env if it exists; otherwise rely on OS environment variables
+            try
+            {
+                if (File.Exists(envPath))
+                {
+                    Env.Load(envPath);
+                }
+            }
+            catch { /* swallow env load issues to avoid crashing on startup */ }
+
             InitializeComponent();
 
             // Register custom URI protocol for password reset deep links (e.g., cater://reset-password)
@@ -28,7 +38,7 @@ namespace CATERINGMANAGEMENT
             catch { }
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
@@ -49,6 +59,17 @@ namespace CATERINGMANAGEMENT
 
             if (!openedFromDeepLink)
             {
+                // Show splash and run initialization
+                var splash = new SplashScreenWindow();
+                MainWindow = splash;
+                splash.Show();
+
+                await splash.RunAsync(async () =>
+                {
+                    // Place any blocking init tasks here if needed
+                    await System.Threading.Tasks.Task.Delay(200);
+                });
+
                 // Fallback to normal startup
                 if (Services.SessionService.IsLoggedIn)
                 {
@@ -62,6 +83,8 @@ namespace CATERINGMANAGEMENT
                     MainWindow = login;
                     login.Show();
                 }
+
+                splash.Close();
             }
         }
     }

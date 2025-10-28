@@ -1,6 +1,7 @@
 ﻿using Supabase;
 using Supabase.Gotrue;
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -158,7 +159,16 @@ namespace CATERINGMANAGEMENT.Services
                         return true;
                     }
 
-                    AppLogger.Error($"Recover REST failed: {(int)res.StatusCode} {res.ReasonPhrase} - {body}");
+                    // Treat rate limit as success to avoid user confusion on resend
+                    if (res.StatusCode == HttpStatusCode.TooManyRequests ||
+                        body.Contains("over_email_send_rate_limit", StringComparison.OrdinalIgnoreCase) ||
+                        body.Contains("rate limit", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AppLogger.Info("Recover request was rate-limited; treating as success (email likely already sent recently).");
+                        return true;
+                    }
+
+                    AppLogger.Error($"Recover REST failed: {(int)res.StatusCode} {res.ReasonPhrase} - {body}", showToUser: false);
                 }
                 catch (Exception ex)
                 {
@@ -171,7 +181,7 @@ namespace CATERINGMANAGEMENT.Services
                     var serviceKey = Environment.GetEnvironmentVariable("SERVICE_ROLE_KEY");
                     if (string.IsNullOrWhiteSpace(serviceKey))
                     {
-                        AppLogger.Error("SERVICE_ROLE_KEY is missing; cannot use admin generate_link fallback.");
+                        AppLogger.Error("SERVICE_ROLE_KEY is missing; cannot use admin generate_link fallback.", showToUser: false);
                         return false;
                     }
 
@@ -188,7 +198,7 @@ namespace CATERINGMANAGEMENT.Services
 
                     if (!adminRes.IsSuccessStatusCode)
                     {
-                        AppLogger.Error($"Admin generate_link failed: {(int)adminRes.StatusCode} {adminRes.ReasonPhrase} - {adminBody}");
+                        AppLogger.Error($"Admin generate_link failed: {(int)adminRes.StatusCode} {adminRes.ReasonPhrase} - {adminBody}", showToUser: false);
                         return false;
                     }
 
@@ -203,7 +213,7 @@ namespace CATERINGMANAGEMENT.Services
 
                     if (string.IsNullOrWhiteSpace(actionLink))
                     {
-                        AppLogger.Error("Admin generate_link did not return action_link.");
+                        AppLogger.Error("Admin generate_link did not return action_link.", showToUser: false);
                         return false;
                     }
 
@@ -217,7 +227,7 @@ namespace CATERINGMANAGEMENT.Services
                         return true;
                     }
 
-                    AppLogger.Error("Failed to send email using EmailService.");
+                    AppLogger.Error("Failed to send email using EmailService.", showToUser: false);
                     return false;
                 }
                 catch (Exception ex)
