@@ -156,7 +156,7 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                     AppLogger.Success($"Sign-up successful: {email}");
                     MessageBox.Show("Signup successful. Please check your email to confirm your account.", "Check your email", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                    // Close current window
+                    // Close current window to return to login
                     Application.Current.Windows[^1]?.Close();
 
                     // Clear fields

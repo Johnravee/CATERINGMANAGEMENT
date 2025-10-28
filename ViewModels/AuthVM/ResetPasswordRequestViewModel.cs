@@ -59,7 +59,8 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                 {
                     AppLogger.Success("Password reset link requested.");
                     ShowMessage("If that email exists, we sent a reset link.", "Reset Password");
-                    email = null;
+
+                    // Close the window after a successful request
                     RequestClose?.Invoke();
                 }
                 else

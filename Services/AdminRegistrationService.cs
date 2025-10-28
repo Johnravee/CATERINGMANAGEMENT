@@ -6,6 +6,20 @@ namespace CATERINGMANAGEMENT.Services
 {
     public static class AdminRegistrationService
     {
+        private static string ResolveRedirectTo()
+        {
+            var desktop = Environment.GetEnvironmentVariable("APP_URI_SCHEME");            // e.g., cater://reset-password or https://site/auth-bridge
+            var bridge  = Environment.GetEnvironmentVariable("PASSWORD_RESET_BRIDGE_URL"); // e.g., https://site/auth-bridge
+            var mobile  = Environment.GetEnvironmentVariable("MOBILE_REDIRECT_URI");       // e.g., myapp:///auth
+
+            if (!string.IsNullOrWhiteSpace(desktop)) return desktop!;
+            if (!string.IsNullOrWhiteSpace(bridge))  return bridge!;
+            if (!string.IsNullOrWhiteSpace(mobile))  return mobile!;
+
+            // Default to desktop custom scheme used by this app
+            return "cater://reset-password";
+        }
+
         public static async Task<bool> RegisterAdminAsync(string email, string password)
         {
             try
@@ -22,15 +36,15 @@ namespace CATERINGMANAGEMENT.Services
                 http.DefaultRequestHeaders.Add("apikey", anonKey);
                 http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", anonKey);
 
-                // Optional redirect_to for email confirmation (can be omitted)
-                string? redirectTo = Environment.GetEnvironmentVariable("APP_URI_SCHEME");
+                // Always send a redirect_to so links open the app in production
+                var redirectTo = ResolveRedirectTo();
 
                 var payload = new
                 {
                     email = email.Trim(),
                     password = password,
                     data = new Dictionary<string, object> { { "role", "admin" } },
-                    redirect_to = string.IsNullOrWhiteSpace(redirectTo) ? null : redirectTo
+                    redirect_to = redirectTo
                 };
 
                 var endpoint = new Uri(new Uri(supabaseUrl), "/auth/v1/signup");
