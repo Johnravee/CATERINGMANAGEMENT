@@ -101,11 +101,14 @@
                                        FontWeight="SemiBold"
                                        Foreground="#555555" />
 
-                            <TextBlock Text="CaterMate Management"
-                                       FontSize="30"
-                                       FontWeight="Bold"
-                                       Foreground="#333333"
-                                       Margin="0 0 0 10" />
+                            <!-- Responsive brand title -->
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" MaxHeight="48" Margin="0 0 0 10">
+                                <TextBlock Text="{Binding AppName}"
+                                           FontSize="30"
+                                           FontWeight="Bold"
+                                           Foreground="#333333"
+                                           TextWrapping="Wrap" />
+                            </Viewbox>
 
                             <TextBlock Text="Please log in to manage your events."
                                        FontSize="15"

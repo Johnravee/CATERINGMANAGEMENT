@@ -9,9 +9,30 @@ using CATERINGMANAGEMENT.Helpers;
 
 namespace CATERINGMANAGEMENT.Services
 {
+    // Detailed result codes for login attempts
+    public enum LoginErrorCode
+    {
+        None,
+        UnverifiedEmail,
+        NotAdmin,
+        InvalidCredentials,
+        NetworkError,
+        UnknownError
+    }
+
+    public sealed class LoginResponse
+    {
+        public User? User { get; init; }
+        public LoginErrorCode Error { get; init; } = LoginErrorCode.None;
+        public string? Message { get; init; }
+
+        public static LoginResponse Success(User user) => new() { User = user, Error = LoginErrorCode.None };
+        public static LoginResponse Fail(LoginErrorCode code, string? message = null) => new() { Error = code, Message = message };
+    }
+
     public static class AuthService
     {
-        public static async Task<User?> LoginAsync(string email, string password)
+        public static async Task<LoginResponse> LoginAsync(string email, string password)
         {
             try
             {
@@ -20,27 +41,66 @@ namespace CATERINGMANAGEMENT.Services
                 var session = await client.Auth.SignIn(email, password);
 
                 if (session?.User == null)
-                    return null;
+                {
+                    // If no session returned, treat as invalid credentials by default
+                    return LoginResponse.Fail(LoginErrorCode.InvalidCredentials, "Invalid email or password.");
+                }
 
                 SessionService.SetSession(session);
 
                 var user = session.User;
 
-                
+                // Block login if email is not verified
+                if (!IsEmailVerified(user))
+                {
+                    var msg = "Email not confirmed. Please check your inbox and confirm your email before signing in.";
+                    AppLogger.Error(msg);
+                    return LoginResponse.Fail(LoginErrorCode.UnverifiedEmail, msg);
+                }
+
+                // Only allow users with role=admin
                 if (user.UserMetadata != null &&
                     user.UserMetadata.TryGetValue("role", out var role) &&
                     role?.ToString() == "admin")
                 {
-                    return user; 
+                    return LoginResponse.Success(user);
                 }
 
-                return null; // not admin
+                return LoginResponse.Fail(LoginErrorCode.NotAdmin, "Your account does not have admin access.");
+            }
+            catch (HttpRequestException httpEx)
+            {
+                var msg = "Network error while attempting to log in. Please check your connection.";
+                AppLogger.Error(httpEx, msg);
+                return LoginResponse.Fail(LoginErrorCode.NetworkError, msg);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Login failed: " + ex.Message);
-                return null;
+                // Inspect common Supabase auth errors
+                var lower = ex.Message?.ToLowerInvariant() ?? string.Empty;
+
+                // Specific: email not confirmed (Supabase returns error_code=email_not_confirmed)
+                if (lower.Contains("email_not_confirmed") || lower.Contains("email not confirmed"))
+                {
+                    var msg = "Email not confirmed. Please check your inbox and confirm your email before signing in.";
+                    AppLogger.Error(ex, msg);
+                    return LoginResponse.Fail(LoginErrorCode.UnverifiedEmail, msg);
+                }
+
+                if (lower.Contains("invalid login") || lower.Contains("invalid email or password") || lower.Contains("invalid credentials"))
+                {
+                    return LoginResponse.Fail(LoginErrorCode.InvalidCredentials, "Invalid email or password.");
+                }
+
+                AppLogger.Error(ex, "Login failed due to an unexpected error.");
+                return LoginResponse.Fail(LoginErrorCode.UnknownError, "Unexpected error occurred while logging in.");
             }
+        }
+
+        private static bool IsEmailVerified(User user)
+        {
+            // Email Verification Validation
+            return user.EmailConfirmedAt != null || user.ConfirmedAt != null;
         }
 
         private static string ResolveRedirectTo()
