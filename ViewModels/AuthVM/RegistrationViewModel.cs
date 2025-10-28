@@ -16,6 +16,7 @@ using System.Windows;
 using System.Windows.Input;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Helpers;
+using System.Linq;
 
 namespace CATERINGMANAGEMENT.ViewModels.AuthVM
 {
@@ -23,9 +24,15 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
     {
         #region === Private Fields ===
 
-        private string _email;
-        private string _password;
-        private string _confirmPassword;
+        private string _email = string.Empty;
+        private string _password = string.Empty;
+        private string _confirmPassword = string.Empty;
+
+        private bool _hasUpper;
+        private bool _hasLower;
+        private bool _hasDigit;
+        private bool _hasSpecial;
+        private bool _hasMinLength;
 
         #endregion
 
@@ -40,7 +47,12 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
         public string Password
         {
             get => _password;
-            set { _password = value; OnPropertyChanged(); }
+            set
+            {
+                _password = value;
+                OnPropertyChanged();
+                EvaluatePasswordCriteria();
+            }
         }
 
         public string ConfirmPassword
@@ -48,6 +60,12 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
             get => _confirmPassword;
             set { _confirmPassword = value; OnPropertyChanged(); }
         }
+
+        public bool HasUpper { get => _hasUpper; private set { _hasUpper = value; OnPropertyChanged(); } }
+        public bool HasLower { get => _hasLower; private set { _hasLower = value; OnPropertyChanged(); } }
+        public bool HasDigit { get => _hasDigit; private set { _hasDigit = value; OnPropertyChanged(); } }
+        public bool HasSpecial { get => _hasSpecial; private set { _hasSpecial = value; OnPropertyChanged(); } }
+        public bool HasMinLength { get => _hasMinLength; private set { _hasMinLength = value; OnPropertyChanged(); } }
 
         #endregion
 
@@ -129,6 +147,16 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
             {
                 AppLogger.Error(ex, $"An unexpected error occurred during admin registration.{ex.Message}");
             }
+        }
+
+        private void EvaluatePasswordCriteria()
+        {
+            var p = _password ?? string.Empty;
+            HasMinLength = p.Length >= 8;
+            HasUpper = p.Any(char.IsUpper);
+            HasLower = p.Any(char.IsLower);
+            HasDigit = p.Any(char.IsDigit);
+            HasSpecial = p.Any(c => !char.IsLetterOrDigit(c));
         }
 
         #endregion

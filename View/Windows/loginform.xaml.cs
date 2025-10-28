@@ -19,7 +19,7 @@ namespace CATERINGMANAGEMENT.View
 
             // Ensure custom URI protocol is registered when login opens
             var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
-            UriProtocolRegistrar.EnsureRegistered("oshdy", exePath);
+            UriProtocolRegistrar.EnsureRegistered("cater", exePath);
 
             // Removed AuthGuard.PreventAccessIfAuthenticated(this); to avoid pop-ups during reset.
             _viewModel = new LoginViewModel(this);
@@ -28,6 +28,20 @@ namespace CATERINGMANAGEMENT.View
             PasswordBox.PasswordChanged += (s, e) =>
             {
                 _viewModel.Password = PasswordBox.Password;
+            };
+
+            // Keep PasswordBox and PasswordTextBox in sync when toggling ShowPassword
+            this.Loaded += (s, e) =>
+            {
+                // When user types in visible TextBox, update PasswordBox too
+                PasswordTextBox.TextChanged += (s2, e2) =>
+                {
+                    if (_viewModel.ShowPassword)
+                    {
+                        if (PasswordBox.Password != PasswordTextBox.Text)
+                            PasswordBox.Password = PasswordTextBox.Text;
+                    }
+                };
             };
         }
         private void ExitAppBtnHandler(object sender, RoutedEventArgs e)
@@ -47,14 +61,19 @@ namespace CATERINGMANAGEMENT.View
             this.Close();   
         }
 
-        private void ForgotPassword_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private async void ForgotPassword_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             try
             {
-                // Prefer the new request window so user can confirm the email
-                var requestWin = new ResetPasswordRequestWindow();
-                requestWin.Owner = this;
-                requestWin.ShowDialog();
+                var currentEmail = _viewModel?.Email?.Trim() ?? EmailBox.Text?.Trim() ?? string.Empty;
+                var requestWin = string.IsNullOrWhiteSpace(currentEmail)
+                    ? new ResetPasswordRequestWindow()
+                    : new ResetPasswordRequestWindow(currentEmail);
+
+                // Show reset window and make it the main window, then close login
+                requestWin.Show();
+                Application.Current.MainWindow = requestWin;
+                this.Close();
             }
             catch (Exception ex)
             {

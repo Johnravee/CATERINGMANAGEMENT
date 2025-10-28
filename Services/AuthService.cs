@@ -46,7 +46,7 @@ namespace CATERINGMANAGEMENT.Services
         private static string ResolveRedirectTo()
         {
             // Preference: explicit desktop scheme -> bridge url -> mobile redirect
-            var desktop = Environment.GetEnvironmentVariable("APP_URI_SCHEME"); // e.g., oshdy://reset-password OR https://<site>/auth-bridge
+            var desktop = Environment.GetEnvironmentVariable("APP_URI_SCHEME"); // e.g., cater://reset-password OR https://<site>/auth-bridge
             var bridge = Environment.GetEnvironmentVariable("PASSWORD_RESET_BRIDGE_URL"); // e.g., https://site/auth-bridge
             var mobile = Environment.GetEnvironmentVariable("MOBILE_REDIRECT_URI"); // e.g., myapp:///auth or exp://...
 
@@ -55,7 +55,7 @@ namespace CATERINGMANAGEMENT.Services
             if (!string.IsNullOrWhiteSpace(mobile)) return mobile!;
 
             // fallback default to desktop custom scheme used in this app
-            return "oshdy://reset-password";
+            return "cater://reset-password";
         }
 
         public static async Task<bool> RequestPasswordResetAsync(string email)

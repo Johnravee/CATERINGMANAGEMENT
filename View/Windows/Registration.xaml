@@ -75,8 +75,87 @@
                         <PasswordBox x:Name="PasswordBox"
                                      Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
                                      materialDesign:HintAssist.Hint="Password"
-                                     Margin="0 0 0 15"
+                                     Margin="0 0 0 8"
                                      FontSize="14" />
+
+                        <!-- Password Strength Indicators -->
+                        <StackPanel Margin="0 0 0 15">
+                            <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="#9E9E9E" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasMinLength}" Value="True">
+                                                    <Setter Property="Foreground" Value="#2E7D32" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock Text="At least 8 characters" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="#9E9E9E" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasUpper}" Value="True">
+                                                    <Setter Property="Foreground" Value="#2E7D32" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock Text="At least one uppercase letter" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="#9E9E9E" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasLower}" Value="True">
+                                                    <Setter Property="Foreground" Value="#2E7D32" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock Text="At least one lowercase letter" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="#9E9E9E" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasDigit}" Value="True">
+                                                    <Setter Property="Foreground" Value="#2E7D32" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock Text="At least one number" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="#9E9E9E" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasSpecial}" Value="True">
+                                                    <Setter Property="Foreground" Value="#2E7D32" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock Text="At least one special character" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                            </StackPanel>
+                        </StackPanel>
 
                         <!-- Confirm Password -->
                         <PasswordBox x:Name="ConfirmPasswordBox"

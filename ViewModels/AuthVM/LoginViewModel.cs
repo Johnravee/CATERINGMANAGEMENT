@@ -13,6 +13,7 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
     {
         private string _email;
         private string _password;
+        private bool _showPassword;
 
         public string Email
         {
@@ -25,6 +26,13 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
             get => _password;
             set { _password = value; OnPropertyChanged(); }
         }
+
+        public bool ShowPassword
+        {
+            get => _showPassword;
+            set { _showPassword = value; OnPropertyChanged(); }
+        }
+
         public bool IsNotLoading => !IsLoading;
         private bool _isLoading;
 
@@ -41,7 +49,6 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                 }
             }
         }
-
 
         public ICommand LoginCommand { get; }
         private readonly Window _currentWindow;
@@ -67,7 +74,6 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
 
                 if (user != null)
                 {
-                    SessionService.SetCurrentUser(user);
                     var dashboard = new Dashboard();
                     dashboard.Show();
                     _currentWindow.Close();
@@ -82,7 +88,6 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                 IsLoading = false;
             }
         }
-
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null) =>

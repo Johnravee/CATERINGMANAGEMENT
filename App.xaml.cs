@@ -19,11 +19,11 @@ namespace CATERINGMANAGEMENT
             Env.Load(envPath);
             InitializeComponent();
 
-            // Register custom URI protocol for password reset deep links (e.g., oshdy://reset-password)
+            // Register custom URI protocol for password reset deep links (e.g., cater://reset-password)
             try
             {
                 var exePath = Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
-                UriProtocolRegistrar.EnsureRegistered("oshdy", exePath);
+                UriProtocolRegistrar.EnsureRegistered("cater", exePath);
             }
             catch { }
         }
@@ -39,7 +39,7 @@ namespace CATERINGMANAGEMENT
                 try
                 {
                     var arg = e.Args[0];
-                    if (Uri.TryCreate(arg, UriKind.Absolute, out var uri) && uri.Scheme == "oshdy")
+                    if (Uri.TryCreate(arg, UriKind.Absolute, out var uri) && uri.Scheme == "cater")
                     {
                         openedFromDeepLink = DeepLinkHandler.Handle(uri);
                     }

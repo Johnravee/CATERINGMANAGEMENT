@@ -1,40 +1,33 @@
-using System;
 using System.Windows;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.ViewModels.AuthVM;
+using CATERINGMANAGEMENT.View; // for LoginView
 
 namespace CATERINGMANAGEMENT.View.Windows
 {
     public partial class ResetPasswordRequestWindow : Window
     {
+        private readonly ResetPasswordRequestViewModel _viewModel;
+
         public ResetPasswordRequestWindow()
         {
             InitializeComponent();
+            _viewModel = new ResetPasswordRequestViewModel();
+            _viewModel.RequestClose += OnRequestClose;
+            DataContext = _viewModel;
         }
 
-        private async void OnSendLink(object sender, RoutedEventArgs e)
+        // Overload to pre-fill the email
+        public ResetPasswordRequestWindow(string email) : this()
         {
-            var email = EmailBox.Text?.Trim() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                MessageBox.Show("Please enter your email.");
-                return;
-            }
-
-            var ok = await AuthService.RequestPasswordResetAsync(email);
-            if (ok)
-            {
-                MessageBox.Show("If that email exists, we sent a reset link.");
-                Close();
-            }
-            else
-            {
-                MessageBox.Show("Failed to send reset link. Please try again.");
-            }
+            _viewModel.Email = email?.Trim() ?? string.Empty;
         }
 
-        private void OnCancel(object sender, RoutedEventArgs e)
+        private void OnRequestClose()
         {
-            Close();
+            var login = new LoginView();
+            login.Show();
+            Application.Current.MainWindow = login;
+            this.Close();
         }
     }
 }

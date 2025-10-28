@@ -97,70 +97,118 @@
                         <StackPanel Grid.Row="1" VerticalAlignment="Top" IsEnabled="{Binding IsNotLoading}">
                             <!-- Welcome Text -->
                             <TextBlock Text="Welcome to"
-                                       FontSize="20"
+                                       FontSize="22"
                                        FontWeight="SemiBold"
                                        Foreground="#555555" />
 
                             <TextBlock Text="CaterMate Management"
-                                       FontSize="28"
+                                       FontSize="30"
                                        FontWeight="Bold"
                                        Foreground="#333333"
                                        Margin="0 0 0 10" />
 
-                            <TextBlock Text="Please log in to manage your events and reservations."
-                                       FontSize="14"
+                            <TextBlock Text="Please log in to manage your events."
+                                       FontSize="15"
                                        Foreground="#888888"
                                        Margin="0 0 0 30" />
 
                             <!-- Email -->
                             <TextBox x:Name="EmailBox"
                                      Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
+                                     FontSize="14"
                                      materialDesign:HintAssist.Hint="Email"
                                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                                      Margin="0 0 0 20" />
 
-                            <!-- Password -->
-                            <PasswordBox x:Name="PasswordBox"
+                            <!-- Password masked / visible toggle -->
+                            <Grid Margin="0 0 0 10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <PasswordBox x:Name="PasswordBox"
+                                             FontSize="14"
+                                             materialDesign:HintAssist.Hint="Password"
+                                             Margin="0 0 8 0">
+                                    <PasswordBox.Style>
+                                        <Style TargetType="PasswordBox" BasedOn="{StaticResource MaterialDesignFloatingHintPasswordBox}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ShowPassword}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </PasswordBox.Style>
+                                </PasswordBox>
+
+                                <!-- Plain text password when ShowPassword is true -->
+                                <TextBox x:Name="PasswordTextBox"
+                                         Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}"
+                                         FontSize="14"
                                          materialDesign:HintAssist.Hint="Password"
-                                         Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
-                                         Margin="0 0 0 10"
-                                        />
+                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                         Margin="0 0 8 0"
+                                         Visibility="{Binding ShowPassword, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                <!-- Icon toggle: Eye/EyeOff -->
+                                <ToggleButton Grid.Column="1"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding ShowPassword}"
+                                              Padding="6"
+                                              ToolTip="Show/Hide password"
+                                              Style="{StaticResource MaterialDesignFlatButton}">
+                                    <Grid>
+                                        <materialDesign:PackIcon Kind="Eye"
+                                                                 Width="20" Height="20"
+                                                                 Visibility="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                        <materialDesign:PackIcon Kind="EyeOff" Width="20" Height="20">
+                                            <materialDesign:PackIcon.Style>
+                                                <Style TargetType="materialDesign:PackIcon">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </materialDesign:PackIcon.Style>
+                                        </materialDesign:PackIcon>
+                                    </Grid>
+                                </ToggleButton>
+                            </Grid>
 
                             <!-- Forgot password -->
                             <TextBlock Text="Forgot Password?"
                                        Foreground="{DynamicResource PrimaryHueMidBrush}"
-                                       FontSize="12"
+                                       FontSize="13"
                                        HorizontalAlignment="Right"
-                                       Margin="0 0 0 10"
+                                       Margin="0 10 0 10"
                                        Cursor="Hand"
                                        MouseLeftButtonUp="ForgotPassword_Click" />
-
-                            <!-- Keep me signed in -->
-                            <CheckBox Content="Keep me signed in"
-                                      Margin="0 0 0 20"
-                                      Foreground="#666"
-                                      FontSize="12"
-                                      IsChecked="{Binding KeepSignedIn}" />
 
                             <!-- Login Button -->
                             <Button Style="{StaticResource MaterialDesignRaisedButton}"
                                     Foreground="White"
                                     Padding="10"
-                                    Height="38"
+                                    Height="40"
                                     Margin="0 0 0 10"
                                     Command="{Binding LoginCommand}"
-                                    IsEnabled="{Binding IsNotLoading}">
+                                    IsEnabled="{Binding IsNotLoading}"
+                                    materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsLoading}"
+                                    materialDesign:ButtonProgressAssist.IsIndeterminate="True">
 
                                 <TextBlock Text="Login"
+                                    FontSize="15"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Setter Property="Text" Value="Login" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsLoading}" Value="True">
-                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                    <Setter Value="Logging in..." Property="Text" /> 
+                                                    <Setter Property="Text" Value="Logging in..." />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -168,19 +216,18 @@
                                 </TextBlock>
                             </Button>
 
-
                         </StackPanel>
 
                         <!-- Register Prompt -->
                         <StackPanel Grid.Row="2" Margin="0 20 0 0">
                             <Separator Margin="0 10" />
                             <TextBlock Text="Don’t have an account?"
-                                       FontSize="12"
+                                       FontSize="13"
                                        Foreground="#555555" />
                             <Button Content="Create Account"
                                     Style="{StaticResource MaterialDesignFlatButton}"
                                     Foreground="{DynamicResource PrimaryHueMidBrush}"
-                                    FontSize="13"
+                                    FontSize="14"
                                     Cursor="Hand"
                                     Click="CreateAccount_Click" />
                         </StackPanel>
