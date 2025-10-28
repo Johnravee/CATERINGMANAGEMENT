@@ -81,6 +81,8 @@ git clone https://github.com/Johnravee/CATERINGMANAGEMENT.git
 cd CATERINGMANAGEMENT
 ```
 
+Or download the repository as a ZIP file from GitHub and extract it to your preferred location.
+
 ### Step 2: Restore NuGet Packages
 Using .NET CLI:
 ```bash
@@ -105,6 +107,13 @@ The application uses the following major packages (automatically installed with 
 ### Environment Variables Setup
 
 1. **Copy the example environment file**:
+   
+   On Windows (Command Prompt or PowerShell):
+   ```cmd
+   copy .env.example .env
+   ```
+   
+   On Linux/Mac:
    ```bash
    cp .env.example .env
    ```
@@ -142,8 +151,10 @@ The application expects the following tables in your Supabase database:
 ### Firebase Configuration (Optional)
 
 If using Firebase services:
-1. Place your `service-account-file.json` in the `Credentials/` folder
-2. Ensure the file is included in your build output (already configured in .csproj)
+1. Obtain your service account JSON file from Firebase Console
+2. Place your `service-account-file.json` in the `Credentials/` folder
+3. **Important**: Never commit this file to version control - it contains sensitive credentials
+4. The file is already configured to be copied to build output in .csproj
 
 ## 🚀 How to Run
 
@@ -162,7 +173,8 @@ If using Firebase services:
 
 4. **Run the Application**:
    - Press `F5` (Start Debugging) or `Ctrl+F5` (Start Without Debugging)
-   - The Dashboard window will appear as the startup window
+   - The application starts with the Dashboard window (configured as StartupUri in App.xaml)
+   - Note: Depending on authentication implementation, you may see a login screen first
 
 ### Method 2: Using .NET CLI
 
@@ -210,7 +222,7 @@ CATERINGMANAGEMENT/
 ├── Converters/                 # Value converters for data binding
 │
 ├── Credentials/                # Authentication credentials
-│   └── service-account-file.json  # Firebase service account (not in repo)
+│   └── service-account-file.json  # Firebase service account (MUST NOT be committed)
 │
 ├── DocumentsGenerator/         # PDF and document generation
 │
@@ -290,6 +302,10 @@ CATERINGMANAGEMENT/
 - Keep your Supabase API keys secure
 - Store sensitive credentials in environment variables
 - The `.gitignore` file is configured to exclude sensitive files
+- **CRITICAL**: If you have committed a `service-account-file.json` or other credentials to your repository, immediately:
+  1. Revoke/regenerate those credentials in Firebase/Supabase console
+  2. Remove the file from Git history using tools like `git-filter-branch` or BFG Repo-Cleaner
+  3. Add the file path to `.gitignore` to prevent future commits
 
 ## 📝 License
 
