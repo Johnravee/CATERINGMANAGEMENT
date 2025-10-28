@@ -1,17 +1,17 @@
 ﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
-using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
-using Supabase.Postgrest.Models;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System;
 using System.Windows;
 using System.Windows.Input;
 
 namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
 {
-    internal class AddGrazingViewModel : BaseModel
+    internal class AddGrazingViewModel : BaseViewModel
     {
+        private readonly GrazingService _grazingService = new();
+
         private string _name = string.Empty;
         private string _category = string.Empty;
 
@@ -50,8 +50,6 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
             CancelCommand = new RelayCommand(() => CloseWindow());
         }
 
-
-
         private async Task SaveAsync()
         {
             if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Category))
@@ -62,43 +60,45 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
                 var grazing = new GrazingTable
                 {
-                    Name = Name,
-                    Category = Category,
+                    Name = Name.Trim(),
+                    Category = Category.Trim(),
                     CreatedAt = DateTime.UtcNow
                 };
 
-                var response = await client
-                    .From<GrazingTable>()
-                    .Insert(grazing);
+                var inserted = await _grazingService.InsertGrazingAsync(grazing);
 
-                MessageBox.Show("Grazing option added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                CloseWindow(true);
+                if (inserted != null)
+                {
+                    AppLogger.Success($"Grazing option '{Name}' added successfully.");
+                    MessageBox.Show("Grazing option added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CloseWindow();
+                }
+                else
+                {
+                    AppLogger.Error($"Failed to add grazing option '{Name}'.");
+                    MessageBox.Show("Failed to add grazing option.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
+                AppLogger.Error(ex, "Error adding grazing option");
                 MessageBox.Show($"Error saving grazing option:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void CloseWindow(bool success = false)
+        private void CloseWindow()
         {
-            var win = Application.Current.Windows.OfType<AddGrazing>()
-                .FirstOrDefault(w => w.DataContext == this);
-
-            if (win != null)
+            foreach (Window window in Application.Current.Windows)
             {
-                if (success)
-                    win.DialogResult = true; 
-                win.Close();
+                if (window.DataContext == this)
+                {
+                    window.DialogResult = true;
+                    window.Close();
+                    break;
+                }
             }
         }
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? name = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
     }
 }

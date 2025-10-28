@@ -12,11 +12,11 @@ namespace CATERINGMANAGEMENT.View.Windows
     public partial class EquipmentItemAdd : Window
     {
 
-        public EquipmentItemAdd(EquipmentViewModel parentVM)
+        public EquipmentItemAdd()
         {
             InitializeComponent();
             //AuthGuard.RequireAuthentication(this);
-            var viewModel = new AddEquipmentViewModel(parentVM);
+            var viewModel = new AddEquipmentViewModel();
             DataContext = viewModel;
         }
 

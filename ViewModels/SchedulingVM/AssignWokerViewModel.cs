@@ -88,7 +88,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             _filteredWorkers.Source = Workers;
             _filteredWorkers.Filter += ApplyFilter;
 
-            _ = LoadData();
+            _ = LoadCompletedReservation();
         }
         #endregion
 
@@ -117,11 +117,24 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         {
             if (worker == null) return;
 
+           
+            if (string.Equals(worker.Status, "Terminated", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(worker.Status, "On Leave", StringComparison.OrdinalIgnoreCase))
+            {
+                AppLogger.Info($"Cannot select worker '{worker.Name}' (ID: {worker.Id}) with status '{worker.Status}'.");
+                MessageBox.Show($"Worker '{worker.Name}' is {worker.Status} and cannot be assigned.",
+                                "Unavailable Worker",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                return;
+            }
+
             if (AssignedWorkers.Contains(worker))
                 AssignedWorkers.Remove(worker);
             else
                 AssignedWorkers.Add(worker);
         }
+
 
         private void RemoveAssignedWorker(Worker worker)
         {
@@ -131,7 +144,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         #endregion
 
         #region Data Loading
-        private async Task LoadData()
+        private async Task LoadCompletedReservation()
         {
             try
             {
@@ -162,9 +175,15 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         #region Batch Assignment
         private async Task BatchAssignWorkers()
         {
-            if (SelectedReservation == null || AssignedWorkers.Count == 0)
+            if (SelectedReservation == null)
             {
-                ShowMessage("Please select a reservation and at least one worker.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Please select a reservation first.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (AssignedWorkers.Count == 0)
+            {
+                MessageBox.Show("Please select at least one worker to assign.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -176,18 +195,45 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
                 foreach (var worker in AssignedWorkers)
                 {
+                    // Validate worker before calling service
+                    if (string.Equals(worker.Status, "Terminated", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(worker.Status, "On Leave", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AppLogger.Info($"Cannot assign terminated worker '{worker.Name}' (ID: {worker.Id}).");
+                        MessageBox.Show($"Worker '{worker.Name}' is terminated and cannot be assigned.",
+                                        "Terminated Worker",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    if (string.IsNullOrEmpty(worker.Email))
+                    {
+                        MessageBox.Show($"Worker '{worker.Name}' does not have a valid email and cannot be notified.",
+                                        "Missing Email",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    // Assign worker
                     bool assigned = await _assignWorkerService.AssignWorkerAsync(worker, SelectedReservation);
                     if (!assigned)
                     {
                         AppLogger.Error($"Failed to assign worker {worker.Name} (ID: {worker.Id})");
-                        ShowMessage($"Failed to assign {worker.Name}.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show($"Failed to assign '{worker.Name}'. Please try again.",
+                                        "Assignment Failed",
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Error);
                         anyFailed = true;
                         continue;
                     }
 
+                    // Queue email sending
                     emailTasks.Add(_assignWorkerService.SendEmailAsync(worker, SelectedReservation));
                 }
 
+                // Wait for all emails to finish
                 bool[] emailResults = await Task.WhenAll(emailTasks);
 
                 for (int i = 0; i < emailResults.Length; i++)
@@ -203,20 +249,29 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                 await _parentViewModel.ReloadDataAsync();
 
                 if (!anyFailed)
-                    ShowMessage("Workers successfully assigned and emails sent.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                {
+                    MessageBox.Show("Workers successfully assigned and emails sent.",
+                                    "Success",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Information);
+                }
 
                 CloseWindow();
             }
             catch (Exception ex)
             {
-                AppLogger.Error(ex, "Error during batch assign workers");
-                ShowMessage($"Error assigning workers: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "💥 Error during batch assign workers");
+                MessageBox.Show($"An error occurred while assigning workers:\n{ex.Message}",
+                                "Error",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
             }
             finally
             {
                 IsLoading = false;
             }
         }
+
         #endregion
 
         #region Window Management

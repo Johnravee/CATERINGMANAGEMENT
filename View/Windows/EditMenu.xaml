@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Height="350"
+        Height="420"
         Width="420"
         Background="#F9FAFB"
         FontFamily="Segoe UI">
@@ -17,9 +17,15 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <!-- Title -->
                 <RowDefinition Height="Auto"/>
+                <!-- Name -->
                 <RowDefinition Height="Auto"/>
+                <!-- Category -->
                 <RowDefinition Height="Auto"/>
+                <!-- Status -->
+                <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
             </Grid.RowDefinitions>
 
             <!-- Title -->
@@ -54,8 +60,24 @@
                          BorderBrush="#D1D5DB"/>
             </StackPanel>
 
+            <!-- Status Field -->
+            <StackPanel Grid.Row="3" Margin="0,0,0,15">
+                <TextBlock Text="Status" Foreground="#555" Margin="0,0,0,4"/>
+                <ComboBox x:Name="StatusComboBox"
+                          SelectedValue="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Content"
+                          Padding="8"
+                          FontSize="14"
+                          Background="#F3F4F6"
+                          BorderThickness="1"
+                          BorderBrush="#D1D5DB">
+                    <ComboBoxItem Content="Available"/>
+                    <ComboBoxItem Content="Unavailable"/>
+                </ComboBox>
+            </StackPanel>
+
             <!-- Buttons -->
-            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                 <Button Content="Cancel"
                         Width="90"
                         Height="32"

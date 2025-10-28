@@ -1,21 +1,26 @@
 ﻿/*
  * FILE: WorkerViewModel.cs
- * PURPOSE: Handles loading, pagination, search (with debounce), adding, editing, and deleting workers.
+ * PURPOSE: Handles loading, pagination, search (with debounce), adding, editing, deleting, 
+ *           and realtime synchronization for Worker data.
  * 
  * RESPONSIBILITIES:
  *  - Load workers with pagination
  *  - Search workers with debounce
  *  - Add, edit, and delete workers
- *  - Display messages to the user for errors or confirmations
+ *  - Subscribe to Supabase Realtime updates (insert, update, delete)
+ *  - Display messages for user interaction
  */
 
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
+using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
 namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
 {
@@ -90,6 +95,9 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             PrevPageCommand = new RelayCommand(async () => await LoadPageAsync(CurrentPage - 1), () => CurrentPage > 1);
 
             _ = LoadPageAsync(1);
+
+            // ✅ Start realtime subscription
+            _ = Task.Run(SubscribeToRealtime);
         }
         #endregion
 
@@ -106,7 +114,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Items.Clear();
-                    foreach (var w in workers ?? new System.Collections.Generic.List<Worker>())
+                    foreach (var w in workers ?? new List<Worker>())
                         Items.Add(w);
                 });
 
@@ -116,6 +124,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             catch (Exception ex)
             {
                 ShowMessage($"Error loading workers:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error loading workers page");
             }
             finally
             {
@@ -156,7 +165,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Items.Clear();
-                    foreach (var w in results ?? new System.Collections.Generic.List<Worker>())
+                    foreach (var w in results ?? new List<Worker>())
                         Items.Add(w);
                 });
 
@@ -166,6 +175,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
             catch (Exception ex)
             {
                 ShowMessage($"Search failed:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error searching workers");
             }
             finally
             {
@@ -174,7 +184,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
         }
         #endregion
 
-        #region Worker Operations
+        #region CRUD Operations
         private async Task DeleteWorkerAsync(Worker worker)
         {
             if (worker == null) return;
@@ -188,12 +198,12 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
                 if (await _workerService.DeleteWorkerAsync(worker.Id))
                 {
                     Application.Current.Dispatcher.Invoke(() => Items.Remove(worker));
-                    await LoadPageAsync(CurrentPage);
                 }
             }
             catch (Exception ex)
             {
                 ShowMessage($"Delete failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error deleting worker");
             }
             finally
             {
@@ -207,7 +217,7 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
 
             try
             {
-                var editWindow = new EditWorker(worker, this);
+                var editWindow = new EditWorker(worker);
                 editWindow.ShowDialog();
             }
             catch (Exception ex)
@@ -221,13 +231,88 @@ namespace CATERINGMANAGEMENT.ViewModels.WorkerVM
         {
             try
             {
-                var addWindow = new AddWorker(this);
+                var addWindow = new AddWorker();
                 addWindow.ShowDialog();
             }
             catch (Exception ex)
             {
                 AppLogger.Error(ex, "Error opening AddWorker window");
                 ShowMessage($"Failed to open add worker window:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        #endregion
+
+        #region Realtime Sync
+        private async Task SubscribeToRealtime()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                // Subscribe to "workers" table in "public" schema
+                var channel = client.Realtime.Channel("realtime", "public", "workers");
+
+                //  Log all events
+                channel.AddPostgresChangeHandler(ListenType.All, (sender, change) =>
+                {
+                    Debug.WriteLine($"Realtime event: {change.Event}");
+                    Debug.WriteLine($"Payload: {change.Payload}");
+                });
+
+                // INSERT handler
+                channel.AddPostgresChangeHandler(ListenType.Inserts, (sender, change) =>
+                {
+                    var inserted = change.Model<Worker>();
+                    if (inserted == null)
+                    {
+                        Debug.WriteLine("[Realtime Insert] Failed to deserialize worker.");
+                        return;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var existing = Items.FirstOrDefault(w => w.Id == inserted.Id);
+                        if (existing == null)
+                        {
+                            Items.Insert(0, inserted);
+                            Debug.WriteLine($"Realtime Insert: Added worker ID {inserted.Id}");
+                        }
+                    });
+                });
+
+                // UPDATE handler
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
+                {
+                    var updated = change.Model<Worker>();
+                    if (updated == null)
+                    {
+                        Debug.WriteLine("[Realtime Update] Failed to deserialize worker.");
+                        return;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var existing = Items.FirstOrDefault(w => w.Id == updated.Id);
+                        if (existing != null)
+                        {
+                            var index = Items.IndexOf(existing);
+                            Items[index] = updated;
+                            Debug.WriteLine($"Realtime Update: Updated worker ID {updated.Id}");
+                        }
+                        else
+                        {
+                            Items.Insert(0, updated);
+                            Debug.WriteLine($"Realtime Update: Inserted missing worker ID {updated.Id}");
+                        }
+                    });
+                });
+
+                var result = await channel.Subscribe();
+                AppLogger.Success($"✅ Subscribed to realtime worker updates: {result}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error subscribing to realtime worker updates");
             }
         }
         #endregion

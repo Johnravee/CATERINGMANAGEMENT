@@ -7,16 +7,14 @@ namespace CATERINGMANAGEMENT.Models
     [Table("packages")]
     public class Package : BaseModel
     {
-        [PrimaryKey("id", false)] 
-        [Column("id")]
+        [PrimaryKey("id", false)]
+        [Column("id", ignoreOnInsert: true)]
         public long Id { get; set; }
 
         [Column("name")]
         public string Name { get; set; } = string.Empty;
 
-        [Column("ratings")]
-        public decimal? Ratings { get; set; }
-
+       
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
     }

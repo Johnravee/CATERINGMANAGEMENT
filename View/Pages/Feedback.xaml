@@ -121,7 +121,7 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <TextBlock Text="Total Feedback" FontWeight="Bold" Foreground="#333" FontSize="14"/>
-                        <TextBlock Text="{Binding TotalFeedbackCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
+                        <TextBlock Text="{Binding TotalCount}" FontSize="24" FontWeight="Bold" Foreground="#333"/>
                     </StackPanel>
                     <materialDesign:PackIcon Kind="MessageTextOutline" Foreground="#673AB7" Width="36" Height="36" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </Grid>
@@ -159,6 +159,7 @@
                   SelectionMode="Single"
                   HeadersVisibility="Column"
                   GridLinesVisibility="None"
+                  FontSize="16"
                   RowStyle="{StaticResource CustomDataGridRowStyle}"
                   CellStyle="{StaticResource CenteredCellStyle}"
                   ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}">
@@ -181,7 +182,7 @@
                                         Command="{Binding DataContext.DeleteFeedbackCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                         CommandParameter="{Binding}">
                                     <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="Delete" Width="16" Height="16" Margin="0,0,4,0"/>
+                                        <materialDesign:PackIcon Kind="Delete" Width="16" Height="16" Margin="0,1.5,3,0"/>
                                         <TextBlock Text="Delete"/>
                                     </StackPanel>
                                 </Button>

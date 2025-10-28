@@ -1,6 +1,6 @@
-﻿using Supabase.Gotrue;
-
-
+﻿using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace CATERINGMANAGEMENT.Services
 {
@@ -11,38 +11,41 @@ namespace CATERINGMANAGEMENT.Services
             try
             {
                 var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL");
-                var serviceRoleKey = Environment.GetEnvironmentVariable("SERVICE_ROLE_KEY");
-
-                if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(serviceRoleKey))
+                var anonKey = Environment.GetEnvironmentVariable("SUPABASE_API_KEY");
+                if (string.IsNullOrWhiteSpace(supabaseUrl) || string.IsNullOrWhiteSpace(anonKey))
                 {
-                    Console.WriteLine("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+                    Console.WriteLine("Missing SUPABASE_URL or SUPABASE_API_KEY");
                     return false;
                 }
 
+                using var http = new HttpClient();
+                http.DefaultRequestHeaders.Add("apikey", anonKey);
+                http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", anonKey);
 
-                var adminClient = new Supabase.Client(supabaseUrl, serviceRoleKey);
+                // Optional redirect_to for email confirmation (can be omitted)
+                string? redirectTo = Environment.GetEnvironmentVariable("APP_URI_SCHEME");
 
-
-                var adminAuth = adminClient.AdminAuth(serviceRoleKey);
-
-                var adminUserAttrs = new AdminUserAttributes
+                var payload = new
                 {
-                    Email = email,
-                    Password = password,
-                    EmailConfirm = true,
-                    UserMetadata = new Dictionary<string, object>
-                    {
-                        { "role", "admin" }
-                    }
+                    email = email.Trim(),
+                    password = password,
+                    data = new Dictionary<string, object> { { "role", "admin" } },
+                    redirect_to = string.IsNullOrWhiteSpace(redirectTo) ? null : redirectTo
                 };
 
-                var user = await adminAuth.CreateUser(adminUserAttrs);
+                var endpoint = new Uri(new Uri(supabaseUrl), "/auth/v1/signup");
+                var res = await http.PostAsJsonAsync(endpoint, payload, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                var body = await res.Content.ReadAsStringAsync();
 
-                return user != null;
+                if (res.IsSuccessStatusCode)
+                    return true;
+
+                Console.WriteLine($"SignUp failed: {(int)res.StatusCode} {res.ReasonPhrase} - {body}");
+                return false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Admin create user failed: {ex.Message}");
+                Console.WriteLine($"Admin sign-up failed: {ex.Message}");
                 return false;
             }
         }

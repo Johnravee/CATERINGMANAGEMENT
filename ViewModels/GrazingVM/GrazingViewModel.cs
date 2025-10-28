@@ -1,28 +1,24 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
-using CATERINGMANAGEMENT.Helpers;
+﻿using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using static Supabase.Postgrest.Constants;
+using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
 namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
 {
-    public class GrazingViewModel : INotifyPropertyChanged
+    public class GrazingViewModel : BaseViewModel
     {
-        private ObservableCollection<GrazingTable> _allItems = new();
-        private ObservableCollection<GrazingTable> _filteredItems = new();
+        private readonly GrazingService _grazingService = new();
 
-        private const int PageSize = 10;
-
+        private ObservableCollection<GrazingTable> _items = new();
         public ObservableCollection<GrazingTable> Items
         {
-            get => _filteredItems;
-            set { _filteredItems = value; OnPropertyChanged(); }
+            get => _items;
+            set { _items = value; OnPropertyChanged(); }
         }
 
         private int _totalCount;
@@ -47,7 +43,7 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
             {
                 _searchText = value;
                 OnPropertyChanged();
-                ApplySearchFilter();
+                _ = ApplySearchFilterAsync();
             }
         }
 
@@ -65,41 +61,37 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
-        public ICommand AddGrazingCommand { get; set; }
-        public ICommand EditGrazingCommand { get; set; }
-        public ICommand DeleteGrazingCommand { get; set; }
-        public ICommand NextPageCommand { get; set; }
-        public ICommand PrevPageCommand { get; set; }
-        public ICommand ExportPdfCommand { get; set; }
-        public ICommand ExportCsvCommand { get; set; }
-
+        public ICommand AddGrazingCommand { get; }
+        public ICommand EditGrazingCommand { get; }
+        public ICommand DeleteGrazingCommand { get; }
+        public ICommand NextPageCommand { get; }
+        public ICommand PrevPageCommand { get; }
 
         public GrazingViewModel()
         {
-            EditGrazingCommand = new RelayCommand<GrazingTable>(async (g) => await EditGrazing(g));
-            DeleteGrazingCommand = new RelayCommand<GrazingTable>(async (g) => await DeleteGrazing(g));
-            NextPageCommand = new RelayCommand(async () => await NextPage());
-            PrevPageCommand = new RelayCommand(async () => await PrevPage());
-            AddGrazingCommand = new RelayCommand(async () => await InsertGrazingItem());
+            AddGrazingCommand = new RelayCommand(InsertGrazingItem);
+            EditGrazingCommand = new RelayCommand<GrazingTable>(EditGrazing);
+            DeleteGrazingCommand = new RelayCommand<GrazingTable>(async (g) => await DeleteGrazingAsync(g));
+            NextPageCommand = new RelayCommand(async () => await NextPageAsync());
+            PrevPageCommand = new RelayCommand(async () => await PrevPageAsync());
 
-            ExportPdfCommand = new RelayCommand(ExportToPdf);
-            ExportCsvCommand = new RelayCommand(ExportToCsv);
-
-            _ = LoadItems();
+            _ = LoadItemsAsync();
+            _ = SubscribeToRealtimeAsync();
         }
 
-        public async Task LoadItems()
+        public async Task LoadItemsAsync()
         {
             IsLoading = true;
             try
             {
-                _allItems.Clear();
-                Items.Clear();
-                await LoadPage(1);
+                var (items, totalCount) = await _grazingService.GetGrazingPageAsync(CurrentPage);
+                Items = new ObservableCollection<GrazingTable>(items);
+                TotalCount = totalCount;
+                TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / 10));
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading grazing options:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error loading grazing items");
             }
             finally
             {
@@ -107,43 +99,26 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
             }
         }
 
-        private async Task LoadPage(int page)
+        private async Task ApplySearchFilterAsync()
         {
             IsLoading = true;
-
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
-                int from = (page - 1) * PageSize;
-                int to = from + PageSize - 1;
-
-                var response = await client
-                    .From<GrazingTable>()
-                    .Range(from, to)
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get(); 
-
-                _allItems.Clear();
-                if (response.Models != null)
+                if (string.IsNullOrWhiteSpace(SearchText))
                 {
-                    foreach (var item in response.Models)
-                        _allItems.Add(item);
+                    await LoadItemsAsync();
                 }
-
-                var countResult = await client
-                    .From<GrazingTable>()
-                    .Count(CountType.Exact);
-
-                TotalCount = countResult;
-                TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
-
-                ApplySearchFilter();
-                CurrentPage = page;
+                else
+                {
+                    var searchResults = await GrazingService.SearchGrazingAsync(SearchText.Trim());
+                    Items = new ObservableCollection<GrazingTable>(searchResults);
+                    TotalPages = 1;
+                    CurrentPage = 1;
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading grazing page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error applying search filter");
             }
             finally
             {
@@ -151,177 +126,128 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
             }
         }
 
-        private async Task NextPage()
+        private async Task NextPageAsync()
         {
             if (CurrentPage < TotalPages)
-                await LoadPage(CurrentPage + 1);
+            {
+                CurrentPage++;
+                await LoadItemsAsync();
+            }
         }
 
-        private async Task PrevPage()
+        private async Task PrevPageAsync()
         {
             if (CurrentPage > 1)
-                await LoadPage(CurrentPage - 1);
-        }
-
-        private async void ApplySearchFilter()
-        {
-            var query = _searchText?.Trim().ToLower();
-
-            if (string.IsNullOrWhiteSpace(query))
             {
-                Items = new ObservableCollection<GrazingTable>(_allItems);
-            }
-            else
-            {
-                try
-                {
-                    IsLoading = true;
-
-                    var client = await SupabaseService.GetClientAsync();
-                    var response = await client
-                        .From<GrazingTable>()
-                        .Filter(x => x.Name, Operator.ILike, $"%{query}%")
-                        .Order(x => x.CreatedAt, Ordering.Descending)
-                        .Get();
-
-                    if (response.Models != null)
-                        Items = new ObservableCollection<GrazingTable>(response.Models);
-                    else
-                        Items = new ObservableCollection<GrazingTable>();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error filtering grazing options:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                finally
-                {
-                    IsLoading = false;
-                }
+                CurrentPage--;
+                await LoadItemsAsync();
             }
         }
 
-        private async Task InsertGrazingItem()
+        private static void InsertGrazingItem()
         {
-            var addWindow = new AddGrazing();
-            bool? result = addWindow.ShowDialog();
-
-            if (result == true)
-                await LoadItems();
+            new AddGrazing().ShowDialog();
         }
 
-        private async Task EditGrazing(GrazingTable item)
+        private static void EditGrazing(GrazingTable grazing)
         {
-            if (item == null) return;
-
-            var editWindow = new EditGrazing(item);
-            bool? result = editWindow.ShowDialog();
-
-            if (result == true)
-                await LoadItems();
+            if (grazing == null) return;
+            new EditGrazing(grazing).ShowDialog();
         }
 
-        private async Task DeleteGrazing(GrazingTable item)
+        private async Task DeleteGrazingAsync(GrazingTable grazing)
         {
-            if (item == null) return;
+            if (grazing == null) return;
 
-            var confirm = MessageBox.Show($"Are you sure you want to delete '{item.Name}'?",
+            var confirm = MessageBox.Show($"Are you sure you want to delete '{grazing.Name}'?",
                 "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
             if (confirm != MessageBoxResult.Yes) return;
 
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-                await client.From<GrazingTable>().Where(x => x.Id == item.Id).Delete();
-
-                _allItems.Remove(item);
-                ApplySearchFilter();
-
-                MessageBox.Show("Deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                bool success = await _grazingService.DeleteGrazingAsync(grazing.Id);
+                if (success)
+                {
+                    Items.Remove(grazing);
+                    TotalCount--;
+                    TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / 10));
+                    AppLogger.Success($"Deleted grazing '{grazing.Name}' successfully.");
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error deleting grazing item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error deleting grazing item");
             }
         }
 
-        private async Task ExportToPdf()
+        private async Task SubscribeToRealtimeAsync()
         {
             try
             {
                 var client = await SupabaseService.GetClientAsync();
 
+                var channel = client.Realtime.Channel("realtime", "public", "grazing");
 
-                var response = await client
-                    .From<GrazingTable>()
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
-
-                var grazing = response.Models;
-
-                if (grazing == null || grazing.Count == 0)
+                channel.AddPostgresChangeHandler(ListenType.Inserts, (sender, change) =>
                 {
-                    MessageBox.Show("No grazing found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                    var inserted = change.Model<GrazingTable>();
+                    if (inserted == null) return;
 
-                DataGridToPdf.DataGridToPDF(
-                    grazing,
-                    "Grazing Menu's",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "CreatedAt"
-                );
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        if (!Items.Any(g => g.Id == inserted.Id))
+                        {
+                            Items.Insert(0, inserted);
+                            await RefreshGrazingCount();
+                            AppLogger.Info($"Realtime Insert: Added Grazing ID {inserted.Id}");
+                        }
+                    });
+                });
+
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
+                {
+                    var updated = change.Model<GrazingTable>();
+                    if (updated == null) return;
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var existing = Items.FirstOrDefault(g => g.Id == updated.Id);
+                        if (existing != null)
+                        {
+                            var index = Items.IndexOf(existing);
+                            Items[index] = updated;
+                            AppLogger.Info($"Realtime Update: Updated Grazing ID {updated.Id}");
+                        }
+                        else
+                        {
+                            Items.Insert(0, updated);
+                            TotalCount++;
+                            TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / 10));
+                            AppLogger.Info($"Realtime Update: Inserted missing Grazing ID {updated.Id}");
+                        }
+                    });
+                });
+
+                var subscribeResult = await channel.Subscribe();
+                AppLogger.Success($"Subscribed to realtime grazing updates: {subscribeResult}");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting to PDF:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error subscribing to realtime grazing updates");
             }
         }
 
-        private async Task ExportToCsv()
+        private async Task RefreshGrazingCount()
         {
             try
             {
-                var client = await SupabaseService.GetClientAsync();
-
-
-                var response = await client
-                    .From<GrazingTable>()
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
-
-                var grazing = response.Models;
-
-                if (grazing == null || grazing.Count == 0)
-                {
-                    MessageBox.Show("No grazing found to export.", "Export Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                DatagridToCsv.ExportToCsv(
-                    grazing,
-                    "Grazing Menu's",
-                    "Id",
-                    "BaseUrl",
-                    "RequestClientOptions",
-                    "TableName",
-                    "PrimaryKey",
-                    "CreatedAt"
-                );
+                int totalCount = await _grazingService.GetTotalGrazingOptionsCountAsync();
+                TotalCount = totalCount;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting to PDF:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error refreshing grazing count");
             }
         }
-
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

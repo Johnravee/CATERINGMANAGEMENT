@@ -6,6 +6,7 @@ using System.Windows.Input;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.View.Windows;
+using System;
 
 namespace CATERINGMANAGEMENT.ViewModels.AuthVM
 {
@@ -13,6 +14,7 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
     {
         private string _email;
         private string _password;
+        private bool _showPassword;
 
         public string Email
         {
@@ -25,6 +27,19 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
             get => _password;
             set { _password = value; OnPropertyChanged(); }
         }
+
+        public bool ShowPassword
+        {
+            get => _showPassword;
+            set { _showPassword = value; OnPropertyChanged(); }
+        }
+
+        // Dynamic app/branding name from environment
+        public string AppName { get; } =
+            Environment.GetEnvironmentVariable("APP_NAME")?.Trim()
+            ?? Environment.GetEnvironmentVariable("BRAND_NAME")?.Trim()
+            ?? "CaterMate Management";
+
         public bool IsNotLoading => !IsLoading;
         private bool _isLoading;
 
@@ -42,7 +57,6 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
             }
         }
 
-
         public ICommand LoginCommand { get; }
         private readonly Window _currentWindow;
         public LoginViewModel(Window currentWindow)
@@ -55,7 +69,7 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
         {
             if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
             {
-                MessageBox.Show("Please fill in both fields.");
+                MessageBox.Show("Please fill in both fields.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -63,26 +77,33 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
             {
                 IsLoading = true;
 
-                var user = await AuthService.LoginAsync(Email, Password);
+                var result = await AuthService.LoginAsync(Email, Password);
 
-                if (user != null)
+                if (result.User != null)
                 {
-                    SessionService.SetCurrentUser(user);
                     var dashboard = new Dashboard();
                     dashboard.Show();
                     _currentWindow.Close();
+                    return;
                 }
-                else
+
+                // Specific error message based on error code
+                string message = result.Message ?? result.Error switch
                 {
-                    MessageBox.Show("Login failed or unauthorized. Only admins can log in here.");
-                }
+                    LoginErrorCode.UnverifiedEmail => "Your email is not verified. Please check your inbox for the confirmation link.",
+                    LoginErrorCode.NotAdmin => "Your account does not have admin access. Only admins can log in here.",
+                    LoginErrorCode.InvalidCredentials => "Invalid email or password.",
+                    LoginErrorCode.NetworkError => "Network error. Please check your internet connection and try again.",
+                    _ => "Login failed due to an unexpected error."
+                };
+
+                MessageBox.Show(message, "Login Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
             {
                 IsLoading = false;
             }
         }
-
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null) =>

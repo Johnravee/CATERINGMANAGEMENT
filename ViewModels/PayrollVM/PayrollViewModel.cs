@@ -11,19 +11,22 @@
  *  - Mark payrolls as paid
  *  - Delete payroll records
  *  - Open Payslip and Payroll generator windows
+ *  - Subscribe to realtime payroll updates and refresh data accordingly
  */
 
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
+using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
-using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
 namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
 {
@@ -105,7 +108,11 @@ namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
             MarkAsPaidCommand = new RelayCommand<Payroll>(async p => await MarkAsPaidAsync(p));
             DeletePayrollCommand = new RelayCommand<Payroll>(async p => await DeletePayrollAsync(p));
 
+            // Load initial page
             _ = LoadPageAsync(1);
+
+            // Start realtime subscription
+            _ = SubscribeToRealtime();
         }
         #endregion
 
@@ -188,7 +195,7 @@ namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
 
             if (await _payrollService.MarkAsPaidAsync(payroll))
             {
-                await LoadPageAsync(CurrentPage);
+                ShowMessage("[Success] payroll mark as paid.");
             }
             else
             {
@@ -210,6 +217,104 @@ namespace CATERINGMANAGEMENT.ViewModels.PayrollVM
             else
             {
                 ShowMessage("Error deleting payroll.", "Error");
+            }
+        }
+        #endregion
+
+        #region Methods: Realtime Updates
+        private async Task SubscribeToRealtime()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                // Subscribe to the payrolls table (public schema)
+                var channel = client.Realtime.Channel("realtime", "public", "payroll");
+
+                // Generic handler for all events, just logs raw payloads
+                channel.AddPostgresChangeHandler(ListenType.All, (sender, change) =>
+                {
+                    Debug.WriteLine($"Realtime event: {change.Event}");
+                    Debug.WriteLine($"Payload: {change.Payload}");
+                });
+
+                // Insert handler
+                channel.AddPostgresChangeHandler(ListenType.Inserts, (sender, change) =>
+                {
+                    var inserted = change.Model<Payroll>();
+                    if (inserted == null)
+                    {
+                        Debug.WriteLine("[Realtime Insert] Failed to deserialize inserted payroll record.");
+                        return;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        // Insert new record to the collection and refresh search filter
+                        _payrollItems.Insert(0, inserted);
+                        ApplySearchFilter();
+                        Debug.WriteLine($"Realtime Insert: Added payroll ID {inserted.Id}");
+                    });
+                });
+
+                // Update handler
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
+                {
+                    var updated = change.Model<Payroll>();
+                    if (updated == null)
+                    {
+                        Debug.WriteLine("[Realtime Update] Failed to deserialize updated payroll record.");
+                        return;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var existing = _payrollItems.FirstOrDefault(p  => p.Id == updated.Id);
+                        if (existing != null)
+                        {
+                            existing.PaidStatus = updated.PaidStatus;
+                            existing.PaidDate = updated.PaidDate;
+                            existing.GrossPay = updated.GrossPay;
+
+                            // Only update nested objects if they exist
+                            if (updated.Worker != null)
+                            {
+                                if (existing.Worker == null)
+                                    existing.Worker = updated.Worker;
+                                else
+                                    existing.Worker.Name = updated.Worker.Name;
+                            }
+
+                            if (updated.Reservation != null)
+                            {
+                                if (existing.Reservation == null)
+                                    existing.Reservation = updated.Reservation;
+                                else
+                                    existing.Reservation.ReceiptNumber = updated.Reservation.ReceiptNumber;
+                            }
+
+                            Debug.WriteLine($"Realtime Update: Updated payroll ID {updated.Id}");
+                        }
+                        else
+                        {
+                            _payrollItems.Insert(0, updated);
+                            Debug.WriteLine($"Realtime Update: Inserted new payroll ID {updated.Id}");
+                        }
+
+                        ApplySearchFilter();
+                    });
+
+                });
+
+
+
+
+                var result = await channel.Subscribe();
+                Debug.WriteLine($"Subscribed to realtime payroll updates: {result}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error subscribing to realtime payroll updates: {ex.Message}");
             }
         }
         #endregion

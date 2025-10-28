@@ -14,7 +14,7 @@ namespace CATERINGMANAGEMENT.Models
         public string? ItemName { get; set; }
 
         [Column("quantity")]
-        public decimal? Quantity { get; set; }
+        public long? Quantity { get; set; }
 
         [Column("condition")]
         public string? Condition { get; set; }

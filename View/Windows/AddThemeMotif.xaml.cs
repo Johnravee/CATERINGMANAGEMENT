@@ -20,12 +20,12 @@ namespace CATERINGMANAGEMENT.View.Windows
     /// </summary>
     public partial class AddThemeMotif : Window
     {
-        private readonly AddThemeMotifViewModel _viewModel;
+     
         public AddThemeMotif()
         {
             InitializeComponent();
-            _viewModel = new AddThemeMotifViewModel();
-            DataContext = _viewModel;
+            var viewModel = new AddThemeMotifViewModel();
+            DataContext = viewModel;
         }
     }
 }

@@ -24,11 +24,11 @@ namespace CATERINGMANAGEMENT.View.Windows
     {
         
        
-        public AddWorker(WorkerViewModel parentVM)
+        public AddWorker()
         {
             InitializeComponent();
             //AuthGuard.RequireAuthentication(this);
-            var viewModel = new AddWorkerViewModel(parentVM);
+            var viewModel = new AddWorkerViewModel();
             DataContext = viewModel;
         }
 

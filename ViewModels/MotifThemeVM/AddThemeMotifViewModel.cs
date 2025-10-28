@@ -12,6 +12,7 @@
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
@@ -24,11 +25,17 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
 {
     internal class AddThemeMotifViewModel : BaseViewModel
     {
+        #region Services
+        private readonly PackageService _packageService= new();
+        private readonly ThemeMotifService _thememotifService = new();
+        #endregion
+
         #region === Private Fields ===
 
         private string _name = string.Empty;
         private long? _selectedPackageId;
         private ObservableCollection<Package> _packages = new();
+
 
         #endregion
 
@@ -65,6 +72,8 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
 
         public AddThemeMotifViewModel()
         {
+            _packageService = new PackageService();
+            _thememotifService = new ThemeMotifService();
             SaveCommand = new RelayCommand(async () => await SaveAsync());
             CancelCommand = new RelayCommand(() => CloseWindow());
 
@@ -80,15 +89,9 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
             try
             {
                 AppLogger.Info("Loading available packages for Theme & Motif creation...");
+                var response = await _packageService.GetAllPackagesAsync();
 
-                var client = await SupabaseService.GetClientAsync();
-                var response = await client
-                    .From<Package>()
-                    .Select("*")
-                    .Order(p => p.CreatedAt, Supabase.Postgrest.Constants.Ordering.Descending)
-                    .Get();
-
-                Packages = new ObservableCollection<Package>(response.Models);
+                Packages = new ObservableCollection<Package>(response);
 
                 AppLogger.Info($"Successfully loaded {Packages.Count} packages.");
             }
@@ -130,16 +133,15 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
                 var motif = new NewThemeMotif
                 {
                     Name = Name,
-                    PackageId = SelectedPackageId
+                    PackageId = SelectedPackageId,
+                    CreatedAt = DateTime.UtcNow
                 };
 
-                var response = await client
-                    .From<NewThemeMotif>()
-                    .Insert(motif);
+                var response = _thememotifService.InsertThemeMotifAsync(motif);
 
                 AppLogger.Info($"Theme & Motif '{Name}' added successfully (Package ID: {SelectedPackageId}).");
                 ShowMessage("Theme & Motif added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                CloseWindow(true);
+                CloseWindow();
             }
             catch (Exception ex)
             {
@@ -151,30 +153,19 @@ namespace CATERINGMANAGEMENT.ViewModels.MotifThemeVM
         #endregion
 
         #region === Window Handling ===
-
-        private void CloseWindow(bool success = false)
+        private void CloseWindow()
         {
-            AppLogger.Info("Closing Add Theme & Motif window...");
-
-            var win = Application.Current.Windows.OfType<View.Windows.AddThemeMotif>()
-                .FirstOrDefault(w => w.DataContext == this);
-
-            if (win != null)
+            foreach (Window window in Application.Current.Windows)
             {
-                if (success)
+                if (window.DataContext == this)
                 {
-                    AppLogger.Info("Operation successful. Setting DialogResult = true.");
-                    win.DialogResult = true;
+                    window.DialogResult = true;
+                    window.Close();
+                    break;
                 }
-
-                win.Close();
-                AppLogger.Info("Add Theme & Motif window closed.");
-            }
-            else
-            {
-                AppLogger.Info("No matching window found to close.");
             }
         }
+
 
         #endregion
     }

@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CATERINGMANAGEMENT.View.Windows"
         mc:Ignorable="d"
-        Title="Registration" Height="450" Width="800"
+        Title="Registration" Height="600" Width="800"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="Transparent"
@@ -57,45 +57,149 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" VerticalAlignment="Top">
-                        <TextBlock Text="Create Account"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   Foreground="#333333"
-                                   Margin="0 0 0 20" />
+                    <!-- Make form scrollable so the Register button is always reachable -->
+                    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                        <StackPanel VerticalAlignment="Top">
+                            <TextBlock Text="Create Account"
+                                       FontSize="28"
+                                       FontWeight="Bold"
+                                       Foreground="#333333"
+                                       Margin="0 0 0 20" />
 
-                        <!-- Email -->
-                        <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 materialDesign:HintAssist.Hint="Email"
-                                 Margin="0 0 0 15"
-                                 FontSize="14"
-                                 Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
-
-                        <!-- Password -->
-                        <PasswordBox x:Name="PasswordBox"
-                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
-                                     materialDesign:HintAssist.Hint="Password"
+                            <!-- Email -->
+                            <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                     materialDesign:HintAssist.Hint="Email"
                                      Margin="0 0 0 15"
-                                     FontSize="14" />
-
-                        <!-- Confirm Password -->
-                        <PasswordBox x:Name="ConfirmPasswordBox"
-                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
-                                     materialDesign:HintAssist.Hint="Confirm Password"
-                                     Margin="0 0 0 25"
                                      FontSize="14"
-                                     />
+                                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <!-- Register Button -->
-                        <Button Content="Register"
-                                Style="{StaticResource MaterialDesignRaisedButton}"
-                                Foreground="White"
-                                FontSize="16"
-                                Padding="10 6"
-                                Margin="0 10 0 0"
-                                Cursor="Hand"
-                                Command="{Binding RegisterAdminCommand}" />
-                    </StackPanel>
+                            <!-- Confirm Email -->
+                            <TextBox Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                     materialDesign:HintAssist.Hint="Confirm Email"
+                                     Margin="0 0 0 15"
+                                     FontSize="14"
+                                     Text="{Binding ConfirmEmail, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <!-- Password -->
+                            <PasswordBox x:Name="PasswordBox"
+                                         Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                         materialDesign:HintAssist.Hint="Password"
+                                         Margin="0 0 0 8"
+                                         FontSize="14" />
+
+                            <!-- Password Strength Indicators -->
+                            <StackPanel Margin="0 0 0 15">
+                                <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                        <materialDesign:PackIcon.Style>
+                                            <Style TargetType="materialDesign:PackIcon">
+                                                <Setter Property="Foreground" Value="#9E9E9E" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasMinLength}" Value="True">
+                                                        <Setter Property="Foreground" Value="#2E7D32" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </materialDesign:PackIcon.Style>
+                                    </materialDesign:PackIcon>
+                                    <TextBlock Text="At least 8 characters" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                        <materialDesign:PackIcon.Style>
+                                            <Style TargetType="materialDesign:PackIcon">
+                                                <Setter Property="Foreground" Value="#9E9E9E" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasUpper}" Value="True">
+                                                        <Setter Property="Foreground" Value="#2E7D32" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </materialDesign:PackIcon.Style>
+                                    </materialDesign:PackIcon>
+                                    <TextBlock Text="At least one uppercase letter" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                        <materialDesign:PackIcon.Style>
+                                            <Style TargetType="materialDesign:PackIcon">
+                                                <Setter Property="Foreground" Value="#9E9E9E" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasLower}" Value="True">
+                                                        <Setter Property="Foreground" Value="#2E7D32" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </materialDesign:PackIcon.Style>
+                                    </materialDesign:PackIcon>
+                                    <TextBlock Text="At least one lowercase letter" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                        <materialDesign:PackIcon.Style>
+                                            <Style TargetType="materialDesign:PackIcon">
+                                                <Setter Property="Foreground" Value="#9E9E9E" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasDigit}" Value="True">
+                                                        <Setter Property="Foreground" Value="#2E7D32" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </materialDesign:PackIcon.Style>
+                                    </materialDesign:PackIcon>
+                                    <TextBlock Text="At least one number" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0 2 0 2">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="16" Height="16">
+                                        <materialDesign:PackIcon.Style>
+                                            <Style TargetType="materialDesign:PackIcon">
+                                                <Setter Property="Foreground" Value="#9E9E9E" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasSpecial}" Value="True">
+                                                        <Setter Property="Foreground" Value="#2E7D32" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </materialDesign:PackIcon.Style>
+                                    </materialDesign:PackIcon>
+                                    <TextBlock Text="At least one special character" Margin="6 0 0 0" Foreground="#666" FontSize="12" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Confirm Password -->
+                            <PasswordBox x:Name="ConfirmPasswordBox"
+                                         Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                         materialDesign:HintAssist.Hint="Confirm Password"
+                                         Margin="0 0 0 25"
+                                         FontSize="14"
+                                         />
+
+                            <!-- Register Button with loader -->
+                            <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Foreground="White"
+                                    FontSize="16"
+                                    Padding="10 6"
+                                    Margin="0 10 0 20"
+                                    Cursor="Hand"
+                                    Command="{Binding RegisterAdminCommand}"
+                                    IsEnabled="{Binding IsNotLoading}"
+                                    materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding IsLoading}"
+                                    materialDesign:ButtonProgressAssist.IsIndeterminate="True">
+                                <TextBlock FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="Register" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                                    <Setter Property="Text" Value="Registering..." />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Button>
+                        </StackPanel>
+                    </ScrollViewer>
 
                     <!-- Bottom Section -->
                     <StackPanel Grid.Row="1" Margin="0 20 0 0" HorizontalAlignment="Stretch">

@@ -14,7 +14,6 @@
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services.Data;
-using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -26,7 +25,6 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
     {
         #region Fields & Services
         private readonly EquipmentService _equipmentService;
-        private readonly EquipmentViewModel _parentViewModel;
         #endregion
 
         #region Properties
@@ -48,9 +46,9 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
         #endregion
 
         #region Constructor
-        public AddEquipmentViewModel(EquipmentViewModel parentViewModel)
+        public AddEquipmentViewModel()
         {
-            _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
+          
             _equipmentService = new EquipmentService();
 
             SaveCommand = new RelayCommand(async () => await SaveAsync());
@@ -80,7 +78,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                 var newItem = new Equipment
                 {
                     ItemName = ItemName.Trim(),
-                    Quantity = qty,
+                    Quantity = (long?)qty,
                     Condition = string.IsNullOrWhiteSpace(Condition) ? "Good" : Condition.Trim(),
                     Notes = Notes.Trim(),
                     UpdatedAt = DateTime.UtcNow
@@ -94,7 +92,6 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
                 {
                     AppLogger.Success($"Inserted equipment: {inserted.Id} - {inserted.ItemName}");
                     ShowMessage("Equipment item added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    await _parentViewModel.LoadPage(1); // Refresh parent list
                     CloseWindow();
                 }
                 else
@@ -123,7 +120,7 @@ namespace CATERINGMANAGEMENT.ViewModels.EquipmentsVM
             {
                 if (window.DataContext == this)
                 {
-                    window.DialogResult = false;
+                    window.DialogResult = true;
                     window.Close();
                     break;
                 }

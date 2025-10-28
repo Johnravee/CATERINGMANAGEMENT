@@ -18,6 +18,11 @@
     <IsPublishable>True</IsPublishable>
   </PropertyGroup>
 
+  <!-- Kill any stale running instance before build in Debug to avoid file lock errors -->
+  <Target Name="KillRunningExe" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Debug'">
+    <Exec Command="taskkill /F /IM CATERINGMANAGEMENT.exe &gt;nul 2&gt;&amp;1" ContinueOnError="true" />
+  </Target>
+
   <ItemGroup>
     <None Remove=".env" />
     <None Remove="Assets\images\applogo.png" />

@@ -1,14 +1,17 @@
 ﻿/*
- * FILE: ReservationListViewModel.cs
- * PURPOSE: Main ViewModel for managing reservations, including loading, pagination, search, deletion, and realtime updates.
- *
- * RESPONSIBILITIES:
- *  - Load reservations with pagination
- *  - Filter reservations by search text (debounced)
- *  - Track reservation status counts (Pending, Confirmed, Cancelled)
- *  - Handle deletion of reservations
- *  - Subscribe to Supabase realtime updates
- *  - Open reservation details window
+ * ReservationListViewModel.cs
+ * 
+ * ViewModel for managing the list of reservations in the catering management application.
+ * 
+ * Responsibilities:
+ * - Load, paginate, and filter reservations.
+ * - Manage reservation selection and detail viewing.
+ * - Handle real-time updates via Supabase realtime subscription to the reservations table.
+ * - Maintain reservation status counts (total, pending, confirmed, canceled) and update UI accordingly.
+ * - Support commands for viewing and deleting reservations, as well as pagination controls.
+ * - Implements debounced search functionality for efficient filtering.
+ * 
+ * Author: RAVE
  */
 
 using CATERINGMANAGEMENT.Helpers;
@@ -17,6 +20,7 @@ using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
@@ -205,33 +209,99 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             try
             {
                 var client = await SupabaseService.GetClientAsync();
+
+                // Subscribe to the reservations table (public schema)
                 var channel = client.Realtime.Channel("realtime", "public", "reservations");
-                await channel.Subscribe();
 
-                AppLogger.Info("Subscribed to realtime reservation updates.");
+                // Generic handler for all events, just logs raw payloads
+                channel.AddPostgresChangeHandler(ListenType.All, (sender, change) =>
+                {
+                    Debug.WriteLine("Realtime event change: " + change.Event);
+                    Debug.WriteLine("Realtime event change payload: " + change.Payload);
+                });
 
+                // Insert handler
+                channel.AddPostgresChangeHandler(ListenType.Inserts, (sender, change) =>
+                {
+                    var inserted = change.Model<Reservation>();
+                    if (inserted == null)
+                    {
+                        Debug.WriteLine("[Realtime Insert] Failed to deserialize inserted record.");
+                        return;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(async () =>
+                    {
+                        var existing = AllReservations.FirstOrDefault(r => r.Id == inserted.Id);
+                        if (existing == null)
+                        {
+                            AllReservations.Insert(0, inserted);
+                            AppLogger.Info($"Realtime Insert: Added reservation ID {inserted.Id}");
+                           await RefreshReservationCountsAsync();
+                        }
+                        else
+                        {
+                            var index = AllReservations.IndexOf(existing);
+                            AllReservations[index] = inserted;
+                            AppLogger.Info($"Realtime Insert (update existing): Updated reservation ID {inserted.Id}");
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(SearchText))
+                        {
+                            ApplySearch();
+                        }
+                        else
+                        {
+                            FilteredReservations.Insert(0, inserted);
+                        }
+                    });
+                });
+
+                // Update handler
                 channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
                 {
                     var updated = change.Model<Reservation>();
-                    if (updated == null) return;
+                    if (updated == null)
+                    {
+                        Debug.WriteLine("[Realtime Update] Failed to deserialize updated record.");
+                        return;
+                    }
 
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(async () =>
                     {
                         var existing = AllReservations.FirstOrDefault(r => r.Id == updated.Id);
                         if (existing != null)
                         {
                             var index = AllReservations.IndexOf(existing);
                             AllReservations[index] = updated;
+                            AppLogger.Info($"Realtime Update: Updated reservation ID {updated.Id}");
+                            await RefreshReservationCountsAsync();
                         }
                         else
                         {
-                            AllReservations.Add(updated);
+                            AllReservations.Insert(0, updated);
+                            AppLogger.Info($"Realtime Update: Inserted missing reservation ID {updated.Id}");
                         }
 
                         if (!string.IsNullOrWhiteSpace(SearchText))
+                        {
                             ApplySearch();
+                        }
+                        else
+                        {
+                            var filteredExisting = FilteredReservations.FirstOrDefault(r => r.Id == updated.Id);
+                            if (filteredExisting != null)
+                            {
+                                var filteredIndex = FilteredReservations.IndexOf(filteredExisting);
+                                FilteredReservations[filteredIndex] = updated;
+                            }
+                        }
                     });
                 });
+
+                var result = await channel.Subscribe();
+                AppLogger.Success($"Subscribed to realtime reservation updates: {result}");
+                Debug.WriteLine($"✅ Subscribed to realtime reservation updates: {result}");
             }
             catch (Exception ex)
             {
@@ -256,6 +326,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 {
                     AllReservations.Remove(reservation);
                     FilteredReservations.Remove(reservation);
+                    await RefreshReservationCountsAsync();
                     AppLogger.Success($"Deleted reservation ID: {reservation.Id}");
                 }
                 else
@@ -294,6 +365,34 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 AppLogger.Error(ex, "Error opening reservation details");
             }
         }
+
+        private async Task RefreshReservationCountsAsync()
+        {
+            try
+            {
+                // Invalidate the cached
+                _reservationService.InvalidateAllReservationCaches();
+
+                
+                var counts = await _reservationService.GetReservationStatusCountsAsync();
+
+                if (counts != null)
+                {
+                    TotalCount = counts.TotalReservations;
+                    PendingCount = counts.Pending;
+                    ConfirmedCount = counts.Confirmed;
+                    CancelledCount = counts.Canceled;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error refreshing reservation counts");
+            }
+        }
+
+
+
+
         #endregion
     }
 }

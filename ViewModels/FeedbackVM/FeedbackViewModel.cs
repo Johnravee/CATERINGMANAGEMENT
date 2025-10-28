@@ -1,55 +1,56 @@
-﻿using CATERINGMANAGEMENT.DocumentsGenerator;
+﻿/*
+ * FILE: FeedbackViewModel.cs
+ * PURPOSE: Handles loading, pagination, search (with debounce), deleting, and realtime sync of Feedback data.
+ * 
+ * RESPONSIBILITIES:
+ *  - Load feedbacks with pagination
+ *  - Search feedbacks with debounce
+ *  - Delete feedback entries
+ *  - Subscribe to Supabase Realtime updates (insert, update, delete)
+ *  - Display messages for user interaction
+ */
+
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
+using CATERINGMANAGEMENT.Services.Data;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using static Supabase.Postgrest.Constants;
+using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
 namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
 {
-    public class FeedbackViewModel : INotifyPropertyChanged
+    public class FeedbackViewModel : BaseViewModel
     {
-        private ObservableCollection<Feedback> _allItems = new();
-        private ObservableCollection<Feedback> _filteredItems = new();
-
+        #region Constants
         private const int PageSize = 10;
+        #endregion
 
-        public ObservableCollection<Feedback> Items
-        {
-            get => _filteredItems;
-            set { _filteredItems = value; OnPropertyChanged(); }
-        }
+        #region Services
+        private readonly FeedbackService _feedbackService = new();
+        #endregion
 
-        private int _totalCount;
-        public int TotalCount
-        {
-            get => _totalCount;
-            set { _totalCount = value; OnPropertyChanged(); }
-        }
+        #region Fields
+        private CancellationTokenSource? _searchDebounceToken;
+        #endregion
 
+        #region Collections
+        public ObservableCollection<Feedback> Items { get; } = new();
+        #endregion
+
+        #region UI State
         private bool _isLoading;
         public bool IsLoading
         {
             get => _isLoading;
             set { _isLoading = value; OnPropertyChanged(); }
-        }
-
-        private string _searchText = string.Empty;
-        public string SearchText
-        {
-            get => _searchText;
-            set
-            {
-                _searchText = value;
-                OnPropertyChanged();
-                ApplySearchFilter();
-            }
         }
 
         private int _currentPage = 1;
@@ -66,169 +67,238 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
             set { _totalPages = value; OnPropertyChanged(); }
         }
 
+        private int _totalCount;
+        public int TotalCount
+        {
+            get => _totalCount;
+            set { _totalCount = value; OnPropertyChanged(); }
+        }
+
+        private string _searchText = string.Empty;
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                _searchText = value;
+                OnPropertyChanged();
+                _ = ApplySearchDebouncedAsync();
+            }
+        }
+        #endregion
+
+        #region Commands
         public ICommand DeleteFeedbackCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
+        #endregion
 
-
+        #region Constructor
         public FeedbackViewModel()
         {
-            DeleteFeedbackCommand = new RelayCommand<Feedback>(async (item) => await DeleteFeedback(item));
-            NextPageCommand = new RelayCommand(async () => await NextPage());
-            PrevPageCommand = new RelayCommand(async () => await PrevPage());
+            DeleteFeedbackCommand = new RelayCommand<Feedback>(async f => await DeleteFeedbackAsync(f));
+            NextPageCommand = new RelayCommand(async () => await LoadPageAsync(CurrentPage + 1), () => CurrentPage < TotalPages);
+            PrevPageCommand = new RelayCommand(async () => await LoadPageAsync(CurrentPage - 1), () => CurrentPage > 1);
 
+            _ = LoadPageAsync(1);
 
-            _ = LoadItems();
+            // ✅ Start realtime subscription
+            _ = Task.Run(SubscribeToRealtime);
         }
+        #endregion
 
-        public async Task LoadItems()
+        #region Load Feedbacks
+        public async Task LoadPageAsync(int pageNumber)
         {
+            if (IsLoading) return;
             IsLoading = true;
+
             try
             {
-                _allItems.Clear();
-                Items.Clear();
-                await LoadPage(1);
+                var (feedbacks, totalCount, totalPages) = await _feedbackService.GetFeedbackPageAsync(pageNumber);
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Items.Clear();
+                    foreach (var f in feedbacks)
+                        Items.Add(f);
+                });
+
+                TotalCount = totalCount;
+                TotalPages = totalPages;
+                CurrentPage = Math.Max(1, Math.Min(pageNumber, totalPages == 0 ? 1 : totalPages));
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading feedbacks:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Error loading feedbacks:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error loading feedback page");
             }
             finally
             {
                 IsLoading = false;
             }
         }
+        #endregion
 
-        private async Task LoadPage(int page)
+        #region Search (with debounce)
+        private async Task ApplySearchDebouncedAsync()
         {
-            IsLoading = true;
+            _searchDebounceToken?.Cancel();
+            var cts = new CancellationTokenSource();
+            _searchDebounceToken = cts;
+
             try
             {
-                var client = await SupabaseService.GetClientAsync();
+                await Task.Delay(400, cts.Token); // debounce delay
+                await ApplySearchAsync();
+            }
+            catch (TaskCanceledException)
+            {
+                // Ignore cancelled debounce task
+            }
+        }
 
-                int from = (page - 1) * PageSize;
-                int to = from + PageSize - 1;
-
-                var response = await client
-                    .From<Feedback>()
-                    .Select("*, profiles(*)")
-                    .Range(from, to)
-                    .Order(x => x.CreatedAt, Ordering.Descending)
-                    .Get();
-
-                _allItems.Clear();
-                if (response.Models != null)
+        private async Task ApplySearchAsync()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(SearchText))
                 {
-                    foreach (var item in response.Models)
-                        _allItems.Add(item);
+                    await LoadPageAsync(1);
+                    return;
                 }
 
-                var countResult = await client
-                    .From<Feedback>()
-                    .Count(CountType.Exact);
+                IsLoading = true;
 
-                TotalCount = countResult;
-                TotalPages = Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+                var results = await _feedbackService.SearchFeedbacksAsync(SearchText);
 
-                ApplySearchFilter();
-                CurrentPage = page;
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Items.Clear();
+                    foreach (var f in results)
+                        Items.Add(f);
+                });
+
+                TotalPages = 1;
+                CurrentPage = 1;
+                TotalCount = Items.Count;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading feedback page:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Search failed:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error searching feedbacks");
             }
             finally
             {
                 IsLoading = false;
             }
         }
+        #endregion
 
-        private async Task NextPage()
+        #region Delete Feedback
+        private async Task DeleteFeedbackAsync(Feedback feedback)
         {
-            if (CurrentPage < TotalPages)
-                await LoadPage(CurrentPage + 1);
-        }
+            if (feedback == null) return;
 
-        private async Task PrevPage()
-        {
-            if (CurrentPage > 1)
-                await LoadPage(CurrentPage - 1);
-        }
-
-        private async void ApplySearchFilter()
-        {
-            var query = _searchText?.Trim().ToLower();
-
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                Items = new ObservableCollection<Feedback>(_allItems);
-            }
-            else
-            {
-                try
-                {
-                    IsLoading = true;
-
-                    var client = await SupabaseService.GetClientAsync();
-                    var response = await client
-                        .From<Feedback>()
-                        .Select("*")
-                        .Filter(x => x.Name, Operator.ILike, $"%{query}%")
-                        .Order(x => x.CreatedAt, Ordering.Descending)
-                        .Get();
-
-                    if (response.Models != null)
-                        Items = new ObservableCollection<Feedback>(response.Models);
-                    else
-                        Items = new ObservableCollection<Feedback>();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error filtering feedbacks:\n{ex.Message}", "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                finally
-                {
-                    IsLoading = false;
-                }
-            }
-        }
-
-        private async Task DeleteFeedback(Feedback item)
-        {
-            if (item == null) return;
-
-            var confirm = MessageBox.Show($"Are you sure you want to delete feedback from '{item.Name}'?",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var confirm = MessageBox.Show(
+                $"Delete feedback from {feedback.Name}?",
+                "Confirm Delete",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning
+            );
 
             if (confirm != MessageBoxResult.Yes) return;
 
+            IsLoading = true;
+
             try
             {
-                IsLoading = true;
+                bool success = await FeedbackService.DeleteFeedbackAsync(feedback);
 
-                var client = await SupabaseService.GetClientAsync();
-                await client.From<Feedback>().Where(x => x.Id == item.Id).Delete();
+                if (success)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        Items.Remove(feedback);
+                        TotalCount--;
+                    });
 
-                _allItems.Remove(item);
-                ApplySearchFilter();
+                    ShowMessage("Feedback deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    ShowMessage("Delete failed. The record may not exist or could not be removed.",
+                                "Delete Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
 
-                MessageBox.Show("Deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                ShowMessage("Feedback deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error deleting feedback:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowMessage($"Delete failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLogger.Error(ex, "Error deleting feedback");
             }
             finally
             {
                 IsLoading = false;
             }
         }
+        #endregion
 
-        
+        #region Realtime Sync
+        private async Task SubscribeToRealtime()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+                // Subscribe to "feedback" table in "public" schema
+                var channel = client.Realtime.Channel("realtime", "public", "feedbacks");
+
+                // Log all events
+                channel.AddPostgresChangeHandler(ListenType.All, (sender, change) =>
+                {
+                    Debug.WriteLine($"[Realtime] Event: {change.Event}");
+                    Debug.WriteLine($"Payload: {change.Payload}");
+                });
+
+                // INSERT handler
+                channel.AddPostgresChangeHandler(ListenType.Inserts, async (sender, change) =>
+                {
+                    var inserted = change.Model<Feedback>();
+                    if (inserted == null)
+                    {
+                        Debug.WriteLine("[Realtime Insert] Failed to deserialize feedback.");
+                        return;
+                    }
+
+                    if (inserted.Profile == null && inserted.ProfileId.HasValue)
+                    {
+                        var profile = await _feedbackService.GetProfileByIdAsync(inserted.ProfileId.Value);
+                        inserted.Profile = profile;
+                    }
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var existing = Items.FirstOrDefault(f => f.Id == inserted.Id);
+                        if (existing == null)
+                        {
+                            Items.Insert(0, inserted);
+                            TotalCount++;
+                            Debug.WriteLine($"Realtime Insert: Added feedback ID {inserted.Id}");
+                        }
+                    });
+                });
+
+                var result = await channel.Subscribe();
+                AppLogger.Success($"✅ Subscribed to realtime feedback updates: {result}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error subscribing to realtime feedback updates");
+            }
+        }
+        #endregion
     }
 }

@@ -6,10 +6,10 @@ namespace CATERINGMANAGEMENT.View.Windows
 {
     public partial class EditEquipments : Window
     {
-        public EditEquipments(Equipment equipment, EquipmentViewModel parentVM)
+        public EditEquipments(Equipment equipment)
         {
             InitializeComponent();
-            var viewModel = new EditEquipmentViewModel(equipment, parentVM);
+            var viewModel = new EditEquipmentViewModel(equipment);
             DataContext = viewModel;
         }
     }

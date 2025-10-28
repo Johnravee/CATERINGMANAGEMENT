@@ -8,6 +8,7 @@ namespace CATERINGMANAGEMENT.Models
     public class MenuOption : BaseModel
     {
         [PrimaryKey("id", false)]
+        [Column("id", ignoreOnInsert: true)]
         public long Id { get; set; }
 
         [Column("name")]
@@ -15,6 +16,9 @@ namespace CATERINGMANAGEMENT.Models
 
         [Column("category")]
         public string? Category { get; set; }
+
+        [Column("status")]
+        public string? Status { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }

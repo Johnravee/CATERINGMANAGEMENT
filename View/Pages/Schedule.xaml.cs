@@ -1,4 +1,5 @@
 ﻿using CATERINGMANAGEMENT.ViewModels.SchedulingVM;
+using CATERINGMANAGEMENT.Helpers;
 using System.Windows.Controls;
 
 
@@ -12,7 +13,9 @@ namespace CATERINGMANAGEMENT.View.Pages
         public Schedule()
         {
             InitializeComponent();
-            //AuthGuard.RequireAuthentication(this);
+            if (!AuthGuard.RequireAuthentication(this))
+                return;
+
             DataContext = new SchedulingViewModel();
 
            

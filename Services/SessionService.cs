@@ -14,7 +14,7 @@ namespace CATERINGMANAGEMENT.Services
             _currentSession = session;
         }
 
-        // Optional: if you just want to store the user separately
+        // Optional: store user only (note: this does NOT include access/refresh tokens)
         public static void SetCurrentUser(User user)
         {
             _currentSession = new Session { User = user };
