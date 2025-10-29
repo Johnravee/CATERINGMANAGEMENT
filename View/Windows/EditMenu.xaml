@@ -1,12 +1,48 @@
 ﻿<Window x:Class="CATERINGMANAGEMENT.View.Windows.EditMenu"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Height="420"
         Width="420"
         Background="#F9FAFB"
         FontFamily="Segoe UI">
+
+    <Window.Resources>
+        <x:Array x:Key="MenuCategories" Type="sys:String">
+            <sys:String>Appetizer</sys:String>
+            <sys:String>Soup</sys:String>
+            <sys:String>Salad</sys:String>
+            <sys:String>Main Course</sys:String>
+            <sys:String>Side Dish</sys:String>
+            <sys:String>Vegetable</sys:String>
+            <sys:String>Pasta</sys:String>
+            <sys:String>Rice</sys:String>
+            <sys:String>Seafood</sys:String>
+            <sys:String>Beef</sys:String>
+            <sys:String>Pork</sys:String>
+            <sys:String>Chicken</sys:String>
+            <sys:String>Grill</sys:String>
+            <sys:String>BBQ</sys:String>
+            <sys:String>Noodles</sys:String>
+            <sys:String>Breakfast</sys:String>
+            <sys:String>Brunch</sys:String>
+            <sys:String>Dessert</sys:String>
+            <sys:String>Beverage</sys:String>
+            <sys:String>Kids</sys:String>
+            <sys:String>Vegan</sys:String>
+            <sys:String>Vegetarian</sys:String>
+            <sys:String>Gluten-Free</sys:String>
+            <sys:String>Halal</sys:String>
+            <sys:String>Keto</sys:String>
+            <sys:String>Snack</sys:String>
+            <sys:String>Canapés</sys:String>
+            <sys:String>Platter</sys:String>
+            <sys:String>Buffet</sys:String>
+            <sys:String>Ala Carte</sys:String>
+        </x:Array>
+    </Window.Resources>
 
     <Border CornerRadius="12"
             Background="White"
@@ -51,13 +87,16 @@
             <!-- Category Field -->
             <StackPanel Grid.Row="2" Margin="0,0,0,15">
                 <TextBlock Text="Category" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox x:Name="CategoryTextBox"
-                         Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
-                         Padding="8"
-                         FontSize="14"
-                         Background="#F3F4F6"
-                         BorderThickness="1"
-                         BorderBrush="#D1D5DB"/>
+                <ComboBox x:Name="CategoryComboBox"
+                          IsEditable="True"
+                          IsTextSearchEnabled="True"
+                          Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
+                          ItemsSource="{StaticResource MenuCategories}"
+                          Padding="8"
+                          FontSize="14"
+                          Background="#F3F4F6"
+                          BorderThickness="1"
+                          BorderBrush="#D1D5DB"/>
             </StackPanel>
 
             <!-- Status Field -->

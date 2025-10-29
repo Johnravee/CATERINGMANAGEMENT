@@ -1,0 +1,179 @@
+<Window x:Class="CATERINGMANAGEMENT.View.Windows.ChecklistBuilder"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:vm="clr-namespace:CATERINGMANAGEMENT.ViewModels.ReservationVM"
+        Title="Reservation Checklist"
+        Height="700" Width="1380"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="Segoe UI"
+        Style="{StaticResource MaterialDesignWindow}">
+
+    <Window.DataContext>
+        <vm:ChecklistBuilderViewModel />
+    </Window.DataContext>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <materialDesign:PackIcon Kind="ClipboardListOutline" Width="28" Height="28" Foreground="#673AB7"/>
+                <TextBlock Text="Reservation Equipment Checklist" FontSize="22" FontWeight="Bold" Margin="8,0,0,0"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Body: two resizable columns -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" MinWidth="420"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*" MinWidth="360"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Left Top: reservation selector -->
+            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Completed Reservation" VerticalAlignment="Center"/>
+                <ComboBox ItemsSource="{Binding CompletedReservations}"
+                          SelectedItem="{Binding SelectedReservation}"
+                          DisplayMemberPath="ReceiptNumber"
+                          MinWidth="260" Margin="8,0,0,0"/>
+            </StackPanel>
+
+            <!-- Left Bottom: equipment grid with scroll -->
+            <Border Grid.Row="1" Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Background="White">
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="8">
+                        <Button Content="Add Row"
+                                Command="{Binding AddRowCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"/>
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <DataGrid ItemsSource="{Binding SelectedItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  Background="White"
+                                  GridLinesVisibility="None"
+                                  BorderThickness="0"
+                                  MinRowHeight="36"
+                                  RowHeight="36"
+                                  FontSize="14"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  HorizontalScrollBarVisibility="Disabled">
+
+                            <DataGrid.Columns>
+                                <!-- Item -->
+                                <DataGridTemplateColumn Header="Item" Width="2*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.EquipmentNames, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                      SelectedItem="{Binding ItemName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEditable="True"
+                                                      Margin="2"
+                                                      Height="28"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Quantity -->
+                                <DataGridTextColumn Header="Qty"
+                                                    Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="70"/>
+
+                                <!-- Notes -->
+                                <DataGridTextColumn Header="Notes"
+                                                    Binding="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="2*"/>
+
+                                <!-- Remove Button -->
+                                <DataGridTemplateColumn Header="" Width="110" MinWidth="110">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove"
+                                                    Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="#E53935"
+                                                    Foreground="White"
+                                                    Height="28"
+                                                    Padding="10,0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Style="{StaticResource MaterialDesignRaisedButton}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Grid splitter -->
+            <GridSplitter Grid.Column="1" Grid.RowSpan="2" Width="5" Background="#EEE" HorizontalAlignment="Stretch"/>
+
+            <!-- Right panel: details and design -->
+            <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="2">
+                <GroupBox Header="Reservation Details" Padding="8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="{Binding SelectedReservation.ReceiptNumber, StringFormat=Receipt: {0}}"/>
+                        <TextBlock Grid.Row="1" Text="{Binding SelectedReservation.Profile.FullName, StringFormat=Client: {0}}"/>
+                        <TextBlock Grid.Row="2" Text="{Binding SelectedReservation.Venue, StringFormat=Venue: {0}}"/>
+                        <TextBlock Grid.Row="3" Text="{Binding SelectedReservation.Location, StringFormat=Location: {0}}"/>
+                        <TextBlock Grid.Row="4" Text="{Binding SelectedReservation.EventDate, StringFormat='{}{0:MMMM dd, yyyy}'}"/>
+                        <TextBlock Grid.Row="5" Text="{Binding SelectedReservation.EventTime, StringFormat=Time: {0}}"/>
+                        <TextBlock Grid.Row="6" Text="{Binding SelectedReservation.Package.Name, StringFormat=Package: {0}}"/>
+                        <TextBlock Grid.Row="7" Text="{Binding SelectedReservation.ThemeMotif.Name, StringFormat=Theme: {0}}"/>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Design Reference" Padding="8" Margin="0,8,0,0">
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,8">
+                            <TextBox Text="{Binding DesignImagePath}" Width="280" IsReadOnly="True"/>
+                            <Button Content="Browse"
+                                    Command="{Binding BrowseImageCommand}"
+                                    Margin="8,0,0,0"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"/>
+                        </StackPanel>
+                        <Border BorderBrush="#DDD" BorderThickness="1" Background="#FFF" Height="300">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                <Image Source="{Binding DesignImagePath}" Stretch="Uniform"/>
+                            </ScrollViewer>
+                        </Border>
+                    </DockPanel>
+                </GroupBox>
+            </StackPanel>
+        </Grid>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Generate PDF"
+                    Command="{Binding GenerateCommand}"
+                    Background="#3949AB"
+                    Foreground="White"
+                    Style="{StaticResource MaterialDesignRaisedButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>

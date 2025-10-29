@@ -141,10 +141,12 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                     return;
                 }
 
-                if (Password.Length < 8)
+                // Centralized strict password validation
+                var (ok, err) = ValidationHelper.ValidatePassword(Password, minLength: 8, requireUpper: true, requireLower: true, requireDigit: true, requireSpecial: true);
+                if (!ok)
                 {
-                    AppLogger.Info("Validation failed: Password too short.");
-                    MessageBox.Show("Password must be at least 8 characters long.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    AppLogger.Info($"Validation failed: {err}");
+                    MessageBox.Show(err!, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 

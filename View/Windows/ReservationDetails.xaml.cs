@@ -13,7 +13,5 @@ namespace CATERINGMANAGEMENT.View.Windows
             _viewModel = new ReservationDetailsViewModel(reservation);
             DataContext = _viewModel;
         }
-
-       
     }
 }

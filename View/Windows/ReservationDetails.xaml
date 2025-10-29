@@ -196,6 +196,17 @@
                                 <TextBlock Text="Contract" Margin="6,0,0,0"/>
                             </StackPanel>
                         </Button>
+
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                Background="#2E7D32"
+                                Foreground="White"
+                                Padding="12,6"
+                                Command="{Binding OpenChecklistCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ClipboardTextOutline"/>
+                                <TextBlock Text="Checklist PDF" Margin="6,0,0,0"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
                 </StackPanel>

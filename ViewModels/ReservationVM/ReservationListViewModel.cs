@@ -24,6 +24,9 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
+using Microsoft.Win32;
+using CATERINGMANAGEMENT.DocumentsGenerator;
+using System.IO;
 
 namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 {
@@ -102,6 +105,8 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public ICommand DeleteReservationCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
+        public ICommand OpenChecklistBuilderCommand { get; }
+        public ICommand GenerateContractCommand { get; }
         #endregion
 
         #region Constructor
@@ -111,8 +116,21 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             DeleteReservationCommand = new RelayCommand<Reservation>(async (res) => await DeleteReservation(res));
             NextPageCommand = new RelayCommand(async () => await LoadReservations(CurrentPage + 1), () => CurrentPage < TotalPages);
             PrevPageCommand = new RelayCommand(async () => await LoadReservations(CurrentPage - 1), () => CurrentPage > 1);
+            OpenChecklistBuilderCommand = new RelayCommand(OpenChecklistBuilder);
+            GenerateContractCommand = new RelayCommand<Reservation>(async (res) => await GenerateContractAsync(res));
 
             _ = Task.Run(SubscribeToRealtime);
+        }
+        #endregion
+
+        #region Checklist
+        private void OpenChecklistBuilder()
+        {
+            var win = new ChecklistBuilder
+            {
+                Owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+            };
+            win.ShowDialog();
         }
         #endregion
 
@@ -366,6 +384,72 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             }
         }
 
+        private async Task GenerateContractAsync(Reservation reservation)
+        {
+            if (reservation == null) return;
+
+            try
+            {
+                // Ensure we have full reservation with joins for PDF
+                var resWithJoins = await _reservationService.GetReservationWithJoinsAsync(reservation.Id) ?? reservation;
+
+                // 1) Choose template image (optional - can cancel to use default)
+                string? templateImagePath = null;
+                var openTemplate = new OpenFileDialog
+                {
+                    Title = "Select Contract Template Image (PNG/JPG)",
+                    Filter = "Image Files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|All Files (*.*)|*.*"
+                };
+                var openResult = openTemplate.ShowDialog();
+                if (openResult == true)
+                {
+                    templateImagePath = openTemplate.FileName;
+                }
+
+                // 2) Choose where to save the generated contract PDF
+                var sfd = new SaveFileDialog
+                {
+                    Title = "Save Contract PDF",
+                    FileName = $"Contract_{resWithJoins.ReceiptNumber}.pdf",
+                    Filter = "PDF file (*.pdf)|*.pdf"
+                };
+
+                if (sfd.ShowDialog() != true) return;
+
+                // 3) Generate contract PDF
+                ContractPdfGenerator.Generate(resWithJoins, sfd.FileName, templateImagePath);
+
+                // 4) Update reservation status to "contractsigning"
+                resWithJoins.Status = "contractsigning";
+                var updated = await _reservationService.UpdateReservationAsync(resWithJoins);
+
+                if (updated != null)
+                {
+                    // Update local collections
+                    var idx = AllReservations.ToList().FindIndex(r => r.Id == updated.Id);
+                    if (idx >= 0) AllReservations[idx] = updated;
+
+                    var fidx = FilteredReservations.ToList().FindIndex(r => r.Id == updated.Id);
+                    if (fidx >= 0) FilteredReservations[fidx] = updated;
+
+                    await RefreshReservationCountsAsync();
+                    ShowMessage("Contract generated and status set to 'contractsigning'.", "Success");
+                }
+                else
+                {
+                    AppLogger.Error("Contract generated but failed to update status.", showToUser: true);
+                }
+            }
+            catch (FileNotFoundException ex)
+            {
+                AppLogger.Error(ex, ex.Message, showToUser: true);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Failed to generate contract.", showToUser: true);
+            }
+        }
+
         private async Task RefreshReservationCountsAsync()
         {
             try
@@ -373,7 +457,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 // Invalidate the cached
                 _reservationService.InvalidateAllReservationCaches();
 
-                
                 var counts = await _reservationService.GetReservationStatusCountsAsync();
 
                 if (counts != null)
@@ -389,10 +472,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 AppLogger.Error(ex, "Error refreshing reservation counts");
             }
         }
-
-
-
-
         #endregion
     }
 }

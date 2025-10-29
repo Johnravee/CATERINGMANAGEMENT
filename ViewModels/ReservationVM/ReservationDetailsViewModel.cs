@@ -16,6 +16,7 @@ using CATERINGMANAGEMENT.Mailer;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Services.Data;
+using CATERINGMANAGEMENT.View.Windows;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -31,6 +32,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         private readonly EmailService _emailService;
         private readonly ContractMailer _contractMailer;
         private readonly ReservationService _reservationService = new();
+        private readonly ReservationChecklistService _checklistService = new();
         #endregion
 
         #region Properties & Data
@@ -57,6 +59,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         #region Commands
         public ICommand GenerateContractCommand { get; }
         public ICommand UpdateReservationCommand { get; }
+        public ICommand OpenChecklistCommand { get; }
         #endregion
 
 
@@ -71,6 +74,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
             GenerateContractCommand = new RelayCommand(async () => await GenerateContractAsync());
             UpdateReservationCommand = new RelayCommand(async () => await UpdateReservationAsync());
+            OpenChecklistCommand = new RelayCommand(() => OpenChecklist());
 
             Task.Run(LoadReservationMenuOrdersAsync);
         }
@@ -188,6 +192,17 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             {
                 IsLoading = false;
             }
+        }
+        #endregion
+
+        #region Checklist
+        private void OpenChecklist()
+        {
+            var win = new ChecklistBuilder
+            {
+                Owner = App.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+            };
+            win.ShowDialog();
         }
         #endregion
     }

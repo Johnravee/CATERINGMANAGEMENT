@@ -23,37 +23,36 @@ namespace CATERINGMANAGEMENT.Helpers
         // Threshhold (30 days)
         private const int LogRetentionDays = 30;
 
-        // Static constructor to create log directory and clean up old logs
+        // Static constructor to create log directory and clean up old logs (Debug only)
         static AppLogger()
         {
+#if DEBUG
             if (!Directory.Exists(logDirectory))
             {
                 Directory.CreateDirectory(logDirectory);
             }
             else
             {
-                
                 CleanUpOldLogs();
             }
+#endif
         }
+
+#if DEBUG
         private static void CleanUpOldLogs()
         {
-           
             DateTime thresholdDate = DateTime.Now.AddDays(-LogRetentionDays);
 
             try
             {
-               
                 var oldLogFiles = Directory.GetFiles(logDirectory, "*.log")
                     .Where(file =>
                     {
-                     
                         DateTime creationDate = File.GetCreationTime(file);
                         return creationDate < thresholdDate;
                     })
                     .ToList();
 
-          
                 foreach (var file in oldLogFiles)
                 {
                     File.Delete(file);
@@ -62,13 +61,13 @@ namespace CATERINGMANAGEMENT.Helpers
             }
             catch (Exception ex)
             {
-                
                 Debug.WriteLine($"[Logger Error] Failed to clean up old logs: {ex.Message}");
             }
         }
+#endif
 
-
-        // Log Info
+        // Log Info (compiled out in Release)
+        [Conditional("DEBUG")]
         public static void Info(string message,
             [CallerMemberName] string member = "",
             [CallerFilePath] string file = "",
@@ -77,7 +76,8 @@ namespace CATERINGMANAGEMENT.Helpers
             Log(LogLevel.Info, message, member, file, line);
         }
 
-        // Log Success
+        // Log Success (compiled out in Release)
+        [Conditional("DEBUG")]
         public static void Success(string message,
             [CallerMemberName] string member = "",
             [CallerFilePath] string file = "",
@@ -120,6 +120,7 @@ namespace CATERINGMANAGEMENT.Helpers
         // Core log method
         private static void Log(LogLevel level, string message, string member, string file, int line)
         {
+#if DEBUG
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
             string fileName = Path.GetFileName(file);
             string logOutput = $"{timestamp} [{level}] {message} (at {fileName}::{member} - Line {line})";
@@ -140,6 +141,10 @@ namespace CATERINGMANAGEMENT.Helpers
                     Debug.WriteLine($"[Logger Error] Failed to write log: {fileEx.Message}");
                 }
             }
+#else
+            // In Release builds, suppress writing logs to console or disk
+            _ = level; _ = message; _ = member; _ = file; _ = line;
+#endif
         }
     }
 }

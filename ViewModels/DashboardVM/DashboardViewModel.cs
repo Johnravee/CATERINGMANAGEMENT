@@ -11,7 +11,6 @@
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.View;
-using CATERINGMANAGEMENT.View.Windows;
 using Supabase.Gotrue;
 using System.Windows.Input;
 
@@ -82,7 +81,7 @@ namespace CATERINGMANAGEMENT.ViewModels.DashboardVM
                 // Close current dashboard window
                 foreach (var window in System.Windows.Application.Current.Windows)
                 {
-                    if (window is Dashboard dashboard)
+                    if (window is View.Windows.Dashboard dashboard)
                     {
                         dashboard.Close();
                         break;

@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.ViewModels;
+using System.Linq;
 
 namespace CATERINGMANAGEMENT.ViewModels.AuthVM
 {
@@ -98,11 +99,17 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                     return;
                 }
 
+                if (!ValidationHelper.IsValidEmail(email))
+                {
+                    ShowMessage("Please enter a valid email address.", "Reset Password");
+                    return;
+                }
+
                 var ok = await AuthService.RequestPasswordResetAsync(email);
                 if (ok)
                 {
                     AppLogger.Success("Password reset link requested.");
-                    ShowMessage("Check your email for the reset link. If you don’t see it, check your Spam/Junk folder.", "Reset Password");
+                    ShowMessage("Check your email for the reset link. If you don't see it, check your Spam/Junk folder.", "Reset Password");
                     StartCooldown(30); // prevent duplicate requests for 30s
                 }
                 else

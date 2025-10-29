@@ -107,10 +107,11 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                     return;
                 }
 
-                // Match the registration validation behavior, with criteria hints
-                if (!HasMinLength)
+                // Centralized strict password validation
+                var (ok, err) = ValidationHelper.ValidatePassword(NewPassword, minLength: 8, requireUpper: true, requireLower: true, requireDigit: true, requireSpecial: true);
+                if (!ok)
                 {
-                    ShowMessage("Password must be at least 8 characters long.", "Validation");
+                    ShowMessage(err!, "Validation");
                     return;
                 }
                 if (NewPassword != ConfirmPassword)
@@ -118,13 +119,6 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                     ShowMessage("Passwords do not match.", "Validation");
                     return;
                 }
-
-                // Optional: enforce complexity similar to displayed criteria (uncomment to make strict)
-                // if (!(HasUpper && HasLower && HasDigit && HasSpecial))
-                // {
-                //     ShowMessage("Password must include uppercase, lowercase, number, and special character.", "Validation");
-                //     return;
-                // }
 
                 var client = await SupabaseService.GetClientAsync();
                 if (client == null)

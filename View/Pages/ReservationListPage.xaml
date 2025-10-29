@@ -12,6 +12,7 @@
     <Page.Resources>
         <materialDesign:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
+        <!-- Styles -->
         <Style x:Key="CenteredCellStyle" TargetType="DataGridCell">
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -52,7 +53,7 @@
             <Setter Property="Margin" Value="4,0"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Width" Value="75"/>
+            <Setter Property="Width" Value="90"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -73,222 +74,201 @@
     </Page.Resources>
 
 
-
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <!-- Header -->
             <RowDefinition Height="Auto"/>
+            <!-- Cards -->
+            <RowDefinition Height="*"/>
+            <!-- DataGrid -->
+            <RowDefinition Height="Auto"/>
+            <!-- Pagination -->
         </Grid.RowDefinitions>
 
-        <!-- Title -->
-        <StackPanel Margin="20">
-            <StackPanel Orientation="Horizontal">
-                <materialDesign:PackIcon Kind="CalendarCheckOutline" Width="28" Height="28" Foreground="#673AB7" Margin="0,0,10,0"/>
-                <TextBlock Text="Reservations"
-                           FontSize="26"
-                           FontWeight="Bold"
-                           Foreground="#333"
-                           VerticalAlignment="Center"/>
-            </StackPanel>
-
-            <TextBlock FontSize="14"
-                       Foreground="Gray"
-                       Margin="0,4,0,20"
-                       Text="Reservation Records and Status Overview"/>
-        </StackPanel>
-
-    
-
-        <!-- Main Content -->
-        <Grid Grid.Row="1">
+        <!-- HEADER (like EquipmentsInventory) -->
+        <Grid Grid.Row="0" Margin="20">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="117*"/>
-                <ColumnDefinition Width="37*"/>
-                <ColumnDefinition Width="154*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            
-            
 
-            <!-- Cards -->
-            <UniformGrid Rows="1" Columns="4" Margin="0,0,0,10" Grid.ColumnSpan="3">
-                <Border Background="#7E57C2" CornerRadius="8" Padding="16" Margin="8" Height="90" Effect="{DynamicResource MaterialDesignShadowDepth2}">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Total Reservations" FontWeight="Bold" Foreground="White" FontSize="14"/>
-                        <TextBlock Text="{Binding TotalCount, StringFormat={}{0:D2}}" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="#FFB300" CornerRadius="8" Padding="16" Margin="8" Height="90">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Pending" FontWeight="Bold" Foreground="White" FontSize="14"/>
-                        <TextBlock Text="{Binding PendingCount, StringFormat={}{0:D2}}" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="#66BB6A" CornerRadius="8" Padding="16" Margin="8" Height="90">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Confirmed" FontWeight="Bold" Foreground="White" FontSize="14"/>
-                        <TextBlock Text="{Binding ConfirmedCount, StringFormat={}{0:D2}}" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="#EF5350" CornerRadius="8" Padding="16" Margin="8" Height="90">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Canceled" FontWeight="Bold" Foreground="White" FontSize="14"/>
-                        <TextBlock Text="{Binding CancelledCount, StringFormat={}{0:D2}}" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
-
-            <!-- Search Bar Moved Here -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,10" Grid.ColumnSpan="3">
-                <Border Background="White" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1" Padding="4" Height="38" VerticalAlignment="Center">
-                    <DockPanel>
-                        <materialDesign:PackIcon Kind="Magnify" Width="18" Height="18" VerticalAlignment="Center" Foreground="#666" Margin="4,0"/>
-                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="200"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Foreground="#333"
-                                 FontSize="14"
-                                 Padding="4,2"
-                                 VerticalContentAlignment="Center"
-                                 materialDesign:HintAssist.Hint="Search..." />
-                    </DockPanel>
-                </Border>
+            <!-- Title -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <materialDesign:PackIcon Kind="CalendarCheckOutline" Width="28" Height="28" Foreground="#673AB7" Margin="0,0,10,0"/>
+                <StackPanel>
+                    <TextBlock Text="Reservations"
+                               FontSize="26"
+                               FontWeight="Bold"
+                               Foreground="#333"/>
+                    <TextBlock FontSize="14"
+                               Foreground="Gray"
+                               Text="Reservation Records and Status Overview"/>
+                </StackPanel>
             </StackPanel>
 
-       
-
-                <!-- DataGrid -->
-                <DataGrid Grid.Row="2"
-                      x:Name="ReservationGrid"
-                      ItemsSource="{Binding FilteredReservations}"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      HeadersVisibility="Column"
-                      AlternatingRowBackground="#F0F0F0"
-                      IsReadOnly="True"
-                      RowHeaderWidth="0"
-                      GridLinesVisibility="None"
-                      BorderThickness="0"
-                      ColumnHeaderHeight="40"
-                      RowHeight="40"
-                      EnableRowVirtualization="True"
-                      EnableColumnVirtualization="False"
-                      Background="White"
-                      SelectionMode="Single"
-                      SelectionUnit="FullRow"
-                      FontSize="16"
-                      CellStyle="{StaticResource CenteredCellStyle}"
-                      ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}" Grid.ColumnSpan="3">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                        <DataGridTextColumn Header="Celebrant" Binding="{Binding Celebrant}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                        <DataGridTextColumn Header="Date" Binding="{Binding EventDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                        <DataGridTextColumn Header="Time" Binding="{Binding EventTime}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                        <DataGridTextColumn Header="Adults" Binding="{Binding AdultsQty}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                        <DataGridTextColumn Header="Kids" Binding="{Binding KidsQty}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                        <DataGridTextColumn Header="Venue" Binding="{Binding Venue}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                        <DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource CenteredTextStyle}">
-                                    <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Status}" Value="canceled">
-                                        <Setter Property="Foreground" Value="#721C24"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Status}" Value="confirmed">
-                                        <Setter Property="Foreground" Value="#155724"/>
-                                        </DataTrigger>
-                                    <DataTrigger Binding="{Binding Status}" Value="pending">
-                                        <Setter Property="Foreground" Value="#856404"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-                        <DataGridTemplateColumn Header="Actions" Width="180">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
-                                        <Button Style="{StaticResource ModernFlatButton}" 
-												ToolTip="View"
-											    Command="{Binding DataContext.ViewReservationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-												CommandParameter="{Binding}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="Eye" Width="16" Height="16" Margin="0,1.5,3,0"/>
-                                                <TextBlock Text="View"/>
-                                            </StackPanel>
-                                        </Button>
-                                        <Button Style="{StaticResource ModernFlatButton}"  
-                                        Background="#E53935" 
-                                        ToolTip="Delete"
-                                        Command="{Binding DataContext.DeleteReservationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                        CommandParameter="{Binding}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="Delete" Width="16" Height="16" Margin="0,1.5,3,0"/>
-                                                <TextBlock Text="Delete"/>
-                                            </StackPanel>
-                                        </Button>
-
-
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-    
-
-            <!-- Loading Overlay -->
-            <Border Grid.RowSpan="3"
-                    Background="#80000000"
-                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
-                    CornerRadius="8" Grid.ColumnSpan="3">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                 IsIndeterminate="True"
-                                 Width="60"
-                                 Height="60"
-                                 Foreground="White"/>
+            <!-- Top-right Button (same style as EquipmentsInventory header) -->
+            <Button Grid.Column="1"
+                    Style="{StaticResource ModernFlatButton}"
+                    Padding="10"
+                    Width="110"
+                    Background="#2E7D32"
+                    Command="{Binding OpenChecklistBuilderCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="ClipboardTextOutline" Width="16" Height="16" Margin="0,1.5,4,0"/>
+                    <TextBlock Text="Checklist"/>
                 </StackPanel>
-            </Border>
+            </Button>
         </Grid>
 
-      
+        <!-- CARDS -->
+        <UniformGrid Grid.Row="1" Rows="1" Columns="4" Margin="0,0,0,10">
+            <Border Background="#7E57C2" CornerRadius="8" Padding="16" Margin="8" Height="90" Effect="{DynamicResource MaterialDesignShadowDepth2}">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Total Reservations" FontWeight="Bold" Foreground="White" FontSize="14"/>
+                    <TextBlock Text="{Binding TotalCount, StringFormat={}{0:D2}}" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                </StackPanel>
+            </Border>
+            <Border Background="#FFB300" CornerRadius="8" Padding="16" Margin="8" Height="90">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Pending" FontWeight="Bold" Foreground="White" FontSize="14"/>
+                    <TextBlock Text="{Binding PendingCount, StringFormat={}{0:D2}}" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                </StackPanel>
+            </Border>
+            <Border Background="#66BB6A" CornerRadius="8" Padding="16" Margin="8" Height="90">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Confirmed" FontWeight="Bold" Foreground="White" FontSize="14"/>
+                    <TextBlock Text="{Binding ConfirmedCount, StringFormat={}{0:D2}}" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                </StackPanel>
+            </Border>
+            <Border Background="#EF5350" CornerRadius="8" Padding="16" Margin="8" Height="90">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Canceled" FontWeight="Bold" Foreground="White" FontSize="14"/>
+                    <TextBlock Text="{Binding CancelledCount, StringFormat={}{0:D2}}" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
 
-      
+        <!-- SEARCH BAR -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,10">
+            <Border Background="White" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1" Padding="4" Height="38" VerticalAlignment="Center">
+                <DockPanel>
+                    <materialDesign:PackIcon Kind="Magnify" Width="18" Height="18" VerticalAlignment="Center" Foreground="#666" Margin="4,0"/>
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Width="200"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="#333"
+                             FontSize="14"
+                             Padding="4,2"
+                             VerticalContentAlignment="Center"
+                             materialDesign:HintAssist.Hint="Search..." />
+                </DockPanel>
+            </Border>
+        </StackPanel>
 
+        <!-- DATAGRID -->
+        <DataGrid Grid.Row="2"
+                  x:Name="ReservationGrid"
+                  ItemsSource="{Binding FilteredReservations}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  HeadersVisibility="Column"
+                  AlternatingRowBackground="#F0F0F0"
+                  IsReadOnly="True"
+                  RowHeaderWidth="0"
+                  GridLinesVisibility="None"
+                  BorderThickness="0"
+                  ColumnHeaderHeight="40"
+                  RowHeight="40"
+                  EnableRowVirtualization="True"
+                  EnableColumnVirtualization="False"
+                  Background="White"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow"
+                  FontSize="16"
+                  CellStyle="{StaticResource CenteredCellStyle}"
+                  ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Celebrant" Binding="{Binding Celebrant}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Date" Binding="{Binding EventDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Time" Binding="{Binding EventTime}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Adults" Binding="{Binding AdultsQty}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Kids" Binding="{Binding KidsQty}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Venue" Binding="{Binding Venue}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource CenteredTextStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="canceled">
+                                    <Setter Property="Foreground" Value="#721C24"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="confirmed">
+                                    <Setter Property="Foreground" Value="#155724"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="pending">
+                                    <Setter Property="Foreground" Value="#856404"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="contractsigning">
+                                    <Setter Property="Foreground" Value="#1E88E5"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTemplateColumn Header="Actions" Width="270">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Style="{StaticResource ModernFlatButton}" ToolTip="View"
+                                        Command="{Binding DataContext.ViewReservationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Eye" Width="16" Height="16" Margin="0,1.5,3,0"/>
+                                        <TextBlock Text="View"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource ModernFlatButton}" Background="#E53935" ToolTip="Delete"
+                                        Command="{Binding DataContext.DeleteReservationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Delete" Width="16" Height="16" Margin="0,1.5,3,0"/>
+                                        <TextBlock Text="Delete"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
 
-        <!-- Pagination -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <!-- Pagination Controls -->
-            <Button Style="{StaticResource ModernFlatButton}" 
-            Width="80" 
-            Command="{Binding PrevPageCommand}">
-                    <TextBlock Text="Prev"/>
-                </Button>
+        <!-- LOADING OVERLAY -->
+        <Border Grid.RowSpan="3"
+                Background="#80000000"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                CornerRadius="8">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True"
+                             Width="60"
+                             Height="60"
+                             Foreground="White"/>
+            </StackPanel>
+        </Border>
 
-                <TextBlock Text="{Binding CurrentPage}" 
-                           FontWeight="Bold" 
-                           VerticalAlignment="Center"
-                           Margin="10,0"/>
-                <TextBlock Text=" / " 
-                           FontWeight="Bold" 
-                           VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding TotalPages}" 
-                           FontWeight="Bold" 
-                           VerticalAlignment="Center"
-                           Margin="10,0"/>
-
-                <Button Style="{StaticResource ModernFlatButton}" 
-                        Width="80" 
-                        Command="{Binding NextPageCommand}" >
-                            <TextBlock Text="Next"/>
+        <!-- PAGINATION -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Style="{StaticResource ModernFlatButton}" MinWidth="80" Command="{Binding PrevPageCommand}">
+                <TextBlock Text="Prev"/>
+            </Button>
+            <TextBlock Text="{Binding CurrentPage}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
+            <TextBlock Text=" / " FontWeight="Bold" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding TotalPages}" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
+            <Button Style="{StaticResource ModernFlatButton}" MinWidth="80" Command="{Binding NextPageCommand}">
+                <TextBlock Text="Next"/>
             </Button>
         </StackPanel>
     </Grid>
