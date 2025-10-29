@@ -10,38 +10,16 @@
         FontFamily="Segoe UI">
 
     <Window.Resources>
-        <!-- Common menu categories -->
+        <!-- Menu categories aligned with app usage -->
         <x:Array x:Key="MenuCategories" Type="sys:String">
-            <sys:String>Appetizer</sys:String>
-            <sys:String>Soup</sys:String>
-            <sys:String>Salad</sys:String>
-            <sys:String>Main Course</sys:String>
-            <sys:String>Side Dish</sys:String>
-            <sys:String>Vegetable</sys:String>
             <sys:String>Pasta</sys:String>
-            <sys:String>Rice</sys:String>
-            <sys:String>Seafood</sys:String>
-            <sys:String>Beef</sys:String>
-            <sys:String>Pork</sys:String>
+            <sys:String>Vegetable</sys:String>
             <sys:String>Chicken</sys:String>
-            <sys:String>Grill</sys:String>
-            <sys:String>BBQ</sys:String>
-            <sys:String>Noodles</sys:String>
-            <sys:String>Breakfast</sys:String>
-            <sys:String>Brunch</sys:String>
+            <sys:String>Pork</sys:String>
+            <sys:String>Beef</sys:String>
+            <sys:String>Fish</sys:String>
             <sys:String>Dessert</sys:String>
-            <sys:String>Beverage</sys:String>
-            <sys:String>Kids</sys:String>
-            <sys:String>Vegan</sys:String>
-            <sys:String>Vegetarian</sys:String>
-            <sys:String>Gluten-Free</sys:String>
-            <sys:String>Halal</sys:String>
-            <sys:String>Keto</sys:String>
-            <sys:String>Snack</sys:String>
-            <sys:String>Canapés</sys:String>
-            <sys:String>Platter</sys:String>
-            <sys:String>Buffet</sys:String>
-            <sys:String>Ala Carte</sys:String>
+            <sys:String>Drinks</sys:String>
         </x:Array>
     </Window.Resources>
 

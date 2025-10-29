@@ -180,9 +180,20 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
                     if (!sent)
                         throw new Exception("Failed to send the contract email.");
+
+                    // After successfully sending the contract, update status to contractsigning
+                    if (!string.Equals(Reservation.Status, "contractsigning", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Reservation.Status = "contractsigning";
+                        var updated = await _reservationService.UpdateReservationAsync(Reservation);
+                        if (updated != null)
+                        {
+                            Reservation.Status = updated.Status;
+                        }
+                    }
                 });
 
-                AppLogger.Success($"Contract generated and emailed for reservation ID {Reservation.Id}");
+                AppLogger.Success($"Contract generated, emailed, and status updated to 'contractsigning' for reservation ID {Reservation.Id}");
             }
             catch (Exception ex)
             {

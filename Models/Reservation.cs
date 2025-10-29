@@ -32,10 +32,10 @@ namespace CATERINGMANAGEMENT.Models
         public string Location { get; set; } = string.Empty;
 
         [Column("adults_qty")]
-        public decimal AdultsQty { get; set; }
+        public long AdultsQty { get; set; }
 
         [Column("kids_qty")]
-        public decimal KidsQty { get; set; }
+        public long KidsQty { get; set; }
 
         [Column("status")]
         public string Status { get; set; } = string.Empty;
