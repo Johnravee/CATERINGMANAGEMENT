@@ -7,6 +7,7 @@
 .env
 
 Database
+Credentials
 
 # User-specific files
 *.rsuser

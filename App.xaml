@@ -14,9 +14,19 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.DataGrid.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Global window icon style -->
+            <!-- Global window icon and sensible defaults to make dialogs resizable and responsive -->
             <Style TargetType="Window">
-                <Setter Property="Icon" Value="pack://application:,,,/Assets/images/catermateicon.ico" />
+                <!-- Use bundled logo icon that exists in project resources -->
+                <Setter Property="Icon" Value="pack://application:,,,/Assets/images/logoicon.ico" />
+                <!-- Make dialogs resizable by default -->
+                <Setter Property="ResizeMode" Value="CanResize" />
+                <!-- Prevent auto-sizing that may break responsive layouts -->
+                <Setter Property="SizeToContent" Value="Manual" />
+                <!-- Minimum sensible size for dialogs -->
+                <Setter Property="MinWidth" Value="360" />
+                <Setter Property="MinHeight" Value="240" />
+                <!-- Center dialogs by default when Owner is set -->
+                <Setter Property="WindowStartupLocation" Value="CenterOwner" />
             </Style>
         </ResourceDictionary>
     </Application.Resources>

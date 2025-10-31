@@ -2,14 +2,15 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+        MinHeight="360" MinWidth="360"
         Height="420" Width="480"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
         Background="#F9FAFB"
         FontFamily="Segoe UI"
         Title="Kitchen Item">
 
     <Window.Resources>
+        
         <!-- Common kitchen units -->
         <x:Array x:Key="KitchenUnits" Type="sys:String">
             <!-- Countable -->
@@ -62,46 +63,46 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Title -->
-            <TextBlock Text="Kitchen Item" FontSize="24" FontWeight="Bold" Foreground="#2D2D2D" Margin="0,0,0,20"/>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Title spans both columns -->
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Kitchen Item" FontSize="24" FontWeight="Bold" Foreground="#2D2D2D" Margin="0,0,0,20"/>
 
             <!-- Item Name -->
-            <StackPanel Grid.Row="1" Margin="0,0,0,15">
-                <TextBlock Text="Item Name" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox 
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Item Name" Foreground="#555" Margin="0,0,12,8" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="1" Grid.Column="1"
                     Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}" 
                     Padding="8" FontSize="14" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1"/>
-            </StackPanel>
 
             <!-- Unit -->
-            <StackPanel Grid.Row="2" Margin="0,0,0,15">
-                <TextBlock Text="Unit" Foreground="#555" Margin="0,0,0,4"/>
-                <ComboBox
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Unit" Foreground="#555" Margin="0,0,12,8" VerticalAlignment="Center"/>
+            <ComboBox Grid.Row="2" Grid.Column="1"
                     IsEditable="True"
                     IsTextSearchEnabled="True"
                     Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}"
                     ItemsSource="{StaticResource KitchenUnits}"
                     Padding="8" FontSize="14" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1"/>
-            </StackPanel>
 
             <!-- Quantity -->
-            <StackPanel Grid.Row="3" Margin="0,0,0,15">
-                <TextBlock Text="Quantity" Foreground="#555" Margin="0,0,0,4"/>
-                <TextBox 
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Quantity" Foreground="#555" Margin="0,0,12,8" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="3" Grid.Column="1"
                     Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" 
                     Padding="8" FontSize="14" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1"/>
-            </StackPanel>
 
-            <!-- Buttons -->
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button 
-                    Content="Save" Width="90" Height="32" 
-                    Command="{Binding SaveCommand}" 
-                    Background="#4F46E5" Foreground="White" BorderThickness="0"/>
+            <!-- Spacer for responsive vertical expansion -->
+            <StackPanel Grid.Row="4" Grid.ColumnSpan="2" />
+
+            <!-- Buttons aligned to right -->
+            <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <Button Content="Save" Width="90" Height="32" Command="{Binding SaveCommand}" Background="#4F46E5" Foreground="White" BorderThickness="0"/>
             </StackPanel>
         </Grid>
     </Border>
