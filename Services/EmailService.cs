@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Net;
 using System.Net.Mail;
+using CATERINGMANAGEMENT.Helpers;
+using System.Threading.Tasks;
 
 namespace CATERINGMANAGEMENT.Services
 {
@@ -17,6 +19,12 @@ namespace CATERINGMANAGEMENT.Services
 
         public async Task<bool> SendEmailAsync(string toEmail, string subject, string body, bool isHtml = false, string? attachmentPath = null)
         {
+            if (string.IsNullOrWhiteSpace(_fromEmail) || string.IsNullOrWhiteSpace(_appPassword))
+            {
+                AppLogger.Error("EmailService: GMAIL or GMAIL_PASSWORD environment variable is not configured.", showToUser: false);
+                return false;
+            }
+
             try
             {
                 using (var message = new MailMessage(_fromEmail, toEmail, subject, body))
@@ -31,7 +39,10 @@ namespace CATERINGMANAGEMENT.Services
                     using (var smtp = new SmtpClient("smtp.gmail.com", 587))
                     {
                         smtp.EnableSsl = true;
+                        smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
+                        smtp.UseDefaultCredentials = false;
                         smtp.Credentials = new NetworkCredential(_fromEmail, _appPassword);
+
                         await smtp.SendMailAsync(message);
                     }
                 }
@@ -39,7 +50,7 @@ namespace CATERINGMANAGEMENT.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Email send failed: " + ex.Message);
+                AppLogger.Error(ex, "Email send failed via SMTP (EmailService).", showToUser: false);
                 return false;
             }
         }

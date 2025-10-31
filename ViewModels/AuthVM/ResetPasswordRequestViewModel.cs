@@ -114,12 +114,15 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                 }
                 else
                 {
-                    AppLogger.Error("Failed to send reset link.");
+                    // Provide actionable feedback for the user and log guidance
+                    AppLogger.Error("Failed to send reset link (AuthService.RequestPasswordResetAsync returned false).", showToUser: false);
+                    ShowMessage("Unable to send password reset email. Please check your network and application email configuration (SUPABASE_URL, SUPABASE_API_KEY, SERVICE_ROLE_KEY, GMAIL env vars). If the problem persists, contact support.", "Reset Password");
                 }
             }
             catch (Exception ex)
             {
                 AppLogger.Error(ex, "Password reset request failed");
+                ShowMessage("An unexpected error occurred while requesting password reset. Please try again later.", "Reset Password");
             }
             finally
             {
