@@ -217,6 +217,41 @@ namespace CATERINGMANAGEMENT.Services.Data
             InvalidateCache("Reservation_Status_Count");
             InvalidateCacheByPrefix("Reservations_Page_");
         }
+ 
+        public async Task<Reservation?> UpdateReservationStatusAsync(long reservationId, string status)
+        {
+            try
+            {
+                var client = await GetClientAsync();
+
+                await client
+                    .From<Reservation>()
+                    .Where(x => x.Id == reservationId)
+                    .Set(r => r.Status, status)
+                    .Update();
+
+                InvalidateAllReservationCaches();
+
+                var updated = await client
+                    .From<Reservation>()
+                    .Where(x => x.Id == reservationId)
+                    .Select(@"
+                        *,
+                        profile:profile_id(*),
+                        thememotif:theme_motif_id(*),
+                        grazing:grazing_id(*),
+                        package:package_id(*)
+                    ")
+                    .Single();
+
+                return updated;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error updating reservation status: {ex.Message}");
+                return null;
+            }
+        }
     }
     #endregion
 }

@@ -24,6 +24,7 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
             IEnumerable<MenuOption> menuItems,
             IEnumerable<Worker> assignedWorkers,
             string? designImagePath = null,
+            string? callTime = null,
             string? suggestedFilename = null)
         {
             using var doc = new PdfDocument();
@@ -46,8 +47,21 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
                 var img = XImage.FromFile(logoPath);
                 gfx.DrawImage(img, margin, y, 60, 60);
             }
+
+            // Title
             gfx.DrawString("Reservation Equipment Checklist", h1, XBrushes.Black, new XRect(margin + 70, y, page.Width - margin * 2 - 70, 25), XStringFormats.TopLeft);
             gfx.DrawString($"Generated: {DateTime.Now:MMMM dd, yyyy}", text, muted, new XRect(margin + 70, y + 24, page.Width - margin * 2 - 70, 20), XStringFormats.TopLeft);
+
+            // Call Time: render prominently at top-right if provided
+            if (!string.IsNullOrWhiteSpace(callTime))
+            {
+                var callFont = new XFont("Arial", 26, XFontStyleEx.Bold);
+                var callBrush = new XSolidBrush(XColor.FromArgb(255, 33, 37, 41)); // dark
+                // Allocate a rect in the header area on the right
+                var callRect = new XRect(margin, y, page.Width - margin * 2, 48);
+                gfx.DrawString($"@{callTime}", callFont, callBrush, callRect, XStringFormats.TopRight);
+            }
+
             y += 70;
 
             // Reservation Summary
@@ -55,7 +69,7 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
             DrawKeyValue(gfx, text, margin, ref y, "Receipt #", reservation.ReceiptNumber);
             DrawKeyValue(gfx, text, margin, ref y, "Client", reservation.Profile?.FullName ?? "");
             DrawKeyValue(gfx, text, margin, ref y, "Contact", reservation.Profile?.ContactNumber ?? "");
-            DrawKeyValue(gfx, text, margin, ref y, "Event", $"{reservation.EventDate:MMMM dd, yyyy} {reservation.EventTime:hh\\:mm}");
+            DrawKeyValue(gfx, text, margin, ref y, "Event", $"{reservation.EventDate:MMMM dd, yyyy}  {reservation.EventTime:hh\\:mm}");
             DrawKeyValue(gfx, text, margin, ref y, "Venue", reservation.Venue);
             DrawKeyValue(gfx, text, margin, ref y, "Location", reservation.Location);
             DrawKeyValue(gfx, text, margin, ref y, "Package", reservation.Package?.Name ?? "");

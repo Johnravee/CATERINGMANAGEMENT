@@ -19,7 +19,8 @@ namespace CATERINGMANAGEMENT.Services
         public async Task GenerateChecklistPdfAsync(
             long reservationId,
             IEnumerable<SelectedEquipmentItem> selectedEquipments,
-            string? designImagePath = null)
+            string? designImagePath = null,
+            string? callTime = null)
         {
             var reservation = await _reservationService.GetReservationWithJoinsAsync(reservationId);
             if (reservation == null)
@@ -55,6 +56,7 @@ namespace CATERINGMANAGEMENT.Services
                 menuItems,
                 assignedWorkers,
                 designImagePath,
+                callTime,
                 $"Checklist_{reservation.ReceiptNumber}_{reservation.EventDate:yyyyMMdd}"
             );
         }

@@ -10,9 +10,7 @@
         FontFamily="Segoe UI"
         Style="{StaticResource MaterialDesignWindow}">
 
-    <Window.DataContext>
-        <vm:ChecklistBuilderViewModel />
-    </Window.DataContext>
+
 
     <Grid Margin="16">
         <Grid.RowDefinitions>
@@ -24,8 +22,13 @@
         <!-- Header -->
         <DockPanel Grid.Row="0" Margin="0,0,0,8">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                <materialDesign:PackIcon Kind="ClipboardListOutline" Width="28" Height="28" Foreground="#673AB7"/>
-                <TextBlock Text="Reservation Equipment Checklist" FontSize="22" FontWeight="Bold" Margin="8,0,0,0"/>
+                <materialDesign:PackIcon Kind="ClipboardListOutline"
+                                         Width="28" Height="28"
+                                         Foreground="#673AB7"/>
+                <TextBlock Text="Reservation Equipment Checklist"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Margin="8,0,0,0"/>
             </StackPanel>
         </DockPanel>
 
@@ -41,17 +44,40 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Left Top: reservation selector -->
-            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,8">
-                <TextBlock Text="Completed Reservation" VerticalAlignment="Center"/>
+            <!-- Reservation Selector + Call Time beside each other -->
+            <StackPanel Grid.Row="0" Grid.Column="0"
+                        Orientation="Horizontal"
+                        Margin="0,0,0,8"
+                        VerticalAlignment="Center"
+                       >
+                <!-- Reservation Selector -->
+                <TextBlock Text="Completed Reservation"
+                           VerticalAlignment="Center"/>
                 <ComboBox ItemsSource="{Binding CompletedReservations}"
                           SelectedItem="{Binding SelectedReservation}"
                           DisplayMemberPath="ReceiptNumber"
-                          MinWidth="260" Margin="8,0,0,0"/>
+                          MinWidth="260"
+                          Margin="8,0,0,0"/>
+
+                <!-- Call Time beside Reservation -->
+                <TextBlock Text="Call Time"
+                           VerticalAlignment="Center"
+                           Margin="16,0,8,0"/>
+                <TextBox x:Name="CallTimeTextBox"
+                         Text="{Binding CallTime, UpdateSourceTrigger=PropertyChanged}"
+                         Width="120"
+                         VerticalContentAlignment="Center"
+                         Padding="6"
+                         materialDesign:HintAssist.Hint="Call Time"
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
             </StackPanel>
 
-            <!-- Left Bottom: equipment grid with scroll -->
-            <Border Grid.Row="1" Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Background="White">
+            <!-- Left Bottom: Equipment Grid -->
+            <Border Grid.Row="1" Grid.Column="0"
+                    BorderBrush="#DDD"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Background="White">
                 <DockPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="8">
                         <Button Content="Add Row"
@@ -120,10 +146,13 @@
                 </DockPanel>
             </Border>
 
-            <!-- Grid splitter -->
-            <GridSplitter Grid.Column="1" Grid.RowSpan="2" Width="5" Background="#EEE" HorizontalAlignment="Stretch"/>
+            <!-- Grid Splitter -->
+            <GridSplitter Grid.Column="1" Grid.RowSpan="2"
+                          Width="5"
+                          Background="#EEE"
+                          HorizontalAlignment="Stretch"/>
 
-            <!-- Right panel: details and design -->
+            <!-- Right Panel: Reservation Details and Design -->
             <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="2">
                 <GroupBox Header="Reservation Details" Padding="8">
                     <Grid>
@@ -137,6 +166,7 @@
                             <RowDefinition/>
                             <RowDefinition/>
                         </Grid.RowDefinitions>
+
                         <TextBlock Grid.Row="0" Text="{Binding SelectedReservation.ReceiptNumber, StringFormat=Receipt: {0}}"/>
                         <TextBlock Grid.Row="1" Text="{Binding SelectedReservation.Profile.FullName, StringFormat=Client: {0}}"/>
                         <TextBlock Grid.Row="2" Text="{Binding SelectedReservation.Venue, StringFormat=Venue: {0}}"/>

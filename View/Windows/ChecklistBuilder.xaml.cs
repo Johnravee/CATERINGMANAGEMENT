@@ -1,3 +1,4 @@
+using CATERINGMANAGEMENT.ViewModels.ReservationVM;
 using System.Windows;
 
 namespace CATERINGMANAGEMENT.View.Windows
@@ -7,6 +8,8 @@ namespace CATERINGMANAGEMENT.View.Windows
         public ChecklistBuilder()
         {
             InitializeComponent();
+            var viewModel = new ChecklistBuilderViewModel();
+            DataContext = viewModel;
         }
     }
 }

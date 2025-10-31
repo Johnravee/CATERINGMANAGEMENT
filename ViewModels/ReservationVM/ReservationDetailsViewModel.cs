@@ -1,14 +1,14 @@
 ﻿/*
- * FILE: ReservationDetailsViewModel.cs
- * PURPOSE: Handles reservation details, including menu orders, updates, and contract PDF generation/emailing.
- *
- * RESPONSIBILITIES:
- *  - Load reservation menu orders
- *  - Update reservation data
- *  - Generate contract PDF and send via email
- *  - Expose UI commands for updating and generating contracts
- *  - Manage loading state for UI
- */
+* FILE: ReservationDetailsViewModel.cs
+* PURPOSE: Handles reservation details, including menu orders, updates, and contract PDF generation/emailing.
+*
+* RESPONSIBILITIES:
+*  - Load reservation menu orders
+*  - Update reservation data
+*  - Generate contract PDF and send via email
+*  - Expose UI commands for updating and generating contracts
+*  - Manage loading state for UI
+*/
 
 using CATERINGMANAGEMENT.DocumentsGenerator;
 using CATERINGMANAGEMENT.Helpers;
@@ -20,7 +20,9 @@ using CATERINGMANAGEMENT.View.Windows;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -33,6 +35,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         private readonly ContractMailer _contractMailer;
         private readonly ReservationService _reservationService = new();
         private readonly ReservationChecklistService _checklistService = new();
+        
         #endregion
 
         #region Properties & Data
@@ -135,7 +138,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 else
                 {
                     AppLogger.Error($"Reservation update returned null for ID {Reservation.Id}", showToUser: true);
-                    MessageBox.Show("Failed to update reservation.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Failed to update reservation." , "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
@@ -171,6 +174,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 {
                     ContractPdfGenerator.Generate(Reservation, saveDialog.FileName);
 
+                    AppLogger.Info("Attempting to send contract email...");
                     bool sent = await _contractMailer.SendContractEmailAsync(
                         Reservation.Profile?.Email ?? string.Empty,
                         Reservation.Profile?.FullName ?? "Client",
@@ -180,6 +184,8 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
                     if (!sent)
                         throw new Exception("Failed to send the contract email.");
+
+                    AppLogger.Success("Contract email sent successfully.");
 
                     // After successfully sending the contract, update status to contractsigning
                     if (!string.Equals(Reservation.Status, "contractsigning", StringComparison.OrdinalIgnoreCase))
