@@ -30,6 +30,7 @@
     <None Remove=".env" />
     <None Remove="Assets\images\applogo.png" />
     <None Remove="Assets\images\contract.png" />
+    <None Remove="Assets\images\documentlogo.png" />
     <None Remove="Assets\images\oshdylogo.jpg" />
     <None Remove="Assets\images\signupform.png" />
     <None Remove="Assets\LoginForm.png" />
@@ -72,14 +73,14 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
 
-    <Resource Include="Assets\images\logoicon.ico">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-
-    <Resource Include="Assets\images\applogo.png">
+    <Resource Include="Assets\images\documentlogo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    
+
+    <!-- Ensure logo files are embedded as WPF resources so pack URIs work -->
+    <Resource Include="Assets\images\logoicon.ico" />
+    <Resource Include="Assets\images\applogo.png" />
+
     <Resource Include="Assets\images\LoginForm.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>

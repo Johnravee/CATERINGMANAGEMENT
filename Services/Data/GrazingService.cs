@@ -181,8 +181,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                     "BaseUrl",
                     "RequestClientOptions",
                     "TableName",
-                    "PrimaryKey",
-                    "CreatedAt"
+                    "PrimaryKey"
                 );
 
                 AppLogger.Success("Exported grazing options to PDF");
@@ -211,8 +210,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                     "BaseUrl",
                     "RequestClientOptions",
                     "TableName",
-                    "PrimaryKey",
-                    "CreatedAt"
+                    "PrimaryKey"
                 );
 
                 AppLogger.Success("Exported grazing options to CSV");

@@ -66,6 +66,8 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
         public ICommand DeleteGrazingCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
+        public ICommand ExportPdfCommand { get; }
+        public ICommand ExportCsvCommand { get; }
 
         public GrazingViewModel()
         {
@@ -74,6 +76,9 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
             DeleteGrazingCommand = new RelayCommand<GrazingTable>(async (g) => await DeleteGrazingAsync(g));
             NextPageCommand = new RelayCommand(async () => await NextPageAsync());
             PrevPageCommand = new RelayCommand(async () => await PrevPageAsync());
+
+            ExportPdfCommand = new RelayCommand(async () => await ExportGrazingPdfAsync());
+            ExportCsvCommand = new RelayCommand(async () => await ExportGrazingCsvAsync());
 
             _ = LoadItemsAsync();
             _ = SubscribeToRealtimeAsync();
@@ -249,5 +254,40 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
                 AppLogger.Error(ex, "Error refreshing grazing count");
             }
         }
+
+        private async Task ExportGrazingPdfAsync()
+        {
+            IsLoading = true;
+            try
+            {
+                await _grazingService.ExportGrazingToPdfAsync();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error exporting grazing to PDF");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task ExportGrazingCsvAsync()
+        {
+            IsLoading = true;
+            try
+            {
+                await _grazingService.ExportGrazingToCsvAsync();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error exporting grazing to CSV");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
     }
 }

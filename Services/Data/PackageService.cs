@@ -187,11 +187,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                 DataGridToPdf.DataGridToPDF(
                     packages,
                     "Package List",
-                    "Id",
-                    "Name",
-                    "Description",
-                    "Price",
-                    "CreatedAt"
+                    "Id", "BaseUrl", "RequestClientOptions", "TableName", "PrimaryKey", "UpdatedAt"
                 );
 
                 AppLogger.Success("Exported packages to PDF");
@@ -217,11 +213,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                 DatagridToCsv.ExportToCsv(
                     packages,
                     "Package List",
-                    "Id",
-                    "Name",
-                    "Description",
-                    "Price",
-                    "CreatedAt"
+                    "Id", "BaseUrl", "RequestClientOptions", "TableName", "PrimaryKey", "UpdatedAt"
                 );
 
                 AppLogger.Success("Exported packages to PDF");

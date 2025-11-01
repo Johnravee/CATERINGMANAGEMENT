@@ -57,102 +57,125 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
             double rowHeight = 22;
             double pageWidth = page.Width - 2 * margin;
             double pageHeight = page.Height - 2 * margin;
-            double colWidth = pageWidth / properties.Count;
+            double colWidth = pageWidth / Math.Max(1, properties.Count);
 
             int rowIndex = 0;
 
             // 🟡 Header Color (darker gold)
             var headerBrush = new XSolidBrush(XColor.FromArgb(255, 184, 134, 11));
 
-            // ✅ Draw Logo and Label Section (with date + dynamic filename)
-            DrawHeader(gfx, titleFont, labelFont, dateFont, page, filename);
-
-            // Draw table headers
-            void DrawTableHeaders()
+            string? tempLogo = null;
+            try
             {
-                for (int i = 0; i < properties.Count; i++)
+                // ✅ Draw Logo and Label Section (with date + dynamic filename)
+                DrawHeader(gfx, titleFont, labelFont, dateFont, page, filename, out tempLogo);
+
+                // Draw table headers
+                void DrawTableHeaders()
                 {
-                    gfx.DrawRectangle(headerBrush,
-                        startX + i * colWidth,
-                        startY + rowIndex * rowHeight,
-                        colWidth,
-                        rowHeight);
+                    for (int i = 0; i < properties.Count; i++)
+                    {
+                        gfx.DrawRectangle(headerBrush,
+                            startX + i * colWidth,
+                            startY + rowIndex * rowHeight,
+                            colWidth,
+                            rowHeight);
 
-                    gfx.DrawString(properties[i].Name.ToUpper(),
-                        headerFont,
-                        XBrushes.White,
-                        new XRect(startX + i * colWidth, startY + rowIndex * rowHeight, colWidth, rowHeight),
-                        XStringFormats.Center);
+                        gfx.DrawString(properties[i].Name.ToUpper(),
+                            headerFont,
+                            XBrushes.White,
+                            new XRect(startX + i * colWidth, startY + rowIndex * rowHeight, colWidth, rowHeight),
+                            XStringFormats.Center);
+                    }
+                    rowIndex++;
                 }
-                rowIndex++;
-            }
 
-            void AddNewPage()
-            {
-                page = CreateLandscapePage(document);
-                gfx = XGraphics.FromPdfPage(page);
-                DrawHeader(gfx, titleFont, labelFont, dateFont, page, filename);
-                rowIndex = 0;
+                void AddNewPage()
+                {
+                    page = CreateLandscapePage(document);
+                    gfx = XGraphics.FromPdfPage(page);
+                    DrawHeader(gfx, titleFont, labelFont, dateFont, page, filename, out tempLogo);
+                    rowIndex = 0;
+                    DrawTableHeaders();
+                }
+
+                // Draw Header Row
                 DrawTableHeaders();
-            }
 
-            // Draw Header Row
-            DrawTableHeaders();
-
-            // Draw Data Rows
-            foreach (var item in dataSource)
-            {
-                if ((startY + (rowIndex + 2) * rowHeight) > pageHeight)
-                    AddNewPage();
-
-                for (int i = 0; i < properties.Count; i++)
+                // Draw Data Rows
+                foreach (var item in dataSource)
                 {
-                    string value = properties[i].GetValue(item)?.ToString() ?? "";
-                    value = TruncateText(value, 50);
+                    if ((startY + (rowIndex + 2) * rowHeight) > pageHeight)
+                        AddNewPage();
 
-                    gfx.DrawRectangle(XBrushes.White,
-                        startX + i * colWidth,
-                        startY + rowIndex * rowHeight,
-                        colWidth,
-                        rowHeight);
+                    for (int i = 0; i < properties.Count; i++)
+                    {
+                        string value = properties[i].GetValue(item)?.ToString() ?? "";
+                        value = TruncateText(value, 50);
 
-                    gfx.DrawRectangle(XPens.LightGray,
-                        startX + i * colWidth,
-                        startY + rowIndex * rowHeight,
-                        colWidth,
-                        rowHeight);
+                        gfx.DrawRectangle(XBrushes.White,
+                            startX + i * colWidth,
+                            startY + rowIndex * rowHeight,
+                            colWidth,
+                            rowHeight);
 
-                    gfx.DrawString(value,
-                        rowFont,
-                        XBrushes.Black,
-                        new XRect(startX + i * colWidth, startY + rowIndex * rowHeight, colWidth, rowHeight),
-                        XStringFormats.Center);
+                        gfx.DrawRectangle(XPens.LightGray,
+                            startX + i * colWidth,
+                            startY + rowIndex * rowHeight,
+                            colWidth,
+                            rowHeight);
+
+                        gfx.DrawString(value,
+                            rowFont,
+                            XBrushes.Black,
+                            new XRect(startX + i * colWidth, startY + rowIndex * rowHeight, colWidth, rowHeight),
+                            XStringFormats.Center);
+                    }
+
+                    rowIndex++;
                 }
 
-                rowIndex++;
+                // Save and open
+                document.Save(saveFileDialog.FileName);
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = saveFileDialog.FileName,
+                    UseShellExecute = true
+                });
             }
-
-            // Save and open
-            document.Save(saveFileDialog.FileName);
-            Process.Start(new ProcessStartInfo
+            finally
             {
-                FileName = saveFileDialog.FileName,
-                UseShellExecute = true
-            });
+                // Cleanup extracted temp image if any
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(tempLogo) && File.Exists(tempLogo))
+                        File.Delete(tempLogo);
+                }
+                catch { /* ignore cleanup errors */ }
+            }
         }
 
         // ✅ Draw Header with Logo, Title, and Date
-        private static void DrawHeader(XGraphics gfx, XFont titleFont, XFont labelFont, XFont dateFont, PdfPage page, string filename)
+        private static void DrawHeader(XGraphics gfx, XFont titleFont, XFont labelFont, XFont dateFont, PdfPage page, string filename, out string? tempExtractedImage)
         {
+            tempExtractedImage = null;
             double logoSize = 70;
             double margin = 40;
-            string logoPath = "Assets/images/oshdylogo.jpg";
 
-            // Draw logo (if found)
-            if (File.Exists(logoPath))
+            string logo = DocumentResourceHelper.GetLogoPath(out tempExtractedImage) ?? string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(logo) && File.Exists(logo))
             {
-                XImage logo = XImage.FromFile(logoPath);
-                gfx.DrawImage(logo, margin, 30, logoSize, logoSize);
+                try
+                {
+                    XImage img = XImage.FromFile(logo);
+                    double logoHeight = img.PixelHeight * (logoSize / img.PixelWidth);
+                    gfx.DrawImage(img, margin, 30, logoSize, logoHeight);
+                }
+                catch
+                {
+                    // ignore
+                }
             }
 
             // Draw Label beside logo
