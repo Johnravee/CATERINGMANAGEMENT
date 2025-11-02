@@ -27,6 +27,9 @@ using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 using Microsoft.Win32;
 using CATERINGMANAGEMENT.DocumentsGenerator;
 using System.IO;
+using Supabase.Postgrest.Exceptions;
+using System.Windows;
+using System.Net.Http;
 
 namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 {
@@ -340,21 +343,83 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
             try
             {
-                if (await _reservationService.DeleteReservationAsync(reservation))
+                var deleted = await _reservationService.DeleteReservationAsync(reservation);
+
+                if (deleted)
                 {
                     AllReservations.Remove(reservation);
                     FilteredReservations.Remove(reservation);
                     await RefreshReservationCountsAsync();
                     AppLogger.Success($"Deleted reservation ID: {reservation.Id}");
+                    MessageBox.Show("Reservation deleted successfully.", "Deleted", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // If DeleteReservationAsync returned false, provide a specific guidance message
+                AppLogger.Error("Failed to delete reservation.", showToUser: false);
+                MessageBox.Show(
+                    "Unable to delete the reservation. Possible reasons:\n\n" +
+                    "• There are related records (menu orders, payroll entries, etc.) that prevent deletion due to database constraints.\n" +
+                    "• You do not have sufficient permissions to delete this reservation.\n\n" +
+                    "Recommended actions:\n" +
+                    "1) Check and remove or reassign any linked items (menu orders, payrolls) before attempting delete.\n" +
+                    "2) Check your network connection and try again.\n" +
+                    "3) Contact your administrator if you need a cascading delete rule applied or if you lack permissions.",
+                    "Delete Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+            catch (HttpRequestException)
+            {
+                AppLogger.Error("Network error while attempting to delete reservation.");
+                MessageBox.Show(
+                    "Network error: Unable to contact the server. Please check your internet connection and try again.",
+                    "Network Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+            catch (PostgrestException pex)
+            {
+                // Inspect message to detect constraint/foreign key violations
+                AppLogger.Error(pex, "Supabase/Postgrest error when deleting reservation");
+
+                var msg = pex.Message ?? string.Empty;
+                var lower = msg.ToLowerInvariant();
+                bool isConstraint = lower.Contains("foreign key") || lower.Contains("violates") || lower.Contains("constraint") || lower.Contains("23503") || lower.Contains("reference") || lower.Contains("dependent");
+
+                if (isConstraint)
+                {
+                    MessageBox.Show(
+                        "Cannot delete the reservation because related records exist (for example: menu orders, payrolls, or other linked data).\n\n" +
+                        "This operation is blocked to protect data integrity and to avoid accidental data loss.\n\n" +
+                        "Recommended actions:\n" +
+                        "• Remove or reassign linked items (menu orders, payroll entries) and try again.\n" +
+                        "• Alternatively, mark the reservation as 'done' if your workflow permits and then delete.\n" +
+                        "• Contact your database administrator if you need assistance applying cascading deletes.",
+                        "Delete Blocked - Related Data",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
                 }
                 else
                 {
-                    AppLogger.Error("Failed to delete reservation.", showToUser: true);
+                    MessageBox.Show(
+                        $"Server rejected the delete request: {pex.Message}\n\n" +
+                        "Possible causes: insufficient permissions or server-side validation prevented the delete.\n" +
+                        "Please contact the administrator if you believe this is an error.",
+                        "Delete Failed",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
                 AppLogger.Error(ex, "Error deleting reservation");
+                MessageBox.Show(
+                    "An unexpected error occurred while deleting the reservation. Please try again.\n\n" +
+                    "If the problem persists, check the application logs and contact support.",
+                    "Delete Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 

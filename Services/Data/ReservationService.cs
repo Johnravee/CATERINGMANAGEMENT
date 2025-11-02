@@ -19,7 +19,9 @@
 
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Shared;
+using Supabase.Postgrest.Exceptions;
 using System.Diagnostics;
+using System.Net.Http;
 using static Supabase.Postgrest.Constants;
 
 namespace CATERINGMANAGEMENT.Services.Data
@@ -148,6 +150,7 @@ namespace CATERINGMANAGEMENT.Services.Data
             {
                 var client = await GetClientAsync();
 
+                // Perform delete - network issues will surface as HttpRequestException
                 await client
                     .From<Reservation>()
                     .Where(x => x.Id == reservation.Id)
@@ -156,6 +159,16 @@ namespace CATERINGMANAGEMENT.Services.Data
                 InvalidateAllReservationCaches();
 
                 return true;
+            }
+            catch (HttpRequestException)
+            {
+                // Rethrow so callers can show a network-specific message
+                throw;
+            }
+            catch (PostgrestException pex)
+            {
+                Debug.WriteLine($"❌ Postgrest error deleting reservation: {pex.Message}");
+                return false;
             }
             catch (Exception ex)
             {
