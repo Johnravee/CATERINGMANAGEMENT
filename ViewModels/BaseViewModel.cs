@@ -8,8 +8,12 @@ namespace CATERINGMANAGEMENT.ViewModels
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            // Ensure PropertyChangedEventArgs always receives a non-null property name
+            var name = propertyName ?? string.Empty;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
 
         protected void ShowMessage(string message, string title = "Notification", MessageBoxButton buttons = MessageBoxButton.OK, MessageBoxImage icon = MessageBoxImage.Information)
         {

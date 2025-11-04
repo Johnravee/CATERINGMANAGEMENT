@@ -12,6 +12,8 @@
 using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
+using CATERINGMANAGEMENT.Mailer;
+using CATERINGMANAGEMENT.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -25,6 +27,8 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         #region Services
         private readonly SchedulingService _schedulingService = new();
         private readonly SchedulingViewModel _parentViewModel;
+        private readonly EmailService _emailService = new();
+        private readonly RemoveWorkerMailer _removeWorkerMailer;
         #endregion
 
         #region Data
@@ -42,6 +46,8 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         {
             GroupedSchedule = groupedSchedule ?? throw new ArgumentNullException(nameof(groupedSchedule));
             _parentViewModel = parentViewModel ?? throw new ArgumentNullException(nameof(parentViewModel));
+
+            _removeWorkerMailer = new RemoveWorkerMailer(_emailService);
 
             try
             {
@@ -104,6 +110,35 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
                     await _parentViewModel.ReloadDataAsync();
 
+                    // Attempt to notify the worker by email if we have an email address
+                    try
+                    {
+                        if (!string.IsNullOrWhiteSpace(worker.Email))
+                        {
+                            bool emailed = await _removeWorkerMailer.SendWorkerRemovalEmailAsync(
+                                worker.Email,
+                                worker.Name ?? "Staff",
+                                worker.Role ?? "Staff",
+                                GroupedSchedule.PackageName ?? "Event",
+                                GroupedSchedule.EventDate.ToString("MMMM dd, yyyy"),
+                                GroupedSchedule.Venue ?? "Venue"
+                            );
+
+                            if (emailed)
+                                AppLogger.Success($"Removal notification email sent to {worker.Email}");
+                            else
+                                AppLogger.Error($"Failed to send removal email to {worker.Email}", showToUser: false);
+                        }
+                        else
+                        {
+                            AppLogger.Info($"No email available for worker {worker.Name}; skipping notification.");
+                        }
+                    }
+                    catch (Exception mailEx)
+                    {
+                        AppLogger.Error(mailEx, "Error sending worker removal email", showToUser: false);
+                    }
+
                     MessageBox.Show("Worker removed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
@@ -115,6 +150,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             catch (Exception ex)
             {
                 AppLogger.Error(ex, "Failed to remove worker from schedule.");
+                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

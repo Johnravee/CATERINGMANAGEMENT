@@ -8,7 +8,8 @@
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="Segoe UI"
-        Style="{StaticResource MaterialDesignWindow}">
+        Style="{StaticResource MaterialDesignWindow}"
+        WindowState="Maximized">
 
 
 
@@ -186,10 +187,22 @@
                                     Command="{Binding BrowseImageCommand}"
                                     Margin="8,0,0,0"
                                     Style="{StaticResource MaterialDesignRaisedButton}"/>
+                            <!-- Zoom Controls -->
+                            <StackPanel Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Zoom" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <Slider x:Name="ZoomSlider" Minimum="0.25" Maximum="4" Value="1" Width="160"/>
+                            </StackPanel>
                         </StackPanel>
                         <Border BorderBrush="#DDD" BorderThickness="1" Background="#FFF" Height="300">
-                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                                <Image Source="{Binding DesignImagePath}" Stretch="Uniform"/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" PanningMode="Both">
+                                <Image Source="{Binding DesignImagePath}"
+                                       Stretch="None"
+                                       RenderOptions.BitmapScalingMode="HighQuality">
+                                    <Image.LayoutTransform>
+                                        <ScaleTransform ScaleX="{Binding ElementName=ZoomSlider, Path=Value}"
+                                                        ScaleY="{Binding ElementName=ZoomSlider, Path=Value}"/>
+                                    </Image.LayoutTransform>
+                                </Image>
                             </ScrollViewer>
                         </Border>
                     </DockPanel>

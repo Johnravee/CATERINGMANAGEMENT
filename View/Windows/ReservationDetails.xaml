@@ -12,7 +12,7 @@
         ResizeMode="CanResize">
 
     <Window.Resources>
-        <!-- Styles that disable controls when reservation status is final (done or canceled) -->
+        <!-- Disable when reservation is done or canceled -->
         <Style x:Key="TextBoxDisableWhenFinal" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignFloatingHintTextBox}">
             <Setter Property="Height" Value="32" />
             <Setter Property="FontSize" Value="14" />
@@ -73,14 +73,13 @@
             </StackPanel>
         </materialDesign:DialogHost.DialogContent>
 
-        <!-- Use a Grid with two rows so header stays fixed and content scrolls -->
         <Grid Margin="12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- Header -->
+            <!-- HEADER -->
             <StackPanel Grid.Row="0" Margin="4,4,4,12">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <materialDesign:PackIcon Kind="CalendarCheckOutline"
@@ -93,201 +92,231 @@
                                Foreground="#333"
                                VerticalAlignment="Center"/>
                 </StackPanel>
-
-                <TextBlock FontSize="13"
-                           Foreground="Gray"
-                           Margin="0,6,0,0"
+                <TextBlock FontSize="13" Foreground="Gray" Margin="0,6,0,0"
                            Text="Detailed information for a specific reservation"/>
             </StackPanel>
 
-            <!-- Scrollable content -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0">
-                <StackPanel>
+            <!-- MAIN GRID -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <!-- Responsive widths with min limits -->
+                    <ColumnDefinition Width="*" MinWidth="400"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" MinWidth="400"/>
+                </Grid.ColumnDefinitions>
 
-                    <!-- Two-column layout for top fields -->
-                    <Grid Margin="0,6,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="24" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                <!-- LEFT PANEL -->
+                <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- BASIC INFORMATION -->
+                        <GroupBox Header="Basic Information" Padding="10" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Receipt Number" Margin="0,0,0,4" FontSize="14"/>
-                            <TextBox Text="{Binding Reservation.ReceiptNumber}" IsReadOnly="True"
-                                     materialDesign:HintAssist.Hint="Receipt Number"
-                                     Style="{StaticResource TextBoxDisableWhenFinal}"
-                                     Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Receipt Number:" Margin="0,0,8,6" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Reservation.ReceiptNumber}" IsReadOnly="True" Style="{StaticResource TextBoxDisableWhenFinal}"/>
 
-                            <TextBlock Text="Venue" Margin="0,0,0,4" FontSize="14"/>
-                            <TextBox Text="{Binding Reservation.Venue}" 
-                                     Style="{StaticResource TextBoxDisableWhenFinal}" 
-                                     Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Celebrant:" Margin="0,8,8,6" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Reservation.Celebrant}" Style="{StaticResource TextBoxDisableWhenFinal}" Margin="0,8,0,0"/>
 
-                            <TextBlock Text="Event Date" Margin="0,0,0,4" FontSize="14"/>
-                            <DatePicker SelectedDate="{Binding Reservation.EventDate}" Style="{StaticResource DatePickerDisableWhenFinal}"/>
-                        </StackPanel>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Venue:" Margin="0,8,8,6" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Reservation.Venue}" Style="{StaticResource TextBoxDisableWhenFinal}" Margin="0,8,0,0"/>
 
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Celebrant" Margin="0,0,0,4" FontSize="14"/>
-                            <TextBox Text="{Binding Reservation.Celebrant}" 
-                                     Style="{StaticResource TextBoxDisableWhenFinal}" 
-                                     Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Location:" Margin="0,8,8,0" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Reservation.Location}" Style="{StaticResource TextBoxDisableWhenFinal}" Margin="0,8,0,0"/>
+                            </Grid>
+                        </GroupBox>
 
-                            <TextBlock Text="Location" Margin="0,0,0,4" FontSize="14"/>
-                            <TextBox Text="{Binding Reservation.Location}" 
-                                     Style="{StaticResource TextBoxDisableWhenFinal}" 
-                                     Margin="0,0,0,8"/>
+                        <!-- SCHEDULE -->
+                        <GroupBox Header="Schedule" Padding="10" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="Event Time" Margin="0,0,0,4" FontSize="14"/>
-                            <TextBox Text="{Binding Reservation.EventTime}" 
-                                     Style="{StaticResource TextBoxDisableWhenFinal}"/>
-                        </StackPanel>
-                    </Grid>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Event Date" Margin="0,0,0,4" FontSize="14"/>
+                                    <DatePicker SelectedDate="{Binding Reservation.EventDate}" Style="{StaticResource DatePickerDisableWhenFinal}"/>
+                                </StackPanel>
 
-                    <!-- Adults & Kids Qty and Status -->
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="24"/>
-                            <ColumnDefinition Width="1*"/>
-                        </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Event Time" Margin="0,0,0,4" FontSize="14"/>
+                                    <TextBox Text="{Binding Reservation.EventTime}" Style="{StaticResource TextBoxDisableWhenFinal}"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
 
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Adults Quantity" Margin="0,0,0,4" FontSize="14"/>
-                            <TextBox Text="{Binding Reservation.AdultsQty, StringFormat={}{0:0}}" 
-                                     Style="{StaticResource TextBoxDisableWhenFinal}"/>
-                        </StackPanel>
+                        <!-- COUNTS & STATUS -->
+                        <!-- Counts & Status -->
+                        <GroupBox Header="Counts &amp; Status" Padding="10" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Kids Quantity" Margin="0,0,0,4" FontSize="14"/>
-                            <TextBox Text="{Binding Reservation.KidsQty, StringFormat={}{0:0}}" 
-                                     Style="{StaticResource TextBoxDisableWhenFinal}"/>
-                        </StackPanel>
-                    </Grid>
+                                <!-- Top row: Adults and Kids side by side -->
+                                <Grid Grid.Row="0" Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Reservation Status" Margin="0,0,0,6" FontSize="14"/>
-                    <ComboBox SelectedValue="{Binding Reservation.Status}" 
-                              SelectedValuePath="Content"
-                              Style="{StaticResource ComboBoxDisableWhenFinal}"
-                              Margin="0,0,0,12">
-                        <ComboBoxItem Content="pending"/>
-                        <ComboBoxItem Content="confirmed"/>
-                        <ComboBoxItem Content="contractsigning"/>
-                        <ComboBoxItem Content="completed"/>
-                        <ComboBoxItem Content="done"/>
-                        <ComboBoxItem Content="canceled"/>
-                    </ComboBox>
+                                    <!-- Adults -->
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Adults" Margin="0,0,0,4" />
+                                        <TextBox Text="{Binding Reservation.AdultsQty, StringFormat={}{0:0}}" 
+                          Style="{StaticResource TextBoxDisableWhenFinal}"/>
+                                    </StackPanel>
 
-                    <!-- Client and Package Info -->
-                    <GroupBox Header="Client &amp; Package Info"
-                              FontWeight="SemiBold"
-                              Padding="10"
-                              Margin="0,6,0,12">
+                                    <!-- Kids -->
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Kids" Margin="0,0,0,4" />
+                                        <TextBox Text="{Binding Reservation.KidsQty, StringFormat={}{0:0}}" 
+                          Style="{StaticResource TextBoxDisableWhenFinal}"/>
+                                    </StackPanel>
+                                </Grid>
 
-                        <!-- Labeled rows for clarity -->
-                        <Grid Margin="0,2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="160"/>
-                                <ColumnDefinition />
-                            </Grid.ColumnDefinitions>
+                                <!-- Status label -->
+                                <TextBlock Grid.Row="1" Text="Reservation Status" Margin="0,0,0,6" FontSize="14"/>
 
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                                <!-- Status combo -->
+                                <ComboBox Grid.Row="2"
+                   SelectedValue="{Binding Reservation.Status}" SelectedValuePath="Content"
+                   Style="{StaticResource ComboBoxDisableWhenFinal}">
+                                    <ComboBoxItem Content="pending"/>
+                                    <ComboBoxItem Content="confirmed"/>
+                                    <ComboBoxItem Content="contractsigning"/>
+                                    <ComboBoxItem Content="completed"/>
+                                    <ComboBoxItem Content="done"/>
+                                    <ComboBoxItem Content="canceled"/>
+                                </ComboBox>
+                            </Grid>
+                        </GroupBox>
 
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Client:" FontWeight="Bold" FontSize="14"/>
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Reservation.Profile.FullName}" FontSize="14"/>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Email:" FontWeight="Bold" FontSize="14"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Reservation.Profile.Email}" FontSize="14"/>
+                        <!-- CLIENT & PACKAGE -->
+                        <GroupBox Header="Client &amp; Package" Padding="10" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="160"/>
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Package:" FontWeight="Bold" FontSize="14"/>
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Reservation.Package.Name}" FontSize="14"/>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Client:" FontWeight="Bold" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Reservation.Profile.FullName}" />
 
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Grazing:" FontWeight="Bold" FontSize="14"/>
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Reservation.Grazing.Name}" FontSize="14"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Email:" FontWeight="Bold" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Reservation.Profile.Email}" Margin="0,6,0,0" />
 
-                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Theme:" FontWeight="Bold" FontSize="14"/>
-                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Reservation.ThemeMotif.Name}" FontSize="14"/>
-                        </Grid>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Package:" FontWeight="Bold" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Reservation.Package.Name}" Margin="0,6,0,0" />
 
-                    </GroupBox>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Grazing:" FontWeight="Bold" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Reservation.Grazing.Name}" Margin="0,6,0,0" />
 
-                    <!-- Menu Orders -->
-                    <TextBlock Text="Menu Orders"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryHueMidBrush}"
-                               Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Theme:" FontWeight="Bold" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Reservation.ThemeMotif.Name}" Margin="0,6,0,0" />
+                            </Grid>
+                        </GroupBox>
 
-                    <Border BorderThickness="1"
-                            BorderBrush="#DDD"
-                            CornerRadius="4"
-                            Padding="8"
-                            Margin="0,0,0,12">
-                        <ListView ItemsSource="{Binding ReservationMenuOrders}"
-                                  SelectedItem="{Binding SelectedMenuOrder}"
-                                  Style="{StaticResource MaterialDesignListView}"
-                                  Height="220">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="Dish" 
-                                                    DisplayMemberBinding="{Binding menu_options.Name}" 
-                                                    Width="420"/>
-                                    <GridViewColumn Header="Added At" 
-                                                    DisplayMemberBinding="{Binding CreatedAt, StringFormat='{}{0:MMM dd, yyyy HH:mm}'}"
-                                                    Width="220"/>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
-                    </Border>
-
-                    <!-- Action Buttons -->
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                Margin="0,6,0,12"
-                             >
-                        <Button Style="{StaticResource ButtonDisableWhenFinal}"
-                                Command="{Binding UpdateReservationCommand}"
-                                Background="#673AB7"
-                                Foreground="White"
-                                Padding="10,6" Height="34">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18"/>
-                                <TextBlock Text="Update" Margin="8,0,0,0" FontSize="14"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button Style="{StaticResource ButtonDisableWhenFinal}"
-                                Command="{Binding GenerateContractCommand}"
-                                Background="#3949AB"
-                                Foreground="White"
-                                Padding="10,6" Height="34" Margin="8,0,0,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="FilePdfBox" Width="18" Height="18"/>
-                                <TextBlock Text="Contract" Margin="8,0,0,0" FontSize="14"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button Style="{StaticResource ButtonDisableWhenFinal}"
-                                Command="{Binding CancelReservationCommand}"
-                                Background="#E53935"
-                                Foreground="White"
-                                Padding="10,6" Height="34" Margin="8,0,0,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="CloseCircle" Width="18" Height="18"/>
-                                <TextBlock Text="Cancel" Margin="8,0,0,0" FontSize="14"/>
-                            </StackPanel>
-                        </Button>
+                        <!-- ACTION BUTTONS -->
+                        
                     </StackPanel>
+                </ScrollViewer>
 
-                </StackPanel>
-            </ScrollViewer>
+                <!-- SPLITTER -->
+                <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="#DDD" />
+
+                <!-- RIGHT PANEL -->
+                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Menu Orders" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,8"/>
+
+                        <!-- MENU LIST FIXED -->
+                        <Border BorderThickness="1" BorderBrush="#DDD" CornerRadius="4" Padding="8" Margin="0,0,0,12">
+                            <ListView ItemsSource="{Binding ReservationMenuOrders}"
+                                      SelectedItem="{Binding SelectedMenuOrder}"
+                                      Style="{StaticResource MaterialDesignListView}"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                      VerticalAlignment="Stretch">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Dish"
+                                                        DisplayMemberBinding="{Binding menu_options.Name}"
+                                                        />
+                                        <GridViewColumn Header="Added At"
+                                                        DisplayMemberBinding="{Binding CreatedAt, StringFormat='{}{0:MMM dd, yyyy HH:mm}'}"
+                                                        Width="200" />
+                                    </GridView>
+                                </ListView.View>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                            </ListView>
+                        </Border>
+
+                        <!-- ACTION BUTTONS MOVED HERE -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
+                            <Button Style="{StaticResource ButtonDisableWhenFinal}"
+                                    Command="{Binding UpdateReservationCommand}"
+                                    Background="#673AB7"
+                                    Foreground="White"
+                                    Padding="10,6" Height="34">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18"/>
+                                    <TextBlock Text="Update" Margin="8,0,0,0" FontSize="14"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Style="{StaticResource ButtonDisableWhenFinal}"
+                                    Command="{Binding GenerateContractCommand}"
+                                    Background="#3949AB"
+                                    Foreground="White"
+                                    Padding="10,6" Height="34" Margin="8,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FilePdfBox" Width="18" Height="18"/>
+                                    <TextBlock Text="Contract" Margin="8,0,0,0" FontSize="14"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button Style="{StaticResource ButtonDisableWhenFinal}"
+                                    Command="{Binding CancelReservationCommand}"
+                                    Background="#E53935"
+                                    Foreground="White"
+                                    Padding="10,6" Height="34" Margin="8,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="CloseCircle" Width="18" Height="18"/>
+                                    <TextBlock Text="Cancel" Margin="8,0,0,0" FontSize="14"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </materialDesign:DialogHost>
 </Window>

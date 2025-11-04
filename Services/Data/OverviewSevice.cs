@@ -7,6 +7,13 @@
  */
 
 using CATERINGMANAGEMENT.Models;
+using CATERINGMANAGEMENT.DocumentsGenerator;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace CATERINGMANAGEMENT.Services.Data
 {
@@ -87,6 +94,37 @@ namespace CATERINGMANAGEMENT.Services.Data
             catch
             {
                 return new List<MonthlyReservationSummary>();
+            }
+        }
+
+        // Generate a CSV report for the given month and year; return file path or null.
+        public async Task<string?> GenerateMonthlyReservationsReportAsync(int month, int year)
+        {
+            try
+            {
+                var summaries = await GetMonthlyReservationSummariesAsync();
+                var found = summaries.FirstOrDefault(s => s.ReservationMonth == month && s.ReservationYear == year);
+                if (found == null)
+                    return null;
+
+                var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "CateringReports");
+                Directory.CreateDirectory(folder);
+
+                var fileName = $"MonthlyReservations_{year}_{month:00}.csv";
+                var path = Path.Combine(folder, fileName);
+
+                using (var sw = new StreamWriter(path, false))
+                {
+                    await sw.WriteLineAsync("Year,Month,Label,TotalReservations");
+                    await sw.WriteLineAsync($"{found.ReservationYear},{found.ReservationMonth},\"{found.YearMonthLabel}\",{found.TotalReservations}");
+                }
+
+                return path;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error generating monthly report: {ex.Message}");
+                return null;
             }
         }
         #endregion

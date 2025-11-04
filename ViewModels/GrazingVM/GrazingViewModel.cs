@@ -179,9 +179,14 @@ namespace CATERINGMANAGEMENT.ViewModels.GrazingVM
                     AppLogger.Success($"Deleted grazing '{grazing.Name}' successfully.");
                 }
             }
+            catch (InvalidOperationException invEx)
+            {
+                ShowMessage(invEx.Message, "Delete Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             catch (Exception ex)
             {
                 AppLogger.Error(ex, "Error deleting grazing item");
+                //ShowMessage($"Error deleting grazing item:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

@@ -3,6 +3,7 @@ using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Shared;
 using static Supabase.Postgrest.Constants;
+using System;
 
 namespace CATERINGMANAGEMENT.Services.Data
 {
@@ -133,6 +134,7 @@ namespace CATERINGMANAGEMENT.Services.Data
             try
             {
                 var client = await GetClientAsync();
+                // Let any exception bubble up so callers can display contextual messages
                 await client.From<Package>().Where(x => x.Id == packageId).Delete();
 
                 InvalidateAllCaches();
@@ -141,7 +143,21 @@ namespace CATERINGMANAGEMENT.Services.Data
             catch (Exception ex)
             {
                 AppLogger.Error(ex, "Error deleting package");
-                return false;
+
+                // Detect common foreign key / constraint violation messages from PostgreSQL/Supabase
+                var message = ex.Message ?? string.Empty;
+                if (message.Contains("violates foreign key constraint", StringComparison.OrdinalIgnoreCase)
+                    || message.Contains("foreign key constraint", StringComparison.OrdinalIgnoreCase)
+                    || message.Contains("update or delete on table", StringComparison.OrdinalIgnoreCase)
+                    || message.Contains("constraint", StringComparison.OrdinalIgnoreCase) && message.Contains("references", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Provide a clearer message for the UI
+                    throw new InvalidOperationException("This package can’t be deleted because it’s still referenced by other records. Please remove or update those references first.", ex);
+
+                }
+
+                // For other errors, rethrow to allow the caller to handle/display
+                throw;
             }
         }
 

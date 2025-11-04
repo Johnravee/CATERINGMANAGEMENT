@@ -28,8 +28,9 @@ using Microsoft.Win32;
 using CATERINGMANAGEMENT.DocumentsGenerator;
 using System.IO;
 using Supabase.Postgrest.Exceptions;
-using System.Windows;
 using System.Net.Http;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 {
@@ -110,6 +111,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public ICommand PrevPageCommand { get; }
         public ICommand OpenChecklistBuilderCommand { get; }
         public ICommand GenerateContractCommand { get; }
+        public ICommand MarkAsDoneCommand { get; }
         #endregion
 
         #region Constructor
@@ -121,6 +123,9 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             PrevPageCommand = new RelayCommand(async () => await LoadReservations(CurrentPage - 1), () => CurrentPage > 1);
             OpenChecklistBuilderCommand = new RelayCommand(OpenChecklistBuilder);
             GenerateContractCommand = new RelayCommand<Reservation>(async (res) => await GenerateContractAsync(res));
+
+            // initialize mark-as-done command
+            MarkAsDoneCommand = new RelayCommand<Reservation>(async (res) => await MarkReservationAsDoneAsync(res));
 
             _ = Task.Run(SubscribeToRealtime);
         }
@@ -512,6 +517,51 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             catch (Exception ex)
             {
                 AppLogger.Error(ex, "Failed to generate contract.", showToUser: true);
+            }
+        }
+
+        // New: Mark reservation as done
+        private async Task MarkReservationAsDoneAsync(Reservation reservation)
+        {
+            if (reservation == null) return;
+
+            var confirm = MessageBox.Show($"Mark reservation {reservation.ReceiptNumber} as done?",
+                "Confirm",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (confirm != MessageBoxResult.Yes) return;
+
+            try
+            {
+                var updated = await _reservationService.UpdateReservationStatusAsync(reservation.Id, "done");
+
+                if (updated != null)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var idx = AllReservations.ToList().FindIndex(r => r.Id == updated.Id);
+                        if (idx >= 0) AllReservations[idx] = updated;
+
+                        var fidx = FilteredReservations.ToList().FindIndex(r => r.Id == updated.Id);
+                        if (fidx >= 0) FilteredReservations[fidx] = updated;
+                    });
+
+                    await RefreshReservationCountsAsync();
+
+                    MessageBox.Show("Reservation marked as done.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    AppLogger.Success($"Marked reservation ID {reservation.Id} as done.");
+                }
+                else
+                {
+                    AppLogger.Error($"Failed to mark reservation ID {reservation.Id} as done", showToUser: true);
+                    MessageBox.Show("Failed to update reservation status.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error marking reservation as done");
+                MessageBox.Show($"An error occurred while updating status:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

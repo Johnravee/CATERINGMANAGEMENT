@@ -131,7 +131,21 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
             catch (Exception ex)
             {
-                AppLogger.Error(ex, "Error deleting grazing option");
+                AppLogger.Error(ex, "Error deleting package");
+
+                // Detect common foreign key / constraint violation messages from PostgreSQL/Supabase
+                var message = ex.Message ?? string.Empty;
+                if (message.Contains("violates foreign key constraint", StringComparison.OrdinalIgnoreCase)
+                    || message.Contains("foreign key constraint", StringComparison.OrdinalIgnoreCase)
+                    || message.Contains("update or delete on table", StringComparison.OrdinalIgnoreCase)
+                    || message.Contains("constraint", StringComparison.OrdinalIgnoreCase) && message.Contains("references", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Provide a clearer message for the UI
+                    throw new InvalidOperationException("This package cannot be deleted because it is currently in use. Please remove any related items before trying again.", ex);
+
+                }
+
+                // For other errors, rethrow to allow the caller to handle/display
                 throw;
             }
         }

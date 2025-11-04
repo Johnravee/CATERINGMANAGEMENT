@@ -46,20 +46,24 @@
             <Setter Property="MaxWidth" Value="250"/>
         </Style>
 
+        <!-- Make buttons adapt to available space -->
         <Style x:Key="ModernFlatButton" TargetType="Button">
             <Setter Property="Background" Value="#673AB7"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="6,2"/>
-            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="4,2"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Width" Value="90"/>
-            <Setter Property="Height" Value="32"/>
+            <Setter Property="MinWidth" Value="70"/>
+            <Setter Property="MinHeight" Value="28"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" SnapsToDevicePixels="True">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True"
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
@@ -71,6 +75,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
     </Page.Resources>
 
 
@@ -107,18 +112,18 @@
                 </StackPanel>
             </StackPanel>
 
-            <!-- Top-right Button (same style as EquipmentsInventory header) -->
-            <Button Grid.Column="1"
-                    Style="{StaticResource ModernFlatButton}"
-                    Padding="10"
-                    Width="110"
-                    Background="#2E7D32"
-                    Command="{Binding OpenChecklistBuilderCommand}">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="ClipboardTextOutline" Width="16" Height="16" Margin="0,1.5,4,0"/>
-                    <TextBlock Text="Checklist"/>
-                </StackPanel>
-            </Button>
+            <!-- Top-right Button (report removed, keep Checklist) -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource ModernFlatButton}"
+                        Padding="12,6"
+                        Background="#2E7D32"
+                        Command="{Binding OpenChecklistBuilderCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ClipboardTextOutline" Width="16" Height="16" Margin="0,1.5,4,0"/>
+                        <TextBlock Text="Checklist"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <!-- CARDS -->
@@ -188,40 +193,55 @@
                   SelectionUnit="FullRow"
                   FontSize="16"
                   CellStyle="{StaticResource CenteredCellStyle}"
-                  ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}">
+                  ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}"
+                  HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                <DataGridTextColumn Header="Celebrant" Binding="{Binding Celebrant}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" Width="2*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Celebrant" Binding="{Binding Celebrant}" Width="2*" ElementStyle="{StaticResource CenteredTextStyle}"/>
                 <DataGridTextColumn Header="Date" Binding="{Binding EventDate, StringFormat='{}{0:yyyy-MM-dd}'}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
                 <DataGridTextColumn Header="Time" Binding="{Binding EventTime}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
                 <DataGridTextColumn Header="Adults" Binding="{Binding AdultsQty}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
                 <DataGridTextColumn Header="Kids" Binding="{Binding KidsQty}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                <DataGridTextColumn Header="Venue" Binding="{Binding Venue}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                <DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="*" ElementStyle="{StaticResource CenteredTextStyle}"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock" BasedOn="{StaticResource CenteredTextStyle}">
-                            <Style.Triggers>
+                <DataGridTextColumn Header="Venue" Binding="{Binding Venue}" Width="2*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+                <DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="2*" ElementStyle="{StaticResource CenteredTextStyle}"/>
+
+                <!-- Status as badge -->
+                <DataGridTemplateColumn Header="Status" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border x:Name="Badge" CornerRadius="12" Padding="6,2" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#E0E0E0">
+                                <TextBlock x:Name="BadgeText" Text="{Binding Status}" FontWeight="Bold" FontSize="12" Foreground="#424242"/>
+                            </Border>
+                            <DataTemplate.Triggers>
                                 <DataTrigger Binding="{Binding Status}" Value="canceled">
-                                    <Setter Property="Foreground" Value="#721C24"/>
+                                    <Setter TargetName="Badge" Property="Background" Value="#F8D7DA"/>
+                                    <Setter TargetName="BadgeText" Property="Foreground" Value="#721C24"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Status}" Value="confirmed">
-                                    <Setter Property="Foreground" Value="#155724"/>
+                                    <Setter TargetName="Badge" Property="Background" Value="#C8E6C9"/>
+                                    <Setter TargetName="BadgeText" Property="Foreground" Value="#155724"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Status}" Value="pending">
-                                    <Setter Property="Foreground" Value="#856404"/>
+                                    <Setter TargetName="Badge" Property="Background" Value="#FFF3CD"/>
+                                    <Setter TargetName="BadgeText" Property="Foreground" Value="#856404"/>
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding Status}" Value="contractsigning">
-                                    <Setter Property="Foreground" Value="#1E88E5"/>
+                                    <Setter TargetName="Badge" Property="Background" Value="#BBDEFB"/>
+                                    <Setter TargetName="BadgeText" Property="Foreground" Value="#0D47A1"/>
                                 </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
+                                <DataTrigger Binding="{Binding Status}" Value="done">
+                                    <Setter TargetName="Badge" Property="Background" Value="#E0E0E0"/>
+                                    <Setter TargetName="BadgeText" Property="Foreground" Value="#424242"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
                 <DataGridTemplateColumn Header="Actions" Width="270">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" ItemHeight="34" ItemWidth="90">
                                 <Button Style="{StaticResource ModernFlatButton}" ToolTip="View"
                                         Command="{Binding DataContext.ViewReservationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                         CommandParameter="{Binding}">
@@ -230,6 +250,34 @@
                                         <TextBlock Text="View"/>
                                     </StackPanel>
                                 </Button>
+
+                                <!-- Mark as Done button -->
+                                <Button ToolTip="Mark as Done"
+                                        Command="{Binding DataContext.MarkAsDoneCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource ModernFlatButton}">
+                                            <Setter Property="Background" Value="#2E7D32"/>
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                            <Setter Property="Opacity" Value="1"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="done">
+                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                    <Setter Property="Opacity" Value="0.6"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="canceled">
+                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                    <Setter Property="Opacity" Value="0.6"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Check" Width="16" Height="16" Margin="0,1.5,3,0"/>
+                                        <TextBlock Text="Done"/>
+                                    </StackPanel>
+                                </Button>
+
                                 <Button Style="{StaticResource ModernFlatButton}" Background="#E53935" ToolTip="Delete"
                                         Command="{Binding DataContext.DeleteReservationCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                         CommandParameter="{Binding}">
@@ -238,7 +286,7 @@
                                         <TextBlock Text="Delete"/>
                                     </StackPanel>
                                 </Button>
-                            </StackPanel>
+                            </WrapPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
