@@ -92,7 +92,7 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                 {
                     LoginErrorCode.UnverifiedEmail => "Your email is not verified. Please check your inbox for the confirmation link.",
                     LoginErrorCode.NotAdmin => "Your account does not have admin access. Only admins can log in here.",
-                    LoginErrorCode.InvalidCredentials => "Invalid email or password.",
+                    LoginErrorCode.InvalidCredentials => "The credentials entered are incorrect. Please verify your email and password and try again.",
                     LoginErrorCode.NetworkError => "Network error. Please check your internet connection and try again.",
                     _ => "Login failed due to an unexpected error."
                 };

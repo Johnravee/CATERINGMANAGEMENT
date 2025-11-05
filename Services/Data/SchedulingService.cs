@@ -146,6 +146,33 @@ namespace CATERINGMANAGEMENT.Services.Data
         }
 
         /// <summary>
+        /// Removes all workers from a reservation's schedule (deletes all NewScheduling rows for the reservation).
+        /// </summary>
+        public async Task<bool> RemoveAllWorkersFromScheduleAsync(long reservationId)
+        {
+            try
+            {
+                var client = await GetClientAsync();
+                AppLogger.Info($"Removing all workers from reservation {reservationId}");
+
+                await client
+                    .From<NewScheduling>()
+                    .Where(x => x.ReservationId == reservationId)
+                    .Delete();
+
+                InvalidateAllSchedulingCaches();
+                AppLogger.Info("✅ Invalidated scheduling caches after removing all workers");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "❌ Failed to remove all workers from schedule");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Searches grouped schedules (no caching for search results).
         /// </summary>
         public async Task<List<GroupedScheduleView>> SearchGroupedSchedulesAsync(string query)
@@ -176,6 +203,47 @@ namespace CATERINGMANAGEMENT.Services.Data
                 AppLogger.Error(ex, "❌ Search failed for grouped schedules");
                 return new List<GroupedScheduleView>();
             }
+        }
+
+        /// <summary>
+        /// Returns the full Worker records assigned to the given reservation (via NewScheduling rows).
+        /// </summary>
+        public async Task<List<Worker>> GetAssignedWorkersByReservationAsync(long reservationId)
+        {
+            var result = new List<Worker>();
+            try
+            {
+                var client = await GetClientAsync();
+
+                // 1) Get scheduling rows to collect worker ids
+                var schedResponse = await client
+                    .From<NewScheduling>()
+                    .Where(x => x.ReservationId == reservationId)
+                    .Get();
+
+                var ids = schedResponse.Models?
+                    .Select(s => s.WorkerId)
+                    .Where(id => id != 0)
+                    .Distinct()
+                    .ToList() ?? new List<long>();
+
+                // 2) Fetch workers individually (simple & reliable)
+                foreach (var wid in ids)
+                {
+                    var wr = await client.From<Worker>()
+                        .Where(w => w.Id == wid)
+                        .Get();
+                    var worker = wr.Models?.FirstOrDefault();
+                    if (worker != null)
+                        result.Add(worker);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, $"❌ Failed to get assigned workers for reservation {reservationId}");
+            }
+
+            return result;
         }
 
         #endregion

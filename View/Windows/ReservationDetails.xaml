@@ -73,10 +73,15 @@
             </StackPanel>
         </materialDesign:DialogHost.DialogContent>
 
+        <!-- MAIN LAYOUT -->
         <Grid Margin="12">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Main content -->
+                <RowDefinition Height="Auto"/>
+                <!-- Bottom buttons -->
             </Grid.RowDefinitions>
 
             <!-- HEADER -->
@@ -96,10 +101,9 @@
                            Text="Detailed information for a specific reservation"/>
             </StackPanel>
 
-            <!-- MAIN GRID -->
+            <!-- MAIN CONTENT -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <!-- Responsive widths with min limits -->
                     <ColumnDefinition Width="*" MinWidth="400"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*" MinWidth="400"/>
@@ -158,7 +162,6 @@
                         </GroupBox>
 
                         <!-- COUNTS & STATUS -->
-                        <!-- Counts & Status -->
                         <GroupBox Header="Counts &amp; Status" Padding="10" Margin="0,0,0,12">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -167,7 +170,6 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Top row: Adults and Kids side by side -->
                                 <Grid Grid.Row="0" Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -175,38 +177,29 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- Adults -->
                                     <StackPanel Grid.Column="0">
                                         <TextBlock Text="Adults" Margin="0,0,0,4" />
-                                        <TextBox Text="{Binding Reservation.AdultsQty, StringFormat={}{0:0}}" 
-                          Style="{StaticResource TextBoxDisableWhenFinal}"/>
+                                        <TextBox Text="{Binding Reservation.AdultsQty, StringFormat={}{0:0}}" Style="{StaticResource TextBoxDisableWhenFinal}"/>
                                     </StackPanel>
 
-                                    <!-- Kids -->
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Kids" Margin="0,0,0,4" />
-                                        <TextBox Text="{Binding Reservation.KidsQty, StringFormat={}{0:0}}" 
-                          Style="{StaticResource TextBoxDisableWhenFinal}"/>
+                                        <TextBox Text="{Binding Reservation.KidsQty, StringFormat={}{0:0}}" Style="{StaticResource TextBoxDisableWhenFinal}"/>
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Status label -->
                                 <TextBlock Grid.Row="1" Text="Reservation Status" Margin="0,0,0,6" FontSize="14"/>
 
-                                <!-- Status combo -->
                                 <ComboBox Grid.Row="2"
-                   SelectedValue="{Binding Reservation.Status}" SelectedValuePath="Content"
-                   Style="{StaticResource ComboBoxDisableWhenFinal}">
+                                          SelectedValue="{Binding Reservation.Status}" SelectedValuePath="Content"
+                                          Style="{StaticResource ComboBoxDisableWhenFinal}">
                                     <ComboBoxItem Content="pending"/>
                                     <ComboBoxItem Content="confirmed"/>
                                     <ComboBoxItem Content="contractsigning"/>
                                     <ComboBoxItem Content="completed"/>
-                                    <ComboBoxItem Content="done"/>
-                                    <ComboBoxItem Content="canceled"/>
                                 </ComboBox>
                             </Grid>
                         </GroupBox>
-
 
                         <!-- CLIENT & PACKAGE -->
                         <GroupBox Header="Client &amp; Package" Padding="10" Margin="0,0,0,12">
@@ -239,9 +232,6 @@
                                 <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Reservation.ThemeMotif.Name}" Margin="0,6,0,0" />
                             </Grid>
                         </GroupBox>
-
-                        <!-- ACTION BUTTONS -->
-                        
                     </StackPanel>
                 </ScrollViewer>
 
@@ -254,7 +244,6 @@
                         <TextBlock Text="Menu Orders" FontSize="16" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,8"/>
 
-                        <!-- MENU LIST FIXED -->
                         <Border BorderThickness="1" BorderBrush="#DDD" CornerRadius="4" Padding="8" Margin="0,0,0,12">
                             <ListView ItemsSource="{Binding ReservationMenuOrders}"
                                       SelectedItem="{Binding SelectedMenuOrder}"
@@ -263,12 +252,8 @@
                                       VerticalAlignment="Stretch">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Header="Dish"
-                                                        DisplayMemberBinding="{Binding menu_options.Name}"
-                                                        />
-                                        <GridViewColumn Header="Added At"
-                                                        DisplayMemberBinding="{Binding CreatedAt, StringFormat='{}{0:MMM dd, yyyy HH:mm}'}"
-                                                        Width="200" />
+                                        <GridViewColumn Header="Dish" DisplayMemberBinding="{Binding menu_options.Name}" />
+                                        <GridViewColumn Header="Added At" DisplayMemberBinding="{Binding CreatedAt, StringFormat='{}{0:MMM dd, yyyy HH:mm}'}" Width="200" />
                                     </GridView>
                                 </ListView.View>
                                 <ListView.ItemContainerStyle>
@@ -278,45 +263,45 @@
                                 </ListView.ItemContainerStyle>
                             </ListView>
                         </Border>
-
-                        <!-- ACTION BUTTONS MOVED HERE -->
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
-                            <Button Style="{StaticResource ButtonDisableWhenFinal}"
-                                    Command="{Binding UpdateReservationCommand}"
-                                    Background="#673AB7"
-                                    Foreground="White"
-                                    Padding="10,6" Height="34">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18"/>
-                                    <TextBlock Text="Update" Margin="8,0,0,0" FontSize="14"/>
-                                </StackPanel>
-                            </Button>
-
-                            <Button Style="{StaticResource ButtonDisableWhenFinal}"
-                                    Command="{Binding GenerateContractCommand}"
-                                    Background="#3949AB"
-                                    Foreground="White"
-                                    Padding="10,6" Height="34" Margin="8,0,0,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="FilePdfBox" Width="18" Height="18"/>
-                                    <TextBlock Text="Contract" Margin="8,0,0,0" FontSize="14"/>
-                                </StackPanel>
-                            </Button>
-
-                            <Button Style="{StaticResource ButtonDisableWhenFinal}"
-                                    Command="{Binding CancelReservationCommand}"
-                                    Background="#E53935"
-                                    Foreground="White"
-                                    Padding="10,6" Height="34" Margin="8,0,0,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="CloseCircle" Width="18" Height="18"/>
-                                    <TextBlock Text="Cancel" Margin="8,0,0,0" FontSize="14"/>
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
+
+            <!-- FIXED BOTTOM BUTTONS -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                <Button Style="{StaticResource ButtonDisableWhenFinal}"
+                        Command="{Binding UpdateReservationCommand}"
+                        Background="#673AB7"
+                        Foreground="White"
+                        Padding="10,6" Height="34">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18"/>
+                        <TextBlock Text="Update" Margin="8,0,0,0" FontSize="14"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource ButtonDisableWhenFinal}"
+                        Command="{Binding GenerateContractCommand}"
+                        Background="#3949AB"
+                        Foreground="White"
+                        Padding="10,6" Height="34" Margin="8,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FilePdfBox" Width="18" Height="18"/>
+                        <TextBlock Text="Contract" Margin="8,0,0,0" FontSize="14"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource ButtonDisableWhenFinal}"
+                        Command="{Binding CancelReservationCommand}"
+                        Background="#E53935"
+                        Foreground="White"
+                        Padding="10,6" Height="34" Margin="8,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="CloseCircle" Width="18" Height="18"/>
+                        <TextBlock Text="Cancel" Margin="8,0,0,0" FontSize="14"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
     </materialDesign:DialogHost>
 </Window>

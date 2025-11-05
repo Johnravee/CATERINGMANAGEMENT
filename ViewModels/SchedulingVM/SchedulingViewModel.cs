@@ -14,9 +14,13 @@ using CATERINGMANAGEMENT.Helpers;
 using CATERINGMANAGEMENT.Models;
 using CATERINGMANAGEMENT.Services.Data;
 using CATERINGMANAGEMENT.View.Windows;
+using CATERINGMANAGEMENT.Mailer;
+using CATERINGMANAGEMENT.Services;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using static Supabase.Realtime.PostgresChanges.PostgresChangesOptions;
 
 namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
@@ -87,6 +91,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         public ICommand PrevPageCommand { get; }
         public ICommand OpenAssignWorkerCommand { get; }
         public ICommand OpenEditScheduleCommand { get; }
+        public ICommand DeleteScheduledWorkerCommand { get; }
         #endregion
 
         #region Constructor
@@ -97,8 +102,12 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             PrevPageCommand = new RelayCommand(async () => await LoadSchedulesAsync(CurrentPage - 1), () => CurrentPage > 1);
             OpenAssignWorkerCommand = new RelayCommand(OpenAssignWorkerWindow);
             OpenEditScheduleCommand = new RelayCommand<GroupedScheduleView>(OpenEditScheduleWindow);
+            DeleteScheduledWorkerCommand = new RelayCommand<GroupedScheduleView>(async (row) => await DeleteRowAsync(row));
 
             _ = ReloadDataAsync();
+
+            // Start realtime subscription for grouped schedules
+            _ = Task.Run(SubscribeToRealtimeAsync);
         }
         #endregion
 
@@ -205,6 +214,87 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             {
                 AppLogger.Error(ex, "Failed to open EditSchedule window");
                 ShowMessage($"Failed to open EditSchedule window:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task DeleteRowAsync(GroupedScheduleView row)
+        {
+            if (row == null) return;
+
+            var confirm = MessageBox.Show($"Remove all workers from reservation {row.ReceiptNumber}?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes) return;
+
+            try
+            {
+                IsLoading = true;
+
+                // fetch workers to email before deletion
+                var workers = await _schedulingService.GetAssignedWorkersByReservationAsync(row.ReservationId);
+
+                var ok = await _schedulingService.RemoveAllWorkersFromScheduleAsync(row.ReservationId);
+                if (ok)
+                {
+                    // fire-and-forget email notifications
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var mailer = new RemoveWorkerMailer(new Services.EmailService());
+                            await mailer.NotifyWorkersRemovalAsync(
+                                workers,
+                                row.PackageName ?? "Event",
+                                row.EventDate.ToString("MMMM dd, yyyy"),
+                                row.Venue ?? "Venue");
+                        }
+                        catch (Exception ex)
+                        {
+                            AppLogger.Error(ex, "Error emailing workers on delete", showToUser: false);
+                        }
+                    });
+
+                    // Do NOT force-refresh here; caches were invalidated in the service and
+                    // realtime subscription will trigger ReloadDataAsync upon DB change events.
+                    AppLogger.Success($"Cleared schedule for reservation {row.ReservationId}. Waiting for realtime sync...");
+                }
+                else
+                {
+                    ShowMessage("Delete failed. Please try again.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error deleting scheduled workers for row");
+                ShowMessage($"Error deleting: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task SubscribeToRealtimeAsync()
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+                var channel = client.Realtime.Channel("realtime", "public", "scheduling");
+
+                channel.AddPostgresChangeHandler(ListenType.All, (s, change) =>
+                {
+                    Debug.WriteLine($"[schedules realtime] event: {change.Event}");
+                });
+
+                // Inserts/Updates/Deletes -> refresh current page
+                channel.AddPostgresChangeHandler(ListenType.Inserts, async (s, c) => await ReloadDataAsync());
+                channel.AddPostgresChangeHandler(ListenType.Updates, async (s, c) => await ReloadDataAsync());
+                channel.AddPostgresChangeHandler(ListenType.Deletes, async (s, c) => await ReloadDataAsync());
+
+                var result = await channel.Subscribe();
+                AppLogger.Success($"Subscribed to realtime grouped schedules: {result}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error subscribing to realtime schedules");
             }
         }
 

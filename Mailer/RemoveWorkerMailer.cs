@@ -1,5 +1,7 @@
 using CATERINGMANAGEMENT.Services;
 using CATERINGMANAGEMENT.Templates;
+using CATERINGMANAGEMENT.Models;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CATERINGMANAGEMENT.Mailer
@@ -33,6 +35,23 @@ namespace CATERINGMANAGEMENT.Mailer
             );
 
             return await _emailService.SendEmailAsync(workerEmail, subject, body, isHtml: true);
+        }
+
+        public async Task NotifyWorkersRemovalAsync(IEnumerable<Worker> workers, string eventName, string eventDate, string eventVenue)
+        {
+            foreach (var w in workers)
+            {
+                if (string.IsNullOrWhiteSpace(w.Email))
+                    continue;
+                await SendWorkerRemovalEmailAsync(
+                    w.Email,
+                    w.Name ?? "Staff",
+                    w.Role ?? "Staff",
+                    eventName,
+                    eventDate,
+                    eventVenue
+                );
+            }
         }
     }
 }

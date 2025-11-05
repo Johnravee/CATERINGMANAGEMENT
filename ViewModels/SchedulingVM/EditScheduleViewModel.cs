@@ -19,6 +19,7 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Linq;
 
 namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 {
@@ -34,6 +35,15 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         #region Data
         public GroupedScheduleView GroupedSchedule { get; }
         public ObservableCollection<Worker> AssignedWorkers { get; } = new();
+        #endregion
+
+        #region UI State
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set { _isBusy = value; OnPropertyChanged(); }
+        }
         #endregion
 
         #region Commands
@@ -87,6 +97,23 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             }
         }
 
+        private async Task<Worker?> FetchWorkerDetailsAsync(int workerId)
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+                var response = await client.From<Worker>()
+                                           .Where(w => w.Id == workerId)
+                                           .Get();
+                return response.Models?.FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, $"Failed to fetch worker details for Id {workerId}");
+                return null;
+            }
+        }
+
         private async Task RemoveWorkerAsync(Worker worker)
         {
             if (worker == null) return;
@@ -99,8 +126,26 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
             if (confirm != MessageBoxResult.Yes) return;
 
+            // Capture event info up-front
+            string eventName = GroupedSchedule.PackageName ?? "Event";
+            string eventDate = GroupedSchedule.EventDate.ToString("MMMM dd, yyyy");
+            string eventVenue = GroupedSchedule.Venue ?? "Venue";
+
+            IsBusy = true;
             try
             {
+                // Prefetch missing worker details before removal/reload
+                if (string.IsNullOrWhiteSpace(worker.Email) || string.IsNullOrWhiteSpace(worker.Role) || string.IsNullOrWhiteSpace(worker.Name))
+                {
+                    var full = await FetchWorkerDetailsAsync(worker.Id);
+                    if (full != null)
+                    {
+                        worker.Email = string.IsNullOrWhiteSpace(worker.Email) ? full.Email : worker.Email;
+                        worker.Role = string.IsNullOrWhiteSpace(worker.Role) ? full.Role : worker.Role;
+                        worker.Name = string.IsNullOrWhiteSpace(worker.Name) ? full.Name : worker.Name;
+                    }
+                }
+
                 bool success = await _schedulingService.RemoveWorkerFromScheduleAsync(GroupedSchedule.ReservationId, worker.Id);
 
                 if (success)
@@ -108,9 +153,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                     AssignedWorkers.Remove(worker);
                     AppLogger.Success($"Removed worker '{worker.Name}' from reservation {GroupedSchedule.ReservationId}");
 
-                    await _parentViewModel.ReloadDataAsync();
-
-                    // Attempt to notify the worker by email if we have an email address
+                    // Send email BEFORE parent reload
                     try
                     {
                         if (!string.IsNullOrWhiteSpace(worker.Email))
@@ -119,9 +162,9 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                                 worker.Email,
                                 worker.Name ?? "Staff",
                                 worker.Role ?? "Staff",
-                                GroupedSchedule.PackageName ?? "Event",
-                                GroupedSchedule.EventDate.ToString("MMMM dd, yyyy"),
-                                GroupedSchedule.Venue ?? "Venue"
+                                eventName,
+                                eventDate,
+                                eventVenue
                             );
 
                             if (emailed)
@@ -139,6 +182,8 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                         AppLogger.Error(mailEx, "Error sending worker removal email", showToUser: false);
                     }
 
+                    await _parentViewModel.ReloadDataAsync();
+
                     MessageBox.Show("Worker removed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
@@ -151,6 +196,10 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             {
                 AppLogger.Error(ex, "Failed to remove worker from schedule.");
                 MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 

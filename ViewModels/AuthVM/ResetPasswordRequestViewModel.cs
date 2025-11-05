@@ -110,7 +110,7 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                 {
                     AppLogger.Success("Password reset link requested.");
                     ShowMessage("Check your email for the reset link. If you don't see it, check your Spam/Junk folder.", "Reset Password");
-                    StartCooldown(30); // prevent duplicate requests for 30s
+                    StartCooldown(60); // prevent duplicate requests for 30s
                 }
                 else
                 {

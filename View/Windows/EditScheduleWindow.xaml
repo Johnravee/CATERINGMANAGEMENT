@@ -5,7 +5,13 @@
         Title="Edit Schedule"
         Height="500" Width="800"
         WindowStartupLocation="CenterScreen"
-        Background="#FFFDFDFD">
+        Background="#FFFDFDFD"
+        x:Name="EditScheduleWin">
+
+    <!-- Move converter to a scope available at parse time -->
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+    </Window.Resources>
 
     <Grid Margin="15">
         <Grid.RowDefinitions>
@@ -120,7 +126,7 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Content="Remove"
-                                            Command="{Binding DataContext.RemoveWorkerCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Command="{Binding DataContext.RemoveWorkerCommand, Source={x:Reference EditScheduleWin}}"
                                             CommandParameter="{Binding}"
                                             Foreground="White"
                                             Background="#C62828"
@@ -131,6 +137,16 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </ScrollViewer>
+        </Grid>
+
+        <!-- Loader Overlay -->
+        <Grid Grid.RowSpan="3"
+              Background="#66000000"
+              Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="56" Height="56" Style="{StaticResource MaterialDesignCircularProgressBar}"/>
+                <TextBlock Text="Processing..." Foreground="White" Margin="0,8,0,0"/>
+            </StackPanel>
         </Grid>
 
         <!-- Close Button -->
