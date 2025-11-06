@@ -76,12 +76,6 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
                     gfx.DrawString(U(reservation.AdultsQty.ToString()), font, brush, new XPoint(227.94, 304.76));
                     gfx.DrawString(U(reservation.KidsQty.ToString()), font, brush, new XPoint(414.99, 304.76));
 
-                    // Additional line for optional items: render Grazing if it has value
-                    if (!string.IsNullOrWhiteSpace(reservation.Grazing?.Name))
-                    {
-                        gfx.DrawString(U(reservation.Grazing?.Name), font, brush, new XPoint(134.65, 325.58));
-                    }
-
                     // Save the document
                     document.Save(savePath);
                     Process.Start(new ProcessStartInfo

@@ -20,12 +20,8 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
     {
         private readonly PackageService _packageService = new();
         private readonly ThemeMotifService _themeService = new();
-        private readonly GrazingService _grazingService = new();
         private readonly EmailService _emailService = new();
         private readonly ContractMailer _contractMailer;
-
-        // Grazing is optional; include a 'None' option
-        private static readonly GrazingTable GrazingNone = new() { Id = 0, Name = "None", Category = string.Empty, CreatedAt = DateTime.UtcNow };
 
         public AdminContractViewModel()
         {
@@ -70,16 +66,12 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
         public ObservableCollection<Package> Packages { get; } = new();
         public ObservableCollection<ThemeMotif> Themes { get; } = new();
-        public ObservableCollection<GrazingTable> Grazings { get; } = new();
 
         private Package? _selectedPackage;
         public Package? SelectedPackage { get => _selectedPackage; set { _selectedPackage = value; OnPropertyChanged(); } }
 
         private ThemeMotif? _selectedTheme;
         public ThemeMotif? SelectedTheme { get => _selectedTheme; set { _selectedTheme = value; OnPropertyChanged(); } }
-
-        private GrazingTable? _selectedGrazing;
-        public GrazingTable? SelectedGrazing { get => _selectedGrazing; set { _selectedGrazing = value; OnPropertyChanged(); } }
 
         private bool _sendEmail = true;
         public bool SendEmail { get => _sendEmail; set { _sendEmail = value; OnPropertyChanged(); } }
@@ -105,16 +97,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                     Themes.Clear();
                     foreach (var t in motifs) Themes.Add(t);
                     if (Themes.Count > 0) SelectedTheme = Themes[0];
-                });
-
-                // Load all grazing options + add 'None' option as default
-                var graz = await _grazingService.GetAllGrazingAsync();
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    Grazings.Clear();
-                    Grazings.Add(GrazingNone);
-                    foreach (var g in graz) Grazings.Add(g);
-                    SelectedGrazing = GrazingNone;
                 });
             }
             catch (Exception ex)
@@ -177,8 +159,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                         Address = this.ClientAddress ?? string.Empty
                     },
                     Package = SelectedPackage,
-                    ThemeMotif = SelectedTheme,
-                    Grazing = (SelectedGrazing != null && SelectedGrazing.Id != 0) ? SelectedGrazing : null
+                    ThemeMotif = SelectedTheme
                 };
 
                 // Choose save path

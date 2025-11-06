@@ -164,13 +164,6 @@
                                       SelectedItem="{Binding SelectedTheme}"
                                       DisplayMemberPath="Name"
                                       Style="{StaticResource MaterialDesignComboBox}"/>
-
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Grazing:" Margin="0,8,0,0" VerticalAlignment="Center"/>
-                            <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,8,0,0"
-                                      ItemsSource="{Binding Grazings}"
-                                      SelectedItem="{Binding SelectedGrazing}"
-                                      DisplayMemberPath="Name"
-                                      Style="{StaticResource MaterialDesignComboBox}"/>
                         </Grid>
                     </GroupBox>
 
