@@ -38,7 +38,7 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         public ICollectionView FilteredWorkers => _filteredWorkers.View;
         #endregion
 
-        #region Selected Reservation & Search
+        #region Selected Reservation & Manual Mode
         private Reservation? _selectedReservation;
         public Reservation? SelectedReservation
         {
@@ -46,6 +46,24 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             set { _selectedReservation = value; OnPropertyChanged(); }
         }
 
+        private bool _useManualAssignment;
+        public bool UseManualAssignment
+        {
+            get => _useManualAssignment;
+            set { _useManualAssignment = value; OnPropertyChanged(); }
+        }
+
+        private string _manualEventName = string.Empty;
+        public string ManualEventName { get => _manualEventName; set { _manualEventName = value; OnPropertyChanged(); } }
+
+        private DateTime _manualEventDate = DateTime.Today.AddDays(1);
+        public DateTime ManualEventDate { get => _manualEventDate; set { _manualEventDate = value; OnPropertyChanged(); } }
+
+        private string _manualEventVenue = string.Empty;
+        public string ManualEventVenue { get => _manualEventVenue; set { _manualEventVenue = value; OnPropertyChanged(); } }
+        #endregion
+
+        #region Search
         private string? _searchText;
         public string? SearchText
         {
@@ -117,7 +135,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         {
             if (worker == null) return;
 
-           
             if (string.Equals(worker.Status, "Terminated", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(worker.Status, "On Leave", StringComparison.OrdinalIgnoreCase))
             {
@@ -134,7 +151,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
             else
                 AssignedWorkers.Add(worker);
         }
-
 
         private void RemoveAssignedWorker(Worker worker)
         {
@@ -175,16 +191,31 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
         #region Batch Assignment
         private async Task BatchAssignWorkers()
         {
-            if (SelectedReservation == null)
-            {
-                MessageBox.Show("Please select a reservation first.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
             if (AssignedWorkers.Count == 0)
             {
                 MessageBox.Show("Please select at least one worker to assign.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
+
+            if (!UseManualAssignment && SelectedReservation == null)
+            {
+                MessageBox.Show("Please select a reservation first or enable 'Other (manual)'.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (UseManualAssignment)
+            {
+                // Validate manual fields
+                if (string.IsNullOrWhiteSpace(ManualEventName))
+                {
+                    MessageBox.Show("Please enter an event name.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(ManualEventVenue))
+                {
+                    MessageBox.Show("Please enter an event venue.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
             }
 
             try
@@ -195,7 +226,6 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
 
                 foreach (var worker in AssignedWorkers)
                 {
-                    // Validate worker before calling service
                     if (string.Equals(worker.Status, "Terminated", StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(worker.Status, "On Leave", StringComparison.OrdinalIgnoreCase))
                     {
@@ -216,41 +246,60 @@ namespace CATERINGMANAGEMENT.ViewModels.SchedulingVM
                         return;
                     }
 
-                    // Assign worker
-                    bool assigned = await _assignWorkerService.AssignWorkerAsync(worker, SelectedReservation);
-                    if (!assigned)
+                    if (UseManualAssignment)
                     {
-                        AppLogger.Error($"Failed to assign worker {worker.Name} (ID: {worker.Id})");
-                        MessageBox.Show($"Failed to assign '{worker.Name}'. Please try again.",
-                                        "Assignment Failed",
-                                        MessageBoxButton.OK,
-                                        MessageBoxImage.Error);
-                        anyFailed = true;
-                        continue;
-                    }
+                        // Only send email; do not create DB links
+                        var tempReservation = new Reservation
+                        {
+                            Package = new Package { Name = ManualEventName },
+                            EventDate = ManualEventDate.Date,
+                            Venue = ManualEventVenue
+                        };
 
-                    // Queue email sending
-                    emailTasks.Add(_assignWorkerService.SendEmailAsync(worker, SelectedReservation));
+                        emailTasks.Add(_assignWorkerService.SendEmailAsync(worker, tempReservation));
+                    }
+                    else
+                    {
+                        // Assign in DB then send email
+                        bool assigned = await _assignWorkerService.AssignWorkerAsync(worker, SelectedReservation!);
+                        if (!assigned)
+                        {
+                            AppLogger.Error($"Failed to assign worker {worker.Name} (ID: {worker.Id})");
+                            MessageBox.Show($"Failed to assign '{worker.Name}'. Please try again.",
+                                            "Assignment Failed",
+                                            MessageBoxButton.OK,
+                                            MessageBoxImage.Error);
+                            anyFailed = true;
+                            continue;
+                        }
+
+                        emailTasks.Add(_assignWorkerService.SendEmailAsync(worker, SelectedReservation!));
+                    }
                 }
 
                 // Wait for all emails to finish
-                bool[] emailResults = await Task.WhenAll(emailTasks);
-
-                for (int i = 0; i < emailResults.Length; i++)
+                if (emailTasks.Count > 0)
                 {
-                    if (!emailResults[i])
+                    bool[] emailResults = await Task.WhenAll(emailTasks);
+                    for (int i = 0; i < emailResults.Length; i++)
                     {
-                        var failedWorker = AssignedWorkers.ElementAt(i);
-                        AppLogger.Error($"Email failed to send to {failedWorker.Name} ({failedWorker.Email})", showToUser: false);
+                        if (!emailResults[i])
+                        {
+                            var failedWorker = AssignedWorkers.ElementAt(i);
+                            AppLogger.Error($"Email failed to send to {failedWorker.Name} ({failedWorker.Email})", showToUser: false);
+                        }
                     }
                 }
 
-                await Task.Delay(500);
-                await _parentViewModel.ReloadDataAsync();
+                if (!UseManualAssignment)
+                {
+                    await Task.Delay(500);
+                    await _parentViewModel.ReloadDataAsync();
+                }
 
                 if (!anyFailed)
                 {
-                    MessageBox.Show("Workers successfully assigned and emails sent.",
+                    MessageBox.Show(UseManualAssignment ? "Emails sent to selected workers." : "Workers successfully assigned and emails sent.",
                                     "Success",
                                     MessageBoxButton.OK,
                                     MessageBoxImage.Information);

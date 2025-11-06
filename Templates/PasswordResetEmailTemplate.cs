@@ -4,9 +4,9 @@ namespace CATERINGMANAGEMENT.Templates
 {
     public static class PasswordResetEmailTemplate
     {
-        public static string GetHtmlBody(string recipientEmail, string resetLink, string brandName = "CaterMate", string? supportEmail = null)
+        public static string GetHtmlBody(string recipientEmail, string resetLink, string brandName = "OSHDY Events Catering Services", string? supportEmail = null)
         {
-            var safeBrand = string.IsNullOrWhiteSpace(brandName) ? "CaterMate" : brandName.Trim();
+            var safeBrand = string.IsNullOrWhiteSpace(brandName) ? "OSHDY Events Catering Services" : brandName.Trim();
             var contactLine = !string.IsNullOrWhiteSpace(supportEmail)
                 ? $"If you did not request this, please ignore this email or contact us at {supportEmail}."
                 : "If you did not request this, you can safely ignore this email.";

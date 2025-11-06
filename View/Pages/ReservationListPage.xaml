@@ -112,7 +112,7 @@
                 </StackPanel>
             </StackPanel>
 
-            <!-- Top-right Button (report removed, keep Checklist) -->
+            <!-- Top-right Button (Checklist + Admin Contract) -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Style="{StaticResource ModernFlatButton}"
                         Padding="12,6"
@@ -121,6 +121,16 @@
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="ClipboardTextOutline" Width="16" Height="16" Margin="0,1.5,4,0"/>
                         <TextBlock Text="Checklist"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource ModernFlatButton}"
+                        Padding="12,6"
+                        Background="#5E35B1"
+                        Command="{Binding OpenAdminContractWindowCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FileDocumentOutline" Width="16" Height="16" Margin="0,1.5,4,0"/>
+                        <TextBlock Text="Admin Contract"/>
                     </StackPanel>
                 </Button>
             </StackPanel>

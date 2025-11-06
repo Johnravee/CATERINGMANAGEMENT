@@ -49,33 +49,38 @@ namespace CATERINGMANAGEMENT.DocumentsGenerator
 
                     gfx.DrawImage(bgImage, 0, 0, page.Width, page.Height);
 
-                    // Font and brush
-                    var font = new XFont("Arial", 10);
+                    // Font and brush (bold + uppercase for values except email)
+                    var font = new XFont("Arial", 10, XFontStyleEx.Bold);
                     var brush = XBrushes.Black;
+                    static string U(string? s) => (s ?? string.Empty).ToUpperInvariant();
 
-                    // Draw values on correct coordinates
-                    gfx.DrawString(DateTime.Now.ToString("MMMM dd, yyyy"), font, brush, new XPoint(364.85, 124.35));
-                    gfx.DrawString(reservation.Profile?.FullName ?? string.Empty, font, brush, new XPoint(121.49, 146.85));
-                    gfx.DrawString(reservation.Celebrant, font, brush, new XPoint(385.77, 146.85));
+                    // Draw values on correct coordinates (uppercase, bold). Email stays as-is (not uppercased).
+                    gfx.DrawString(U(DateTime.Now.ToString("MMMM dd, yyyy")), font, brush, new XPoint(364.85, 124.35));
+                    gfx.DrawString(U(reservation.Profile?.FullName), font, brush, new XPoint(121.49, 146.85));
+                    gfx.DrawString(U(reservation.Celebrant), font, brush, new XPoint(385.77, 146.85));
 
-                    gfx.DrawString(reservation.Profile?.Address ?? string.Empty, font, brush, new XPoint(130.70, 168.17));
-                    gfx.DrawString(reservation.Profile?.ContactNumber ?? string.Empty, font, brush, new XPoint(148.86, 191.07));
+                    gfx.DrawString(U(reservation.Profile?.Address), font, brush, new XPoint(130.70, 168.17));
+                    gfx.DrawString(U(reservation.Profile?.ContactNumber), font, brush, new XPoint(148.86, 191.07));
                     gfx.DrawString(reservation.Profile?.Email ?? string.Empty, font, brush, new XPoint(361.29, 192.25));
 
-                    gfx.DrawString(reservation.Package?.Name ?? string.Empty, font, brush, new XPoint(130, 215));
-                    gfx.DrawString(reservation.Package?.Name ?? string.Empty, font, brush, new XPoint(396.04, 213.96));
+                    gfx.DrawString(U(reservation.Package?.Name), font, brush, new XPoint(130, 215));
+                    gfx.DrawString(U(reservation.Package?.Name), font, brush, new XPoint(396.04, 213.96));
 
-                    gfx.DrawString(reservation.ThemeMotif?.Name ?? string.Empty, font, brush, new XPoint(153.99, 235.28));
-                    gfx.DrawString(reservation.Venue, font, brush, new XPoint(118.46, 258.97));
-                    gfx.DrawString(reservation.Location, font, brush, new XPoint(377.48, 257.58));
+                    gfx.DrawString(U(reservation.ThemeMotif?.Name), font, brush, new XPoint(153.99, 235.28));
+                    gfx.DrawString(U(reservation.Venue), font, brush, new XPoint(118.46, 258.97));
+                    gfx.DrawString(U(reservation.Location), font, brush, new XPoint(377.48, 257.58));
 
-                    gfx.DrawString(reservation.EventDate.ToString("MMMM dd, yyyy"), font, brush, new XPoint(167, 281.47));
-                    gfx.DrawString(reservation.EventTime.ToString(@"hh\:mm"), font, brush, new XPoint(431.86, 281.47));
+                    gfx.DrawString(U(reservation.EventDate.ToString("MMMM dd, yyyy")), font, brush, new XPoint(167, 281.47));
+                    gfx.DrawString(U(reservation.EventTime.ToString(@"hh\:mm")), font, brush, new XPoint(431.86, 281.47));
 
-                    gfx.DrawString(reservation.AdultsQty.ToString(), font, brush, new XPoint(227.94, 304.76));
-                    gfx.DrawString(reservation.KidsQty.ToString(), font, brush, new XPoint(414.99, 304.76));
+                    gfx.DrawString(U(reservation.AdultsQty.ToString()), font, brush, new XPoint(227.94, 304.76));
+                    gfx.DrawString(U(reservation.KidsQty.ToString()), font, brush, new XPoint(414.99, 304.76));
 
-                    gfx.DrawString("None", font, brush, new XPoint(134.65, 325.58)); // Additional field
+                    // Additional line for optional items: render Grazing if it has value
+                    if (!string.IsNullOrWhiteSpace(reservation.Grazing?.Name))
+                    {
+                        gfx.DrawString(U(reservation.Grazing?.Name), font, brush, new XPoint(134.65, 325.58));
+                    }
 
                     // Save the document
                     document.Save(savePath);

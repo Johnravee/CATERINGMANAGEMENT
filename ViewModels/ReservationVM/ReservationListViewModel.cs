@@ -112,6 +112,7 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         public ICommand OpenChecklistBuilderCommand { get; }
         public ICommand GenerateContractCommand { get; }
         public ICommand MarkAsDoneCommand { get; }
+        public ICommand OpenAdminContractWindowCommand { get; } // new
         #endregion
 
         #region Constructor
@@ -127,6 +128,9 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             // initialize mark-as-done command
             MarkAsDoneCommand = new RelayCommand<Reservation>(async (res) => await MarkReservationAsDoneAsync(res));
 
+            // new: open admin contract window from list page header
+            OpenAdminContractWindowCommand = new RelayCommand(OpenAdminContractWindow);
+
             _ = Task.Run(SubscribeToRealtime);
         }
         #endregion
@@ -135,6 +139,17 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
         private void OpenChecklistBuilder()
         {
             var win = new ChecklistBuilder
+            {
+                Owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+            };
+            win.ShowDialog();
+        }
+        #endregion
+
+        #region Admin Contract Window
+        private void OpenAdminContractWindow()
+        {
+            var win = new AdminContractWindow
             {
                 Owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
             };

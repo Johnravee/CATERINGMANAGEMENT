@@ -14,6 +14,24 @@ namespace CATERINGMANAGEMENT.Services.Data
 
         private async Task<Supabase.Client> GetClientAsync() => await SupabaseService.GetClientAsync();
 
+        // New: Get all theme & motif items (no pagination)
+        public async Task<List<ThemeMotif>> GetAllThemeMotifsAsync()
+        {
+            try
+            {
+                var client = await GetClientAsync();
+                var response = await client.From<ThemeMotif>()
+                    .Order(x => x.CreatedAt, Ordering.Descending)
+                    .Get();
+                return response.Models ?? new List<ThemeMotif>();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error fetching all theme & motif options");
+                return new List<ThemeMotif>();
+            }
+        }
+
         // Paginated list with caching
         public async Task<(List<ThemeMotif> Items, int TotalCount)> GetThemeMotifPageAsync(int pageNumber)
         {

@@ -7,15 +7,28 @@ namespace CATERINGMANAGEMENT.Helpers
     {
         /// <summary>
         /// Handles custom protocol deep links. Returns true if a window was opened.
+        /// Also enforces optional issued/exp query params appended by our redirect_to.
         /// </summary>
         public static bool Handle(Uri uri)
         {
             if (uri == null) return false;
 
+            // validate optional expiry (issued/exp)
+            var all = Merge(ParseKvp(uri.Fragment, isFragment: true), ParseKvp(uri.Query, isFragment: false));
+            if (all.TryGetValue("exp", out var expStr) && long.TryParse(expStr, out var expUnix))
+            {
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                if (now > expUnix)
+                {
+                    MessageBox.Show("This link has expired. Please request a new one.", "Link expired", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+            }
+
             // Only handle our custom scheme hosts
             if (uri.Host.Equals("reset-password", StringComparison.OrdinalIgnoreCase))
             {
-                var tokens = Merge(ParseKvp(uri.Fragment, isFragment: true), ParseKvp(uri.Query, isFragment: false));
+                var tokens = all; // already merged
 
                 tokens.TryGetValue("type", out var type);
                 tokens.TryGetValue("access_token", out var accessToken);

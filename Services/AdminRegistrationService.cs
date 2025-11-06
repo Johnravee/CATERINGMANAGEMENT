@@ -20,6 +20,22 @@ namespace CATERINGMANAGEMENT.Services
             return "cater://reset-password";
         }
 
+        private static string AppendExpiry(string baseRedirect, string purpose, int minutes)
+        {
+            try
+            {
+                var issued = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var exp = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeSeconds();
+                var qs = $"purpose={Uri.EscapeDataString(purpose)}&issued={issued}&exp={exp}";
+                var separator = baseRedirect.Contains('?') ? "&" : "?";
+                return baseRedirect + separator + qs;
+            }
+            catch
+            {
+                return baseRedirect;
+            }
+        }
+
         public static async Task<bool> RegisterAdminAsync(string email, string password)
         {
             try
@@ -36,8 +52,8 @@ namespace CATERINGMANAGEMENT.Services
                 http.DefaultRequestHeaders.Add("apikey", anonKey);
                 http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", anonKey);
 
-                // Always send a redirect_to so links open the app in production
-                var redirectTo = ResolveRedirectTo();
+                // Always send a redirect_to so links open the app in production and include an app-side expiry guard (e.g., 60 minutes)
+                var redirectTo = AppendExpiry(ResolveRedirectTo(), "signup", minutes: 1440);
 
                 var payload = new
                 {

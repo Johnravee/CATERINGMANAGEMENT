@@ -87,14 +87,14 @@ namespace CATERINGMANAGEMENT.ViewModels.AuthVM
                     return;
                 }
 
-                // Specific error message based on error code
-                string message = result.Message ?? result.Error switch
+                // Prefer our own copy for known errors; only use result.Message for UnknownError
+                string message = result.Error switch
                 {
                     LoginErrorCode.UnverifiedEmail => "Your email is not verified. Please check your inbox for the confirmation link.",
                     LoginErrorCode.NotAdmin => "Your account does not have admin access. Only admins can log in here.",
                     LoginErrorCode.InvalidCredentials => "The credentials entered are incorrect. Please verify your email and password and try again.",
                     LoginErrorCode.NetworkError => "Network error. Please check your internet connection and try again.",
-                    _ => "Login failed due to an unexpected error."
+                    _ => string.IsNullOrWhiteSpace(result.Message) ? "Login failed due to an unexpected error." : result.Message!
                 };
 
                 MessageBox.Show(message, "Login Failed", MessageBoxButton.OK, MessageBoxImage.Warning);

@@ -21,6 +21,24 @@ namespace CATERINGMANAGEMENT.Services.Data
             return client;
         }
 
+        // New: Get all grazing items (no pagination)
+        public async Task<List<GrazingTable>> GetAllGrazingAsync()
+        {
+            try
+            {
+                var client = await GetClientAsync();
+                var response = await client.From<GrazingTable>()
+                    .Order(x => x.CreatedAt, Ordering.Descending)
+                    .Get();
+                return response.Models ?? new List<GrazingTable>();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error(ex, "Error fetching all grazing options");
+                return new List<GrazingTable>();
+            }
+        }
+
         // Paginated list with caching
         public async Task<(List<GrazingTable> Items, int TotalCount)> GetGrazingPageAsync(int pageNumber)
         {
