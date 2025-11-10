@@ -1,5 +1,4 @@
-﻿
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Supabase.Postgrest.Attributes;
 using Supabase.Postgrest.Models;
 
@@ -28,6 +27,9 @@ namespace CATERINGMANAGEMENT.Models
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
+
+        [Column("show_on_website")]
+        public bool ShowOnWebsite { get; set; } 
 
         [JsonProperty("profiles")]
         public Profile? Profile { get; set; }

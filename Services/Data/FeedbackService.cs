@@ -80,5 +80,26 @@ namespace CATERINGMANAGEMENT.Services.Data
             return profile;
         }
 
+        // Update only the show_on_website flag of a feedback
+        public async Task<bool> UpdateShowOnWebsiteAsync(long feedbackId, bool value)
+        {
+            try
+            {
+                var client = await SupabaseService.GetClientAsync();
+
+                await client
+                    .From<Feedback>()
+                    .Where(x => x.Id == feedbackId)
+                    .Set(f => f.ShowOnWebsite, value)
+                    .Update();
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
     }
 }

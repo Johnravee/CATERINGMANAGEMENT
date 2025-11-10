@@ -1,13 +1,6 @@
 ﻿/*
  * FILE: FeedbackViewModel.cs
- * PURPOSE: Handles loading, pagination, search (with debounce), deleting, and realtime sync of Feedback data.
- * 
- * RESPONSIBILITIES:
- *  - Load feedbacks with pagination
- *  - Search feedbacks with debounce
- *  - Delete feedback entries
- *  - Subscribe to Supabase Realtime updates (insert, update, delete)
- *  - Display messages for user interaction
+ * PURPOSE: Handles loading, pagination, search (with debounce), deleting, realtime sync, and show_on_website toggling of Feedback data.
  */
 
 using CATERINGMANAGEMENT.Helpers;
@@ -29,23 +22,11 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
 {
     public class FeedbackViewModel : BaseViewModel
     {
-        #region Constants
         private const int PageSize = 10;
-        #endregion
-
-        #region Services
         private readonly FeedbackService _feedbackService = new();
-        #endregion
-
-        #region Fields
         private CancellationTokenSource? _searchDebounceToken;
-        #endregion
-
-        #region Collections
         public ObservableCollection<Feedback> Items { get; } = new();
-        #endregion
 
-        #region UI State
         private bool _isLoading;
         public bool IsLoading
         {
@@ -85,29 +66,25 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
                 _ = ApplySearchDebouncedAsync();
             }
         }
-        #endregion
 
-        #region Commands
         public ICommand DeleteFeedbackCommand { get; }
         public ICommand NextPageCommand { get; }
         public ICommand PrevPageCommand { get; }
-        #endregion
+        public ICommand ShowOnWebsiteCommand { get; }
+        public ICommand HideFromWebsiteCommand { get; }
 
-        #region Constructor
         public FeedbackViewModel()
         {
             DeleteFeedbackCommand = new RelayCommand<Feedback>(async f => await DeleteFeedbackAsync(f));
             NextPageCommand = new RelayCommand(async () => await LoadPageAsync(CurrentPage + 1), () => CurrentPage < TotalPages);
             PrevPageCommand = new RelayCommand(async () => await LoadPageAsync(CurrentPage - 1), () => CurrentPage > 1);
+            ShowOnWebsiteCommand = new RelayCommand<Feedback>(async f => await SetShowOnWebsiteAsync(f, true));
+            HideFromWebsiteCommand = new RelayCommand<Feedback>(async f => await SetShowOnWebsiteAsync(f, false));
 
             _ = LoadPageAsync(1);
-
-            // ✅ Start realtime subscription
             _ = Task.Run(SubscribeToRealtime);
         }
-        #endregion
 
-        #region Load Feedbacks
         public async Task LoadPageAsync(int pageNumber)
         {
             if (IsLoading) return;
@@ -138,9 +115,7 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
                 IsLoading = false;
             }
         }
-        #endregion
 
-        #region Search (with debounce)
         private async Task ApplySearchDebouncedAsync()
         {
             _searchDebounceToken?.Cancel();
@@ -149,12 +124,11 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
 
             try
             {
-                await Task.Delay(400, cts.Token); // debounce delay
+                await Task.Delay(400, cts.Token);
                 await ApplySearchAsync();
             }
             catch (TaskCanceledException)
             {
-                // Ignore cancelled debounce task
             }
         }
 
@@ -193,9 +167,7 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
                 IsLoading = false;
             }
         }
-        #endregion
 
-        #region Delete Feedback
         private async Task DeleteFeedbackAsync(Feedback feedback)
         {
             if (feedback == null) return;
@@ -230,9 +202,6 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
                     ShowMessage("Delete failed. The record may not exist or could not be removed.",
                                 "Delete Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
-
-
-                ShowMessage("Feedback deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -244,26 +213,35 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
                 IsLoading = false;
             }
         }
-        #endregion
 
-        #region Realtime Sync
+        private async Task SetShowOnWebsiteAsync(Feedback feedback, bool value)
+        {
+            if (feedback == null) return;
+
+            bool original = feedback.ShowOnWebsite;
+            feedback.ShowOnWebsite = value; // optimistic
+
+            bool success = await _feedbackService.UpdateShowOnWebsiteAsync(feedback.Id, value);
+            if (!success)
+            {
+                feedback.ShowOnWebsite = original; // revert
+                ShowMessage("Failed to update website visibility.", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private async Task SubscribeToRealtime()
         {
             try
             {
                 var client = await SupabaseService.GetClientAsync();
-
-                // Subscribe to "feedback" table in "public" schema
                 var channel = client.Realtime.Channel("realtime", "public", "feedbacks");
 
-                // Log all events
                 channel.AddPostgresChangeHandler(ListenType.All, (sender, change) =>
                 {
                     Debug.WriteLine($"[Realtime] Event: {change.Event}");
                     Debug.WriteLine($"Payload: {change.Payload}");
                 });
 
-                // INSERT handler
                 channel.AddPostgresChangeHandler(ListenType.Inserts, async (sender, change) =>
                 {
                     var inserted = change.Model<Feedback>();
@@ -291,6 +269,23 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
                     });
                 });
 
+                channel.AddPostgresChangeHandler(ListenType.Updates, (sender, change) =>
+                {
+                    var updated = change.Model<Feedback>();
+                    if (updated == null) return;
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var existing = Items.FirstOrDefault(f => f.Id == updated.Id);
+                        if (existing != null)
+                        {
+                            existing.FeedbackText = updated.FeedbackText;
+                            existing.Category = updated.Category;
+                            existing.ShowOnWebsite = updated.ShowOnWebsite;
+                        }
+                    });
+                });
+
                 var result = await channel.Subscribe();
                 AppLogger.Success($"✅ Subscribed to realtime feedback updates: {result}");
             }
@@ -299,6 +294,5 @@ namespace CATERINGMANAGEMENT.ViewModels.FeedbackVM
                 AppLogger.Error(ex, "Error subscribing to realtime feedback updates");
             }
         }
-        #endregion
     }
 }
