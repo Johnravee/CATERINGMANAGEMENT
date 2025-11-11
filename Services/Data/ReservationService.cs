@@ -31,6 +31,16 @@ namespace CATERINGMANAGEMENT.Services.Data
     {
         private async Task<Supabase.Client> GetClientAsync() => await SupabaseService.GetClientAsync();
 
+        // Normalize dates to midday UTC to avoid tz-based day shifts when PostgREST casts to DATE
+        private static DateTime NormalizeDate(DateTime dt)
+            => DateTime.SpecifyKind(dt.Date.AddHours(12), DateTimeKind.Utc);
+
+        private static void NormalizeReservationDates(Reservation? r)
+        {
+            if (r == null) return;
+            r.EventDate = r.EventDate.Date;
+        }
+
         public async Task<List<Reservation>> GetReservationsAsync(int pageNumber, int pageSize)
         {
             try
@@ -59,6 +69,9 @@ namespace CATERINGMANAGEMENT.Services.Data
                     .Get();
 
                 var reservations = result.Models ?? new List<Reservation>();
+
+                foreach (var r in reservations)
+                    NormalizeReservationDates(r);
 
                 SetCache(cacheKey, reservations);
                 return reservations;
@@ -114,7 +127,8 @@ namespace CATERINGMANAGEMENT.Services.Data
                     .Set(r => r.Celebrant, reservation.Celebrant)
                     .Set(r => r.Venue, reservation.Venue)
                     .Set(r => r.Location, reservation.Location)
-                    .Set(r => r.EventDate, reservation.EventDate)
+                    .Set(r => r.EventDate, NormalizeDate(reservation.EventDate))
+                    .Set(r => r.EventTime, reservation.EventTime)
                     .Set(r => r.AdultsQty, reservation.AdultsQty)
                     .Set(r => r.KidsQty, reservation.KidsQty)
                     .Update();
@@ -133,11 +147,86 @@ namespace CATERINGMANAGEMENT.Services.Data
                     ")
                     .Single();
 
+                NormalizeReservationDates(updated);
                 return updated;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"❌ Error updating reservation: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Fine-grained update for reservation details (does NOT modify Status unless explicitly passed).
+        /// Pass only the fields you want to change; null means leave as-is.
+        /// </summary>
+        public async Task<Reservation?> UpdateReservationDetailsAsync(
+            long reservationId,
+            DateTime? eventDate = null,
+            TimeSpan? eventTime = null,
+            string? celebrant = null,
+            string? venue = null,
+            string? location = null,
+            long? adultsQty = null,
+            long? kidsQty = null,
+            long? themeMotifId = null,
+            long? packageId = null,
+            long? grazingId = null,
+            string? newStatus = null)
+        {
+            try
+            {
+                bool anyChanges = eventDate.HasValue || eventTime.HasValue || celebrant != null || venue != null || location != null ||
+                                   adultsQty.HasValue || kidsQty.HasValue || themeMotifId.HasValue || packageId.HasValue || grazingId.HasValue ||
+                                   !string.IsNullOrWhiteSpace(newStatus);
+
+                if (!anyChanges)
+                {
+                    var current = await GetReservationWithJoinsAsync(reservationId);
+                    NormalizeReservationDates(current);
+                    return current;
+                }
+
+                var client = await GetClientAsync();
+                var builder = client
+                    .From<Reservation>()
+                    .Where(r => r.Id == reservationId);
+
+                if (eventDate.HasValue) builder = builder.Set(r => r.EventDate, NormalizeDate(eventDate.Value));
+                if (eventTime.HasValue) builder = builder.Set(r => r.EventTime, eventTime.Value);
+                if (celebrant != null) builder = builder.Set(r => r.Celebrant, celebrant);
+                if (venue != null) builder = builder.Set(r => r.Venue, venue);
+                if (location != null) builder = builder.Set(r => r.Location, location);
+                if (adultsQty.HasValue) builder = builder.Set(r => r.AdultsQty, adultsQty.Value);
+                if (kidsQty.HasValue) builder = builder.Set(r => r.KidsQty, kidsQty.Value);
+                if (themeMotifId.HasValue) builder = builder.Set(r => r.ThemeMotifId, themeMotifId.Value);
+                if (packageId.HasValue) builder = builder.Set(r => r.PackageId, packageId.Value);
+                if (grazingId.HasValue) builder = builder.Set(r => r.GrazingId, grazingId.Value);
+                if (!string.IsNullOrWhiteSpace(newStatus)) builder = builder.Set(r => r.Status, newStatus!);
+
+                await builder.Update();
+
+                InvalidateAllReservationCaches();
+
+                var updated = await client
+                    .From<Reservation>()
+                    .Where(x => x.Id == reservationId)
+                    .Select(@"
+                        *,
+                        profile:profile_id(*),
+                        thememotif:theme_motif_id(*),
+                        grazing:grazing_id(*),
+                        package:package_id(*)
+                    ")
+                    .Single();
+
+                NormalizeReservationDates(updated);
+                return updated;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"❌ Error updating reservation details: {ex.Message}");
                 return null;
             }
         }
@@ -150,7 +239,6 @@ namespace CATERINGMANAGEMENT.Services.Data
             {
                 var client = await GetClientAsync();
 
-                // Perform delete - network issues will surface as HttpRequestException
                 await client
                     .From<Reservation>()
                     .Where(x => x.Id == reservation.Id)
@@ -162,7 +250,6 @@ namespace CATERINGMANAGEMENT.Services.Data
             }
             catch (HttpRequestException)
             {
-                // Rethrow so callers can show a network-specific message
                 throw;
             }
             catch (PostgrestException pex)
@@ -216,6 +303,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                     ")
                     .Single();
 
+                NormalizeReservationDates(result);
                 return result;
             }
             catch (Exception ex)
@@ -257,6 +345,7 @@ namespace CATERINGMANAGEMENT.Services.Data
                     ")
                     .Single();
 
+                NormalizeReservationDates(updated);
                 return updated;
             }
             catch (Exception ex)

@@ -93,6 +93,10 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         #endregion
 
+        #region Helpers
+        private static DateTime NormalizeDate(DateTime d) => DateTime.SpecifyKind(d.Date, DateTimeKind.Unspecified);
+        #endregion
+
         #region Data Loading
         private async Task LoadReservationMenuOrdersAsync()
         {
@@ -131,11 +135,27 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 IsLoading = true;
                 AppLogger.Info($"Updating reservation ID {Reservation.Id}");
 
-                var updated = await _reservationService.UpdateReservationAsync(Reservation);
+                // Include status if user changed it in details
+                string? statusToSet = string.IsNullOrWhiteSpace(Reservation.Status) ? null : Reservation.Status;
+
+                // Use fine-grained update to avoid accidental date/time conversion issues
+                var updated = await _reservationService.UpdateReservationDetailsAsync(
+                    reservationId: Reservation.Id,
+                    eventDate: NormalizeDate(Reservation.EventDate),
+                    eventTime: Reservation.EventTime,
+                    celebrant: Reservation.Celebrant,
+                    venue: Reservation.Venue,
+                    location: Reservation.Location,
+                    adultsQty: Reservation.AdultsQty,
+                    kidsQty: Reservation.KidsQty,
+                    themeMotifId: Reservation.ThemeMotifId,
+                    packageId: Reservation.PackageId,
+                    grazingId: Reservation.GrazingId,
+                    newStatus: statusToSet
+                );
 
                 if (updated != null)
                 {
-                    // Replace local reservation reference with the updated one so bindings update
                     App.Current.Dispatcher.Invoke(() =>
                     {
                         Reservation = updated;
@@ -144,8 +164,6 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
                     await LoadReservationMenuOrdersAsync();
                     AppLogger.Success($"Reservation ID {Reservation.Id} updated successfully.");
-
-                    // Show blocking messagebox (undo snackbar)
                     App.Current.Dispatcher.Invoke(() => MessageBox.Show("Reservation updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information));
                 }
                 else
@@ -288,17 +306,13 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
 
                     AppLogger.Success("Contract email sent successfully.");
 
-                    // After successfully sending the contract, update status to contractsigning
+                    // After successfully sending the contract, update status to contractsigning without touching other fields
                     if (!string.Equals(Reservation.Status, "contractsigning", StringComparison.OrdinalIgnoreCase))
                     {
-                        // set status locally first
-                        Reservation.Status = "contractsigning";
-
-                        var updated = await _reservationService.UpdateReservationAsync(Reservation);
+                        var updated = await _reservationService.UpdateReservationStatusAsync(Reservation.Id, "contractsigning");
 
                         if (updated != null)
                         {
-                            Reservation.Status = updated.Status;
                             App.Current.Dispatcher.Invoke(() =>
                             {
                                 // replace reference so UI updates bindings

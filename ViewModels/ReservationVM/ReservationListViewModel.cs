@@ -504,9 +504,8 @@ namespace CATERINGMANAGEMENT.ViewModels.ReservationVM
                 // 3) Generate contract PDF
                 ContractPdfGenerator.Generate(resWithJoins, sfd.FileName, templateImagePath);
 
-                // 4) Update reservation status to "contractsigning"
-                resWithJoins.Status = "contractsigning";
-                var updated = await _reservationService.UpdateReservationAsync(resWithJoins);
+                // 4) Update reservation status to "contractsigning" without changing other fields
+                var updated = await _reservationService.UpdateReservationStatusAsync(resWithJoins.Id, "contractsigning");
 
                 if (updated != null)
                 {
